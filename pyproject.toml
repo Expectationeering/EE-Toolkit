@@ -1,0 +1,14 @@
+[project]
+name = "ee-toolkit"
+version = "0.1.0"
+description = "Agentic AI Kit for applying Expectationeering — local flow scripts for docx <-> markdown workbook conversion."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-docx==1.2.0",
+    "lxml==6.1.0",
+]
+
+# This repo is a collection of scripts, not an installable package.
+[tool.uv]
+package = false

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m venv c:/Temp/EEToolkit/.venv)",
+      "Bash(.venv/Scripts/pip install python-docx)",
+      "Bash(.venv/Scripts/python.exe -c \":*)",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"import docx; print\\(''python-docx:'', docx.__version__\\)\")",
+      "Bash(python -c \"import pypandoc; print\\(''pypandoc:'', pypandoc.__version__\\)\")",
+      "Bash(python scripts/md_to_docx.py flows/expectationeering-flow/workbook-template.md outputs/test-conversion.docx --template \"flows/expectationeering-flow/Expectationeering Workbook.docx\")",
+      "Bash(rm outputs/test-conversion.docx)",
+      "Bash(python \"c:/Temp/EEToolkit/scripts/md_to_docx.py\" \"c:/Temp/EEToolkit/outputs/expectationeering-flow-workbook-2026-03-06.md\" \"c:/Temp/EEToolkit/outputs/expectationeering-flow-workbook-2026-03-06.docx\" --template \"c:/Temp/EEToolkit/flows/expectationeering-flow/Expectationeering Workbook.docx\")",
+      "Bash(python scripts/populate_docx.py \"outputs/expectationeering-flow-workbook-2026-03-06.md\" \"flows/expectationeering-flow/Expectationeering Workbook.docx\" \"outputs/expectationeering-flow-workbook-populated.docx\")",
+      "Bash(python scripts/populate_docx.py \"outputs/expectationeering-flow-workbook-2026-03-06.md\" \"flows/expectationeering-flow/Expectationeering Workbook.docx\" \"outputs/expectationeering-flow-workbook-populated2.docx\")",
+      "Bash(python scripts/populate_docx.py \"outputs/expectationeering-flow-workbook-2026-03-06.md\" \"flows/expectationeering-flow/Expectationeering Workbook.docx\" \"outputs/expectationeering-flow-workbook-populated3.docx\")",
+      "Bash(python scripts/populate_docx.py \"outputs/expectationeering-flow-workbook-2026-03-06.md\" \"flows/expectationeering-flow/Expectationeering Workbook.docx\" \"outputs/expectationeering-flow-workbook-2026-03-06.docx\")",
+      "Bash(python scripts/md_to_docx.py \"outputs/2026-03-10/\" \"outputs/2026-03-10/agile-flow-2026-03-10.docx\")"
+    ]
+  }
+}
