@@ -23,10 +23,7 @@ import sys
 import copy
 import shutil
 import argparse
-import tempfile
-import subprocess
 from docx import Document
-from docx.shared import Inches
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
@@ -137,59 +134,6 @@ def replace_placeholder_paragraph(doc, needle: str, text: str) -> bool:
                 run = p.add_run()
                 run.add_break()
                 run.text = extra
-            return True
-    return False
-
-
-def _find_dot():
-    """Locate the Graphviz `dot` executable (PATH first, then common Windows install dirs)."""
-    exe = shutil.which('dot')
-    if exe:
-        return exe
-    for cand in (r"C:\Program Files\Graphviz\bin\dot.exe",
-                 r"C:\Program Files (x86)\Graphviz\bin\dot.exe"):
-        if os.path.exists(cand):
-            return cand
-    return None
-
-
-def extract_dot(md: str) -> str:
-    """Return the first ```dot fenced code block from the markdown, or '' if absent/empty."""
-    m = re.search(r'```dot\s*\n(.*?)\n```', md, re.DOTALL | re.IGNORECASE)
-    if not m:
-        return ''
-    code = m.group(1).strip()
-    # require at least one node or edge beyond comments/braces
-    meaningful = [l for l in code.splitlines()
-                  if l.strip() and not l.strip().startswith('//') and not l.strip().startswith('#')]
-    return code if len(meaningful) > 2 else ''
-
-
-def render_dot_png(dot_code: str):
-    """Render DOT to a PNG using the `dot` binary. Returns the PNG path, or None on failure."""
-    dot = _find_dot()
-    if not dot or not dot_code.strip():
-        return None
-    try:
-        out = os.path.join(tempfile.mkdtemp(), 'context.png')
-        subprocess.run([dot, '-Tpng', '-o', out], input=dot_code.encode('utf-8'),
-                       check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return out if os.path.exists(out) else None
-    except Exception as e:
-        print(f"  (context diagram not rendered: {e})")
-        return None
-
-
-def insert_context_diagram(doc, png_path: str) -> bool:
-    """Replace the '<Add graphical image>' context-diagram placeholder with the rendered PNG."""
-    if not png_path:
-        return False
-    for p in doc.paragraphs:
-        if 'Add graphical image' in p.text:
-            for r in list(p.runs):
-                r.text = ''
-            run = p.runs[0] if p.runs else p.add_run()
-            run.add_picture(png_path, width=Inches(6.0))
             return True
     return False
 
@@ -309,9 +253,34 @@ def populate_user_groups(table, md_rows: list):
 # Word cell / row helpers
 # ---------------------------------------------------------------------------
 
+# BDD feature files in the Verification section render in a fixed monospace font so the
+# Gherkin indentation and data-table columns stay aligned (see flows/.../Example.feature).
+FEATURE_FONT = 'Consolas'
+FEATURE_FONT_HALF_PT = '18'  # Word sizes are in half-points; 18 = 9 pt
+
+
+def _apply_run_font(r_el, name: str, half_pt: str):
+    """Set the font name and size (in half-points) on a Word run element `r_el`."""
+    rpr = OxmlElement('w:rPr')
+    rfonts = OxmlElement('w:rFonts')
+    for attr in ('w:ascii', 'w:hAnsi', 'w:cs'):
+        rfonts.set(qn(attr), name)
+    rpr.append(rfonts)
+    for tag in ('w:sz', 'w:szCs'):
+        sz = OxmlElement(tag)
+        sz.set(qn('w:val'), half_pt)
+        rpr.append(sz)
+    r_el.insert(0, rpr)  # rPr must be the first child of the run
+
+
 def set_value_cell(cell_el, text: str):
-    """Set a Word table cell element to a single run of `text`, replacing ALL its paragraphs."""
+    """Set a Word table cell element to a single run of `text`, replacing ALL its paragraphs.
+
+    Feature-file content (a Gherkin block, recognised by its leading `@ID:` tag) is rendered in
+    the fixed monospace FEATURE_FONT/size so its indentation and data tables stay aligned.
+    """
     text = (text or '').replace('**', '')  # drop markdown bold markers; cells are plain text
+    is_feature = text.lstrip().startswith('@ID:')
     paras = cell_el.findall(qn('w:p'))
     # Drop any extra paragraphs so multi-line placeholder text is fully replaced.
     for extra in paras[1:]:
@@ -331,6 +300,8 @@ def set_value_cell(cell_el, text: str):
             t_new.text = line
             t_new.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
             r_new.append(t_new)
+        if is_feature:
+            _apply_run_font(r_new, FEATURE_FONT, FEATURE_FONT_HALF_PT)
         p.append(r_new)
 
 
@@ -533,8 +504,8 @@ def populate(md_path: str, template_path: str, output_path: str):
     if uc_data and len(uc_data[0]) > 1:
         replace_placeholder_paragraph(doc, '<Use-Case 1>', uc_data[0][1])
 
-    # --- Context diagram: render the authored Graphviz DOT block and insert it ---
-    insert_context_diagram(doc, render_dot_png(extract_dot(md)))
+    # --- Context diagram: graphical rendering removed; leave a "To be added" placeholder ---
+    replace_placeholder_paragraph(doc, 'Add graphical image', 'To be added')
 
     def horiz(key, heading):
         populate_horizontal_table(tables[T[key]], parse_md_table(extract_section(md, heading)))

@@ -54,7 +54,7 @@ Paste the text below into Claude Code and send it. You only do this **once**.
 install toolkit
 ```
 
-That's it — Claude Code installs the three tools the kit needs (**uv** to run the scripts, **pandoc** to read your Word input, and **Graphviz** to draw the context diagram), sets up the environment, and tells you when you're ready. It may ask permission to run a few commands — say yes.
+That's it — Claude Code installs the two tools the kit needs (**uv** to run the scripts and **pandoc** to read your Word input), sets up the environment, and tells you when you're ready. It may ask permission to run a few commands — say yes.
 
 Claude Code will install what's needed, set up the environment, and confirm when you're ready. It may ask for permission to run a few commands — that's normal; say yes.
 

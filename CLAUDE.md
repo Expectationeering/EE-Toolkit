@@ -52,16 +52,16 @@ install toolkit
 
 When the user types `install toolkit` (or "set up the toolkit", "setup"), perform a one-time environment setup, then tell them they're ready to run a flow:
 
-1. Check whether **uv**, **pandoc**, and **Graphviz** are installed; install any that are missing using the right installer for the operating system:
-   - Windows: `winget install astral-sh.uv`, `winget install JohnMacFarlane.Pandoc`, `winget install Graphviz.Graphviz`
-   - macOS: `brew install uv pandoc graphviz`
-   - Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` for uv, plus `pandoc` and `graphviz` from the package manager
-2. **Windows — use just-installed tools without a terminal restart.** winget updates `PATH` in the registry, but the already-running session does not see it. So run every command that uses `uv`/`pandoc`/`dot` in PowerShell, prefixed with a registry PATH refresh:
+1. Check whether **uv** and **pandoc** are installed; install any that are missing using the right installer for the operating system:
+   - Windows: `winget install astral-sh.uv`, `winget install JohnMacFarlane.Pandoc`
+   - macOS: `brew install uv pandoc`
+   - Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` for uv, plus `pandoc` from the package manager
+2. **Windows — use just-installed tools without a terminal restart.** winget updates `PATH` in the registry, but the already-running session does not see it. So run every command that uses `uv`/`pandoc` in PowerShell, prefixed with a registry PATH refresh:
    ```
    $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); <command>
    ```
 3. Run `uv sync` (with the prefix on Windows) to create the environment and install the pinned Python dependencies.
-4. Verify (with the prefix on Windows): `uv run python -c "import docx, lxml; print('ok')"` and `pandoc --version`. (`dot` may stay off `PATH`; that's fine — `scripts/populate_docx.py` locates Graphviz directly.)
+4. Verify (with the prefix on Windows): `uv run python -c "import docx, lxml; print('ok')"` and `pandoc --version`.
 5. Confirm the user is ready — **no terminal restart is needed**; a flow can be run immediately.
 
 ## Orchestration
@@ -84,7 +84,7 @@ Execute flows/<name>
 
 ### Procedure
 
-**Always show progress with a todo list.** Before loading anything, call `TodoWrite` to create a progress checklist and keep it updated throughout — the user relies on it to follow progress live. Create one item per phase (or per step) covering the flow's `## Steps`, plus `Ingest input documents`, `Quality Assurance audit`, and `Convert to .docx`. Keep exactly one item `in_progress`; mark it `completed` the moment that step's output is written to the workbook. Do not open a run by printing the full step table — the todo list is the progress view.
+**Always show progress with a todo list.** Before loading anything, call `TodoWrite` to create a progress checklist and keep it updated throughout — the user relies on it to follow progress live. Create one item per phase (or per step) covering the flow's `## Steps`, plus `Ingest input documents`, `Quality Assurance audit`, `Convert to .docx`, and `Write run statistics`. Keep exactly one item `in_progress`; mark it `completed` the moment that step's output is written to the workbook. Do not open a run by printing the full step table — the todo list is the progress view.
 
 **1. Load all inputs.** Ingest input documents first. For each `<name>.docx` in `inputs/`, convert it to a markdown sibling with pandoc and use the markdown — never the `.docx`. On Windows, run pandoc in PowerShell prefixed with a registry PATH refresh (ask permission first, per Collaboration Rules):
 ```
@@ -118,7 +118,15 @@ Date: <YYYY-MM-DD>
 ---
 ```
 
-**6. Convert to .docx.** If a `Convert command` is defined, run it (ask permission first). Substitute `{md}`, `{docx}`, `{output_dir}` with the output paths. On Windows, prefix with the same registry PATH refresh. (`dot` may stay off `PATH` — `scripts/populate_docx.py` locates Graphviz directly, so the context diagram still renders.) If no `Convert command` is defined, skip.
+**6. Convert to .docx.** If a `Convert command` is defined, run it (ask permission first). Substitute `{md}`, `{docx}`, `{output_dir}` with the output paths. On Windows, prefix with the same registry PATH refresh. If no `Convert command` is defined, skip.
+
+**7. Write run statistics.** Always, as the final step of every run, write `outputs/<YYYY-MM-DD>/run-stats.md` summarising the run. This is orchestrator-authored (no specialist agent), built from the per-invocation figures each subagent returns (`subagent_tokens`, `duration_ms`). It contains:
+- A header: flow path, workbook name, date, and the AI model used (orchestrator and subagents).
+- A one-line note that the figures are subagent totals (excluding the orchestrator's own usage and any wait-for-permission time) and that agents ran sequentially, so summed duration approximates wall-clock.
+- A **Totals** table: AI model, total subagent tokens, agent invocations, average tokens/invocation, summed agent execution time, and number of QA audit passes (with the final verdict).
+- A **Per-step breakdown** table (`Step | Role | Tokens | Duration (s)`), one row per agent invocation **including** every QA audit pass and every remediation fix.
+- A short **Notes** list: heaviest step by duration and by tokens, whether pandoc regeneration ran, how many QA passes were needed, and the artifact volume produced.
+Use `outputs/2026-06-09/run-stats.md` as the reference format. Add `Write run statistics` as the last todo item and mark it complete once the file is written.
 
 **Co-author, gates, and audit modes.**
 - **Co-author** (`parallel with` an author step): take the primary author's draft first, then spawn the co-author to review, challenge, and improve it — not replace it wholesale.

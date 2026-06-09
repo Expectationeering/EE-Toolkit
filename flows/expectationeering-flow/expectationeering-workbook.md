@@ -130,21 +130,7 @@ Write the intended use as a single, flowing prose statement that naturally cover
 
 The context diagram identifies the system of interest in relation to its context. The system of interest contains all elements that are part of the design.
 
-Author the diagram as Graphviz DOT in the fenced `dot` block below: put the System of Interest (and its system elements) in a central cluster, the context elements as surrounding nodes, and the external interfaces (IF_*) as labelled edges between them. The converter renders this block to an image and inserts it into the document.
-
-```dot
-digraph context {
-  rankdir=LR;
-  node [shape=box, style=rounded];
-  subgraph cluster_soi {
-    label="System of Interest";
-    style=rounded;
-    // <SOI element nodes, e.g.>  "Monitor App"; "AI Engine";
-  }
-  // Context element nodes, e.g.>  "Sensor"; "HIS";
-  // External interfaces as labelled edges, e.g.>  "Sensor" -> "Monitor App" [label="IF_01 Vitals feed"];
-}
-```
+_To be added_
 
 #### Product Information
 
@@ -173,6 +159,14 @@ Connections between the system of interest and the context elements (mechanical,
 | ID | Name | Port 1 | Port 2 | ICD |
 |----|------|--------|--------|-----|
 | IF_01 | | | | |
+
+#### Acquired Parameters / Signals
+
+Whenever the product acquires, exchanges, or presents a **set** of parameters, signals, or data items from a set of source elements (measurement devices, sensors, sub-systems, services), enumerate that set here instead of leaving it as a collective phrase elsewhere. One row per source-element/parameter combination, taken from the input. If no such parameter set applies to this product, write `_Not applicable_`.
+
+| Source Element | Parameter / Signal | Unit / Typical Range | Interface |
+|----------------|--------------------|----------------------|-----------|
+| <!-- e.g. a measurement device --> | <!-- the specific parameter it provides --> | | IF_ |
 
 ## Users
 
@@ -244,7 +238,7 @@ Individuals, groups, or systems that perform roles or tasks within the system or
 
 ### Use Cases (UC_*)
 
-<!-- Add a use-case diagram for the SOI -->
+_To be added_
 
 | ID | Title | Actor | Goal | Satisfies | Classification | Precondition | Main Success Scenario | Alternative Scenarios | Exception Scenarios | Post Condition | Traces |
 |----|-------|-------|------|-----------|----------------|--------------|-----------------------|-----------------------|---------------------|----------------|--------|
@@ -268,7 +262,7 @@ Choices made during design, with the considered alternatives and the rationale f
 
 The points where the system connects to context elements, sub-systems, or other systems — connection type, data/signals exchanged, and protocols/standards.
 
-<!-- Add a diagram of the product black-box design -->
+_To be added_
 
 ### Requirements
 
