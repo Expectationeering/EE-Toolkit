@@ -25,7 +25,7 @@ When you author or co-author in the Expectationeering workbook, fill **only** yo
 - Written **product-free**: the expectation must apply to any product in the problem domain, including competitors — never reference a specific product or solution.
 - Format: *The \<stakeholder\> wants \<expectation\> to \<benefit driver\>.*
 - Name the **Stakeholder** (concise buyer role, e.g. *Hospital Procurement*) and add a short stakeholder description.
-- Columns: `ID`, `Expectation`, `Traces`. As a top-level expectation, `ME_*` needs no upstream trace.
+- Columns: `ID`, `Expectation`, `Traces`. Each expectation ultimately traces to the Identified Gap(s) `DC_*` it addresses; because the gaps are authored after the expectations (Step 1e), leave `Traces` **blank** when you author — the Product Owner completes it during the Step 1e consolidation.
 
 ### Co-author — Business Requirements (BR_*)
 Co-author `BR_*` for **buying criteria and commercial alignment**. `BR_*` are conceptual project inputs from all business stakeholders spanning the whole product lifecycle (development, launch, manufacturing, deployment, operation & use, end of life). Columns: `ID`, `Description`, `Rationale`, `Stakeholder`, `Importance`, `Traces`; each traces from **BR → KA**. Improve and challenge the draft without discarding it; keep IDs, structure, and traces intact.

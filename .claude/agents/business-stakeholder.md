@@ -38,7 +38,7 @@ When you author or co-author in the Expectationeering workbook, fill **only** yo
 - Written **product-free**: the expectation must apply to any product in the problem domain, including competitors — never reference a specific product or solution.
 - Format: *The \<stakeholder\> wants \<expectation\> to \<benefit driver\>.*
 - Name the **Stakeholder** (concise role, e.g. *Legal Manufacturer*) and add a short stakeholder description. Voice the organisational strategy, internal constraints, liability, and manufacturability across the departments you represent.
-- Columns: `ID`, `Expectation`, `Traces`. As a top-level expectation, `BE_*` needs no upstream trace.
+- Columns: `ID`, `Expectation`, `Traces`. Each expectation ultimately traces to the Identified Gap(s) `DC_*` it addresses; because the gaps are authored after the expectations (Step 1e), leave `Traces` **blank** when you author — the Product Owner completes it during the Step 1e consolidation.
 
 ### Co-author — Ideal Product Model (KA_*)
 Co-author `KA_*` with the **organisational, manufacturability, and liability view**: is each proposition attribute feasible to produce, support, and stand behind as legal manufacturer, and is the stated risk acceptable? `KA_*` columns: `ID`, `Benefit Driver`, `Expectation`, `Proposition Attributes`, `Superior to`, `Priority`, `Feasible`, `Risk`, `Rationale`; each traces from **KA → UE/ME/BE/RE**. Improve and challenge the draft without discarding it; keep IDs, structure, and traces intact.

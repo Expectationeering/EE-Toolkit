@@ -20,31 +20,11 @@ This workbook captures the expectations and requirements for the product, from i
 
 ## Intended users of the document
 
-This workbook is intended for everyone involved in defining, building, verifying, and approving the MMSS software product:
-
-- **Product Owner and project management** — to consolidate stakeholder needs, frame scope, set priorities, and govern release readiness.
-- **Development team (System Architect, Development Lead, software engineers)** — to derive the system decomposition, interfaces, and an implementable design from the requirements.
-- **Verification and Quality Assurance** — to plan and execute verification, build the coverage matrix, and review evidence against the requirements.
-- **Regulatory Affairs and Quality Management** — to demonstrate IEC 62304 lifecycle rigour, ISO 14971 risk management, and conformity for market access.
-- **Business, customer, user, and regulatory stakeholders** — to confirm that the captured expectations, scope boundary, and requirements reflect their intent before downstream design proceeds.
+This workbook is intended for the product development and assurance community responsible for the MMSS: the product owner and business stakeholders, system architects and developers, usability and human-factors engineers, verification and validation engineers, quality and regulatory affairs, and the clinical stakeholders consulted throughout. It serves as the shared requirements baseline and traceability record from informal stakeholder expectations through to verifiable system requirements.
 
 ## Scope of the document
 
-This workbook covers the **Mobile Monitoring Software Solution (MMSS)** — a software-only medical device product that turns an existing portable patient monitor from a passive vital-signs display into an active, AI-driven clinical decision-support tool, compliant with IEC 62304.
-
-In scope:
-
-- The complete MMSS application software stack — all five software items: Acquisition (AC), Device Acquisition (DAC), Diagnostic Engine Connector (DEC), Diagnostic Pre-processing (DPREC), and Diagnostic Processing (DPROC).
-- Drivers and polling logic for the six measurement device interfaces: ECG monitor, pulse oximeter, blood-pressure monitor, thermal probe, capnometer, and EEG monitor.
-- Acquisition, display, and alarm presentation of vital signs, including connection and sensor-misplacement alarms.
-- AI diagnostic support through the externally sourced, commercially validated Open Evidence AI library, used as an off-the-shelf component, and rendering of ranked diagnostic candidates.
-- Hospital Information System (HIS) integration for sharing patient and diagnostic data for a second opinion (HL7/FHIR).
-
-Out of scope:
-
-- All hardware: the host CPU platform, the six measurement devices, the monitor display, and the physical enclosure are existing, fixed elements accessed only through published interface control documents.
-- Hardware design, selection, or modification; physical enclosure, portability, weight, and battery design.
-- Development of a custom AI model (the validated Open Evidence model is mandated for the first release).
+The product in scope is the Mobile Monitoring Software Solution (MMSS) — regulated medical device software that turns an existing portable patient monitor into an active clinical decision-support tool. The workbook covers the requirement chain from the problem domain and stakeholder expectations through to verifiable system requirements and their BDD verification specifications. Hardware design, internal architecture decomposition, detailed design, and per-item allocation are out of scope; physical components and the diagnostic AI are treated as fixed, externally-supplied elements accessed through defined interfaces.
 
 ---
 
@@ -58,44 +38,63 @@ The stakeholder level is the start of the requirement approach. It captures the 
 
 #### Domain Description
 
-The domain is **mobile and critical-care patient monitoring with clinical decision support**. Trained medical professionals — paramedics, emergency physicians, ICU and ER nurses — attend critically ill patients in time-pressured, often uncontrolled environments such as ambulances, mobile medical units, emergency rooms, and intensive care units. They depend on portable, non-invasive monitors that acquire vital signs from a fleet of measurement devices (ECG, pulse oximetry, blood pressure, temperature, capnography, EEG) and present them in real time so that rapid treatment decisions can be made at the patient's side. Products in this domain — both this product and its competitors — must clear regulatory market-access barriers, conform to medical-device safety and alarm standards, integrate with existing device fleets and hospital information systems, and increasingly provide automated diagnostic assistance to help clinicians converge on a working diagnosis faster.
+The domain is the real-time monitoring of critically ill or unstable patients in critical-care and pre-hospital settings — intensive care units, emergency rooms, and mobile medical units such as ambulances and on-scene emergency response. In this domain, trained medical professionals (paramedics, emergency physicians, ICU/ER nurses) must continuously track a patient's vital signs from a set of non-invasive measurement devices and act quickly on the patient's changing condition, frequently under time pressure and in noisy, moving, poorly lit, or chaotic environments where attention is split across multiple tasks and patients.
+
+Beyond passive observation of vital signs, the domain increasingly extends to clinical decision support: aiding the clinician toward a working diagnosis early in the patient encounter, when information is incomplete and expert consultation may be unavailable. Because monitoring failures, missed alarms, or misleading diagnostic guidance can directly cause patient harm or death, every solution in this domain is a safety-critical, regulated medical device. It is therefore subject to the full body of applicable medical-device law and harmonised standards — software lifecycle rigour (e.g. IEC 62304), risk management (e.g. ISO 14971), usability engineering (e.g. IEC 62366), alarm safety (e.g. IEC 60601-1-8), quality management (e.g. ISO 13485), data-protection law (e.g. GDPR/HIPAA class), and post-market surveillance obligations.
+
+The domain also has a commercial and organisational dimension: solutions are bought by healthcare-provider organisations that weigh clinical value against total cost of ownership, interoperability with the existing care and IT estate, vendor dependability, and institutional liability; and they are placed on the market by legal manufacturers who must demonstrate conformity to competent authorities and notified bodies before and after launch. Any product in this domain — the product under development and its competitors alike — solves the same underlying problem: delivering trustworthy, timely, safe, and lawfully marketable critical-care monitoring with diagnostic support.
 
 #### Actual State
 
-Current portable critical-care monitors reliably acquire and display vital signs from non-invasive measurement devices in real time.
+Today, critical-care and pre-hospital monitoring in this domain is dominated by patient monitors that acquire and display vital signs from non-invasive measurement devices and raise alarms when a measured value crosses a threshold. They give clinicians a real-time window onto the patient's condition, but they are essentially passive: they show numbers and waveforms and signal abnormal readings, leaving all interpretation and diagnosis to the clinician.
 
-Pros:
+**Pros**
 
-- Continuous, real-time acquisition and display of vital signs from an established fleet of non-invasive devices.
-- Familiar to trained clinicians; integrates with existing equipment and workflows.
-- Mature, cleared, and standards-conformant for the monitoring function (alarms, safety classification).
+- Continuous, real-time acquisition and at-a-glance display of vital signs from established measurement devices is mature and widely deployed.
+- Threshold-based alarming for abnormal vital signs is well understood and governed by recognised alarm-safety standards.
+- The clinician retains full diagnostic and treatment authority, so responsibility for patient care rests unambiguously with a qualified professional.
+- The regulatory, quality, and risk-management framework for such devices is established and well-trodden by manufacturers.
+- An installed base of monitors, measurement devices, and clinical IT exists, representing significant prior capital investment.
 
-Cons:
+**Cons**
 
-- Monitors are **passive**: they display raw vital signs but offer no interpretation or diagnostic support, leaving the full cognitive load of diagnosis on the clinician under extreme time pressure.
-- No ranked diagnostic candidates, no confidence or basis for any suggestion, and no convergence toward a predictive diagnosis.
-- Sensor misplacement, disconnection, and unreliable readings are not always unambiguously detected, risking decisions on incorrect or missing data.
-- Diagnostic reasoning and handover to the receiving hospital are manual, slowing continuity of care and any second opinion.
+- Monitoring is passive: the clinician must form a diagnosis unaided, which is slow and error-prone under time pressure, in chaotic settings, or when no colleague can be consulted.
+- No early, ranked diagnostic guidance is offered alongside the raw vital signs to shorten the time to a working diagnosis.
+- Sensor disconnection, misplacement, or unreliable readings may go undetected, risking decisions made on false data.
+- When automated guidance is absent or cannot be produced in time, the clinician has no clear, timely signal to fall back on their own assessment rather than wait.
+- Diagnostic support, where it exists, may not adequately explain its reasoning or confidence, encouraging either mistrust or unsafe automation bias.
+- Cross-environment use (fixed clinical and mobile/pre-hospital) often requires different equipment, increasing fleet complexity and cost.
+- Data exchange with hospital information systems for second opinion and handover is frequently bespoke, costly, or absent.
+- Realistic, risk-free training on the monitoring is limited, so clinicians may first encounter unfamiliar behaviour on a real patient.
 
 #### Desired State
 
-A monitoring solution that retains all the strengths of today's monitors **and adds** active, AI-driven diagnostic decision support.
+The desired state keeps everything good about today's monitoring and adds active, trustworthy clinical decision support. The monitoring still acquires and displays vital signs in real time and alarms on abnormal conditions, but it now also presents ranked, real-time diagnostic candidates alongside the raw data — converging quickly toward a working diagnosis — while keeping the clinician firmly in control and the device demonstrably safe and lawful to deploy.
 
-Pros (the actual-state pros are kept):
+**Pros (retained from the actual state)**
 
-- Continuous, real-time, low-latency acquisition and display of vital signs from the existing six-device fleet (retained).
-- Familiar to trained clinicians and integrates with existing equipment and workflows (retained).
-- Cleared, standards-conformant monitoring, alarms, and safety classification (retained).
-- **New:** ranked, real-time diagnostic candidates presented alongside raw vital signs, converging toward a predictive diagnosis within the diagnostic budget, sourced from a commercially validated AI engine.
-- **New:** transparent diagnostic output — basis, confidence, and known limitations — so clinicians apply their own judgement and do not over-trust automation.
-- **New:** unambiguous, prioritised alarms for critical conditions, sensor misplacement, disconnection, and diagnostic-timeout, conforming to alarm-system standards.
-- **New:** standards-based sharing of patient and diagnostic data with hospital information systems (HL7/FHIR) for continuity of care and a timely second opinion.
+- Continuous, real-time acquisition and at-a-glance display of vital signs from established measurement devices.
+- Recognised, standards-conformant alarming for abnormal vital signs.
+- The clinician retains final diagnostic and treatment authority.
+- An established regulatory, quality, and risk-management framework is satisfied.
+- Compatibility with the existing installed base of monitors, measurement devices, and clinical IT, protecting prior investment.
 
-Cons:
+**Pros (newly added)**
 
-- Added software complexity and a new diagnostic function raise the software safety class (Class C, mitigated to B) and the regulatory, validation, and liability burden.
-- Reliance on a third-party AI component introduces external dependency, contractual, and version-management obligations.
-- Greater risk of clinician over-reliance on automated suggestions and of alarm fatigue if not carefully designed and trained for.
+- Ranked, real-time diagnostic candidates are presented alongside vital signs, converging early so the clinician reaches a working diagnosis faster, even without a colleague to consult.
+- Each diagnostic suggestion carries its reasoning and confidence, so the clinician can judge whether to trust it and automation bias is mitigated.
+- The clinician is clearly and promptly told when a diagnosis cannot be produced in the expected time, so they can fall back on their own assessment without waiting indefinitely.
+- Sensor disconnection, misplacement, and unreliable readings are detected and signalled distinctly, so decisions are not made on false data.
+- The monitoring is ready for use within seconds of switching on and is operable one-handed and glanceably in mobile, noisy, poorly lit conditions.
+- A realistic, risk-free training mode lets clinicians build competence before using the device on a real patient.
+- Patient data and diagnostic findings can be shared with hospital information systems over recognised interoperability standards for second opinion and smooth handover.
+- One solution fits both fixed and mobile/pre-hospital settings, reducing fleet complexity and total cost of ownership.
+- The solution is developed and maintained under a controlled, standards-conformant lifecycle with audit-ready evidence, defensible residual risk, validated diagnostic performance, protected patient data, and credible post-market surveillance — making it lawfully marketable, safe to update, and defensible to governance and authorities.
+
+**Cons (newly introduced, to be controlled)**
+
+- Adding AI-driven diagnostic support introduces new clinical-safety, validation, evidence, and liability burdens that must be reduced to a defensible, documented residual level with independent safeguards for safety-critical functions.
+- Greater capability and interoperability increase development, integration, and data-protection effort, which must be contained within budget, time-to-market, and the manufacturer's existing competencies and capacity.
 
 #### Identified Gaps (DC_*)
 
@@ -103,13 +102,29 @@ The design changes needed to move from the actual state to the desired state.
 
 | ID | Description |
 |----|-------------|
-| DC_01 | Add real-time, AI-driven diagnostic support that produces ranked diagnostic candidates from acquired data and converges toward a predictive diagnosis within the defined time budget, sourced from a commercially validated off-the-shelf engine. |
-| DC_02 | Present diagnostic output transparently — its basis, confidence, and known limitations — so clinicians can apply their own judgement and avoid over-reliance, and notify the clinician promptly when diagnostic support cannot be produced in time. |
-| DC_03 | Preserve continuous, low-latency, real-time acquisition and display of vital signs from the existing six-device measurement fleet, with rapid system activation. |
-| DC_04 | Add unambiguous, prioritised alarming that distinguishes critical from minor conditions and reliably detects and signals sensor misplacement, disconnection, and unreliable readings, conforming to the applicable alarm-system standard. |
-| DC_05 | Add standards-based interoperability so patient and diagnostic data can be exchanged with hospital information systems (HL7/FHIR) for continuity of care and a second opinion, while protecting data security and patient privacy. |
-| DC_06 | Establish full medical-device lifecycle assurance for the new software — IEC 62304 design control, ISO 14971 risk management with safety mitigations reducing the class from C to B, third-party-component qualification, usability engineering, post-market surveillance, labelling, and competency-based training. |
-| DC_07 | Confine the undertaking to a single, clearly bounded software discipline that integrates with fixed hardware through published interfaces, and that is deliverable, serviceable, and viable within the manufacturer's capacity, cost, margin, and strategic-portfolio limits. |
+| DC_01 | Provide continuous, real-time acquisition and at-a-glance display of patient vital signs from the connected non-invasive measurement devices, available within seconds of switching the monitoring on, so the clinician can act on the patient's real condition without start-up delay. |
+| DC_02 | Add active diagnostic decision support that presents ranked, real-time diagnostic candidates alongside the raw vital signs and converges early toward a working diagnosis, going beyond passive vital-signs display — using a commercially validated, ready-made diagnostic capability rather than a proprietary one in the first release. |
+| DC_03 | Present each diagnostic suggestion with its supporting reasoning and confidence, and frame and label the output as decision support that informs rather than replaces the clinician, who retains final diagnostic and treatment authority — keeping residual clinical risk defensible and mitigating automation bias. |
+| DC_04 | Clearly and promptly signal to the clinician when a diagnostic result cannot be produced within the expected time, so they can fall back on their own assessment instead of waiting indefinitely. |
+| DC_05 | Detect abnormal vital-sign conditions and raise immediate, unmistakable, distinguishable alarms that conform to recognised alarm-safety practice, signalling clinically significant conditions without unsafe alarm fatigue or missed-alarm risk. |
+| DC_06 | Detect and clearly warn the clinician when a sensor is disconnected, misplaced, or producing unreliable readings, so decisions are not made on false or missing data. |
+| DC_07 | Make the monitoring operable one-handed and glanceably and reliable in adverse conditions (movement, poor light, noise), supported by a usability-engineering process that identifies and mitigates foreseeable use errors so it can be operated safely by its intended users. |
+| DC_08 | Provide a realistic, risk-free training mode together with the training provisions appropriate to the device's safety class, so clinicians build competence before using the monitoring on a real patient and the deployed fleet is competently operated. |
+| DC_09 | Enable sharing of patient data and diagnostic findings with hospital information systems over recognised healthcare interoperability standards (e.g. HL7/FHIR class), so the clinician can obtain a second opinion and hand over care smoothly and the buyer avoids bespoke integration cost. |
+| DC_10 | Make a single monitoring solution fit both fixed clinical settings and the constraints of mobile and pre-hospital deployment, so providers can standardise across care environments and reduce fleet complexity. |
+| DC_11 | Ensure the monitoring integrates with the buyer's existing patient monitors, measurement devices, and clinical IT estate, protecting prior capital investment and avoiding costly rip-and-replace. |
+| DC_12 | Demonstrate readiness for regulatory clearance and lawful market access in the target markets as a precondition of release, evidenced by a complete, audit-ready technical file, so the device may be lawfully deployed and reimbursed without market-access delay. |
+| DC_13 | Deliver a favourable total cost of ownership across licensing, deployment, support, and lifecycle updates, within the manufacturer's committed budget, cost targets, and time-to-market window, so the investment is justified for the buyer and the business case stays viable. |
+| DC_14 | Achieve demonstrated high reliability and availability for continuous critical-care use, so the monitor is not unavailable at the point of care and clinical downtime is avoided. |
+| DC_15 | Make the solution producible, serviceable, and supportable at the required scale and quality with the manufacturer's existing competencies and capacity, providing dependable support, maintenance, and lifecycle updates throughout the product's service life. |
+| DC_16 | Reduce the clinical risk of the monitoring — covering AI mis-diagnosis, false or missed alarms, sensor-fault propagation, and use error — to an acceptable, documented residual level through a complete lifecycle risk-management process with verified controls and independent safeguards for safety-critical functions, providing the validated-safety and liability assurance buyers and authorities require. |
+| DC_17 | Develop, maintain, and change the monitoring software under a documented, standards-conformant software lifecycle with a justified, traceable safety classification, so it can be safely updated, patched, and supported without re-incurring full re-validation each change and is engineered to a rigour commensurate with the harm it can cause. |
+| DC_18 | Generate and retain design-control, quality-management, and risk-management evidence as a complete, current, audit-ready technical file under a certified quality management system, so notified-body, authority, and internal-governance audits can be satisfied and the declaration of conformity defended. |
+| DC_19 | Make post-market surveillance, vigilance, complaint handling, and incident reporting feasible to operate, with end-to-end traceability from a field event back to the responsible design element, so emerging safety signals are detected, reported within mandated timelines, and corrected through field safety actions where required. |
+| DC_20 | Architect the solution for reuse and configurability across deployment settings and future product lines, so the development investment yields maximum return and the portfolio can be extended at lower cost. |
+| DC_21 | Produce documented clinical evidence and validation of the diagnostic decision-support performance — including the validation status, intended-use boundaries, performance characteristics, and known limitations of any off-the-shelf AI component — confirming the diagnostic output is safe and effective for its stated indication and patient population. |
+| DC_22 | Acquire, process, display, and exchange personal health data in conformance with applicable data-protection and privacy law (e.g. GDPR/HIPAA class) and secure interoperability practice, protecting patient confidentiality, integrity, and rights throughout the data flow. |
+| DC_23 | Provide compliant labelling and instructions for use appropriate to the device's safety class, so intended users understand its capabilities, limitations, and safe operation and mandatory information-for-safety obligations are met. |
 
 ### Expectations
 
@@ -117,79 +132,77 @@ Stakeholder expectations are written "product-free": they apply to any product i
 
 #### User Expectations (UE_*)
 
-**Stakeholder**: Clinician (pre-hospital / critical-care)
+**Stakeholder**: Critical-Care Clinician
 
-Trained medical professionals — paramedics, emergency physicians, ICU and ER nurses — who attend critically ill patients in time-pressured, often uncontrolled environments such as ambulances, mobile medical units, emergency rooms, and intensive care units. They work hands-on at the patient's side, frequently while moving, interrupted, and managing several urgent tasks at once, and must make rapid treatment decisions from the patient's vital signs and clinical condition.
+The frontline trained medical professional (paramedic, emergency physician, ICU/ER nurse) who connects the patient, watches the vital signs, and decides on treatment — frequently in time-pressured, noisy, mobile, or chaotic settings (ambulance, accident scene, ER, ICU) where they must act fast on incomplete information, often with their hands occupied and their attention split across multiple tasks and patients.
 
 | ID | Expectation | Traces |
 |----|-------------|--------|
-| UE_01 | The Clinician wants the patient's vital signs to be tracked continuously and shown without perceptible delay to make rapid, safe treatment decisions at the bedside. | DC_03 |
-| UE_02 | The Clinician wants early, structured diagnostic support alongside the raw vital signs to reach a working diagnosis faster when minutes matter. | DC_01 |
-| UE_03 | The Clinician wants to understand the basis and confidence of any diagnostic suggestion to apply their own clinical judgement and avoid over-trusting an automated output. | DC_02 |
-| UE_04 | The Clinician wants to be unambiguously alerted when a sensor is misplaced, disconnected, or producing unreliable readings to avoid acting on incorrect or missing patient data. | DC_04 |
-| UE_05 | The Clinician wants alarms to clearly distinguish genuinely critical conditions from minor or transient ones to respond decisively without being desensitised by alarm fatigue. | DC_04 |
-| UE_06 | The Clinician wants to be told promptly when diagnostic support cannot be produced in the expected time to fall back on standard clinical assessment without delaying treatment. | DC_02 |
-| UE_07 | The Clinician wants to operate the monitor confidently in a moving, noisy, low-light, or chaotic setting to stay focused on the patient rather than on the device. | DC_06 |
-| UE_08 | The Clinician wants to become competent and stay confident through realistic hands-on practice to use the monitor correctly under real emergency pressure. | DC_06 |
-| UE_09 | The Clinician wants relevant patient data and diagnostic findings to be sharable with the receiving hospital to ensure continuity of care and a timely second opinion during handover. | DC_05 |
-| UE_10 | The Clinician wants the monitor to be ready for use within seconds of being switched on and connected to begin monitoring an unstable patient without losing critical time. | DC_03 |
+| UE_01 | The clinician wants to see the patient's current vital signs at a glance the moment a sensor is connected to act on the patient's real condition without delay. | DC_01 |
+| UE_02 | The clinician wants ranked, real-time diagnostic suggestions presented alongside the raw vital signs to reach a working diagnosis faster, especially when they cannot consult a colleague. | DC_02 |
+| UE_03 | The clinician wants to be alerted immediately and unmistakably when a vital sign crosses an abnormal threshold to intervene before the patient deteriorates. | DC_05 |
+| UE_04 | The clinician wants to be warned when a sensor is disconnected, misplaced, or producing unreliable readings to avoid trusting or acting on false data. | DC_06 |
+| UE_05 | The clinician wants the monitoring to be ready for use within seconds of switching it on at the bedside to start caring for the patient without waiting through start-up. | DC_01 |
+| UE_06 | The clinician wants to understand why a diagnostic suggestion was made and how confident it is to keep clinical judgement in control and decide whether to trust the suggestion. | DC_03 |
+| UE_07 | The clinician wants to operate the monitoring one-handed, glanceably, and reliably in moving vehicles, poor light, and noise to keep working when conditions are far from ideal. | DC_07 |
+| UE_08 | The clinician wants to be clearly told if a diagnosis cannot be produced within the expected time to fall back on their own assessment instead of waiting indefinitely. | DC_04 |
+| UE_09 | The clinician wants to practise with the monitoring in a realistic, risk-free training mode to build competence and avoid misreading the device on a real patient. | DC_08 |
+| UE_10 | The clinician wants to share the patient's data and diagnostic findings with the receiving hospital to secure a second opinion and a smooth handover of care. | DC_09 |
 
 #### Market Expectations (ME_*)
 
-**Stakeholder**: Hospital / EMS Procurement
+**Stakeholder**: Healthcare Provider Procurement (Hospital / EMS)
 
-The buying organisation — hospital procurement and biomedical engineering departments, emergency medical services, ambulance operators, and health-system purchasing groups — that funds, selects, and contracts for critical-care monitoring solutions on behalf of its clinical staff. It evaluates products against total cost of ownership, regulatory clearance and market-access status, fit with the existing fleet of monitors and sensors, integration with hospital information systems, training and rollout effort, vendor service and support, and the manufacturer's liability and risk posture. It must justify any purchase commercially and clinically, satisfy internal procurement and compliance rules, and avoid solutions that lock it in, disrupt established workflows, or fail to clear regulatory and security review.
+The buying organisation that acquires monitoring solutions for critical-care settings — hospital procurement and clinical engineering departments, ambulance services, and EMS fleet operators. They evaluate and select on behalf of the clinicians who will use the product, balancing clinical value against total cost of ownership, regulatory market access, integration with the existing IT and care estate, vendor reliability, and institutional liability. They sign the purchase only when the solution is demonstrably safe to deploy, affordable to own and operate, and defensible to their own governance, accreditation, and risk-management boards.
 
 | ID | Expectation | Traces |
 |----|-------------|--------|
-| ME_01 | The Hospital / EMS Procurement wants any monitoring solution to arrive with completed regulatory clearance and an IEC 62304-compliant safety file to gain market access and place the product into clinical use without further approval burden. | DC_06 |
-| ME_02 | The Hospital / EMS Procurement wants a clearly justified total cost of ownership across licensing, deployment, training, and ongoing service to secure internal budget approval and avoid unforeseen lifecycle costs. | DC_07 |
-| ME_03 | The Hospital / EMS Procurement wants the solution to integrate with the existing fleet of monitors and the established set of non-invasive measurement devices to protect prior capital investment and avoid wholesale equipment replacement. | DC_03, DC_07 |
-| ME_04 | The Hospital / EMS Procurement wants the solution to exchange patient and diagnostic data with hospital information systems over standard interoperability protocols such as HL7 and FHIR to preserve continuity of care and avoid bespoke integration projects. | DC_05 |
-| ME_05 | The Hospital / EMS Procurement wants the training and onboarding burden for clinical staff to be low and well supported to roll the solution out quickly without disrupting frontline care. | DC_06 |
-| ME_06 | The Hospital / EMS Procurement wants dependable vendor service, support, and software maintenance commitments to keep the solution safe and operational throughout its deployed life. | DC_06, DC_07 |
-| ME_07 | The Hospital / EMS Procurement wants the manufacturer to carry clear product liability and a documented risk-management posture to limit the buying organisation's clinical and legal exposure. | DC_06 |
-| ME_08 | The Hospital / EMS Procurement wants the solution to meet the baseline capabilities clinicians already expect of any credible critical-care monitor to ensure clinical acceptance and competitive parity at the point of selection. | DC_03, DC_04 |
-| ME_09 | The Hospital / EMS Procurement wants the solution to satisfy data security and patient-privacy requirements to pass internal information-security review and meet data-protection obligations. | DC_05 |
-| ME_10 | The Hospital / EMS Procurement wants to avoid proprietary lock-in to a single vendor's devices or data formats to retain future purchasing leverage and freedom to evolve the monitoring fleet. | DC_05 |
+| ME_01 | The procurement organisation wants a critical-care monitoring solution that is cleared for sale and use in its target markets before purchase to ensure the device may be lawfully deployed and reimbursed without market-access delay. | DC_12 |
+| ME_02 | The procurement organisation wants a favourable total cost of ownership across licensing, deployment, support, and lifecycle updates to justify the investment against budget and demonstrate value for money. | DC_13 |
+| ME_03 | The procurement organisation wants the monitoring solution to integrate with its existing patient monitors, measurement devices, and clinical IT estate to protect prior capital investment and avoid costly rip-and-replace. | DC_11 |
+| ME_04 | The procurement organisation wants the monitoring solution to exchange patient data with hospital information systems over recognised healthcare interoperability standards (e.g. HL7/FHIR class) to fit its records and handover workflows without bespoke integration cost. | DC_09 |
+| ME_05 | The procurement organisation wants demonstrated high reliability and availability in continuous critical-care use to avoid clinical downtime and the operational risk of an unavailable monitor at the point of care. | DC_01, DC_14 |
+| ME_06 | The procurement organisation wants dependable vendor support, maintenance, and clinician training to be available throughout the product's service life to keep the deployed fleet safe, current, and competently operated. | DC_08, DC_15 |
+| ME_07 | The procurement organisation wants the solution to offer diagnostic decision support beyond passive vital-signs display to differentiate it from baseline monitors and justify replacing or upgrading existing equipment. | DC_02 |
+| ME_08 | The procurement organisation wants clear assurance of clinical safety, validated performance, and the supplier's liability and quality commitments to defend the purchase to its governance and risk boards and limit institutional exposure. | DC_16 |
+| ME_09 | The procurement organisation wants the solution to fit the constraints of mobile and pre-hospital deployment as well as fixed clinical settings to standardise on one solution across its care environments and reduce fleet complexity. | DC_10 |
 
 #### Business Expectations (BE_*)
 
 **Stakeholder**: Legal Manufacturer
 
-The organisation that designs, produces, and places the medical device software on the market and carries full regulatory and product-liability responsibility for it. It speaks with one voice across its departments: Executive and Strategy (portfolio fit and risk appetite), Legal and Compliance (liability, intellectual property, post-market obligations), Finance (cost targets, margin, business-case viability), Operations and Manufacturing (software build, release, and supply feasibility at scale), R&D (technical feasibility and design freeze), Quality Management (QMS and design control under IEC 62304), Regulatory Affairs (declaration of conformity, technical file, market access), Sales and Commercial (pricing and customer commitments), Customer Support and Service (serviceability, maintainability, complaint handling), and Human Resources (workforce competency). It will only commit to what it can produce, support, and stand behind within its budget, capacity, competency, and acceptable-liability limits.
+The organisation legally responsible for designing, producing, and placing the critical-care monitoring solution on the market, and for it throughout its lifecycle. It speaks for its internal departments — Executive/Strategy, Legal & Compliance, Finance, Operations & Manufacturing, R&D, Quality Management, Regulatory Affairs, Sales & Commercial, Customer Support & Service, and HR. Its expectations are shaped by organisational strategy, budget and capacity limits, liability exposure, the quality and regulatory obligations it must carry as legal manufacturer, and what it can realistically produce, support, and stand behind over the product's service life.
 
 | ID | Expectation | Traces |
 |----|-------------|--------|
-| BE_01 | The Legal Manufacturer wants every design decision, risk control, and verification result to be documented under a compliant quality management system and design-control process to satisfy IEC 62304 obligations and withstand external audit and post-market scrutiny. | DC_06 |
-| BE_02 | The Legal Manufacturer wants the diagnostic and alarming functions to be safety-mitigated so that residual risk is reduced to an acceptable, defensible level to limit its product-liability exposure as the party legally responsible for the device. | DC_06 |
-| BE_03 | The Legal Manufacturer wants to build on a commercially validated off-the-shelf component for the most safety- and clearance-critical capability to transfer validation and regulatory-clearance risk away from the organisation and avoid the cost and delay of qualifying a bespoke equivalent. | DC_01, DC_06 |
-| BE_04 | The Legal Manufacturer wants the contractual obligations, validation evidence, and update commitments of any externally sourced critical component to be clearly defined and binding to bound its own liability where it relies on a third party's output. | DC_06 |
-| BE_05 | The Legal Manufacturer wants the scope of the undertaking to stay within a single, clearly bounded discipline rather than spilling into adjacent domains to protect feasibility, cost, and schedule and keep design and verification responsibility manageable. | DC_07 |
-| BE_06 | The Legal Manufacturer wants the offering to be deliverable, releasable, and serviceable at the required quality and scale within its existing capacity and competency to ensure it can manufacture, maintain, and support the product throughout its lifecycle. | DC_07 |
-| BE_07 | The Legal Manufacturer wants the product to meet its cost, margin, and investment targets to confirm a viable business case and justify the commitment of organisational resources. | DC_07 |
-| BE_08 | The Legal Manufacturer wants a post-market surveillance and complaint-handling capability in place to meet its ongoing regulatory obligations and detect and correct field issues before they escalate into liability. | DC_06 |
-| BE_09 | The Legal Manufacturer wants residual safety responsibility for time-critical or failure-prone functions to rest on independent mitigations rather than on a single point of failure to avoid retaining unacceptable liability for foreseeable misuse or component failure. | DC_04, DC_06 |
-| BE_10 | The Legal Manufacturer wants the offering to align with its strategic portfolio direction and innovation roadmap to ensure the investment strengthens rather than fragments the organisation's market position. | DC_07 |
+| BE_01 | The legal manufacturer wants a critical-care monitoring solution that is demonstrably ready for regulatory approval in its target markets as a precondition of release to make lawful market entry possible and protect planned revenue from market-access delay. | DC_12 |
+| BE_02 | The legal manufacturer wants the residual clinical risk of AI-driven diagnostic support to be reduced to a defensible, documented level — with the clinician retaining decision authority and independent safeguards for safety-critical functions — to keep its product-liability exposure controlled and acceptable. | DC_03, DC_16 |
+| BE_03 | The legal manufacturer wants to incorporate a commercially validated, ready-made diagnostic AI capability rather than develop a proprietary model in the first release to limit its own validation, evidence, and liability burden and shorten the path to market. | DC_02 |
+| BE_04 | The legal manufacturer wants the solution to be developed and maintained under a controlled, standards-conformant software lifecycle (e.g. IEC 62304 commensurate with its safety class) to ensure it can be safely updated, patched, and supported over its service life without re-incurring full re-validation cost each change. | DC_17 |
+| BE_05 | The legal manufacturer wants design-control, quality-management (e.g. ISO 13485 class), and risk-management evidence to be generated and retained as a complete, audit-ready technical file to satisfy notified-body, authority, and internal-governance audits and to defend its declaration of conformity. | DC_18 |
+| BE_06 | The legal manufacturer wants the solution delivered within its committed budget, cost targets, and time-to-market window to keep the business case viable and protect the planned margin and portfolio investment priorities. | DC_13 |
+| BE_07 | The legal manufacturer wants post-market surveillance, complaint handling, and end-to-end traceability from field event back to the responsible design item to be feasible to operate to meet its post-market legal obligations and contain the cost and exposure of field issues. | DC_19 |
+| BE_08 | The legal manufacturer wants the solution to be producible and serviceable at the required scale and quality with the organisation's existing competencies, capacity, and supply arrangements to deliver and support the deployed fleet reliably without overrunning operational capability. | DC_15 |
+| BE_09 | The legal manufacturer wants the solution architected for reuse and configurability across deployment settings and future product lines to maximise return on the development investment and reduce the cost of extending the portfolio. | DC_20 |
 
 #### Regulatory Expectations (RE_*)
 
 **Stakeholder**: Competent Authority / Notified Body
 
-The regulatory system that decides whether a medical device may lawfully be placed on a market and remain there. It speaks for national competent authorities and surveillance agencies (e.g. FDA, EMA national authorities, TGA, PMDA, Swissmedic, CDSCO) that enforce market-access legislation and can approve, refuse, or withdraw a product; notified bodies that audit technical documentation and certify conformity (e.g. CE marking under the EU MDR); standards organisations (IEC, ISO, CEN) whose published standards define the presumption of conformity; and post-market vigilance and customs/border authorities that monitor devices in the field and at import. It does not advocate for any product; it holds every device in the domain — including competitors — to account against applicable law, harmonised standards, and enforcement practice, and grants access only when mandatory safety, performance, clinical, quality, and documentation obligations are demonstrably met.
+The regulatory system that decides whether a medical device may lawfully be placed on, and remain on, the market — national competent authorities (e.g. FDA, EMA national authorities, TGA, Swissmedic, PMDA, CDSCO), the notified bodies that assess technical documentation and issue conformity certificates for regulated software-as-a-medical-device, the standards organisations whose published standards (ISO/IEC/CEN) define the presumption of conformity, and the post-market surveillance and vigilance authorities that monitor devices in the field. This stakeholder does not advocate for the product; it holds it to account against applicable law, harmonised standards, and enforcement practice. It grants, defers, or refuses market access on the basis of demonstrated conformity, validated safety and clinical performance, an auditable quality system, and credible post-market obligations — applying these criteria equally to any product or competitor seeking access to the same market.
 
 | ID | Expectation | Traces |
 |----|-------------|--------|
-| RE_01 | The Competent Authority / Notified Body wants any diagnostic-support medical device software to be classified according to its safety impact and developed, maintained, and documented across the full software lifecycle under a recognised process such as IEC 62304 to ensure that lifecycle rigour is matched to the patient harm a software failure could cause. | DC_06 |
-| RE_02 | The Competent Authority / Notified Body wants a documented risk-management process conforming to ISO 14971 that identifies hazards, estimates and controls risks, and demonstrates that residual risk — including any risk-control measures relied upon to reduce the software safety class — is acceptable to ensure that claimed mitigations are evidenced and not merely asserted. | DC_06 |
-| RE_03 | The Competent Authority / Notified Body wants usability engineering conforming to IEC 62366-1 that demonstrates safe use by the intended users in the intended environment and controls reasonably foreseeable use error to ensure that the human-machine interaction does not itself become a source of patient harm. | DC_06 |
-| RE_04 | The Competent Authority / Notified Body wants objective clinical evidence that any AI-driven diagnostic-support function performs as intended across its claimed indications and patient population, with defined performance metrics, validation data, and known limitations to ensure that diagnostic claims are scientifically substantiated before market access is granted. | DC_01, DC_02 |
-| RE_05 | The Competent Authority / Notified Body wants any off-the-shelf or third-party software component used in a safety-related function to be identified, qualified, version-controlled, and supported by evidence of its validation and ongoing maintenance to ensure that responsibility and traceability are unbroken even where the manufacturer relies on a component it did not develop. | DC_01, DC_06 |
-| RE_06 | The Competent Authority / Notified Body wants clinical alarm systems to conform to the applicable alarm-system standard such as IEC 60601-1-8, with defined alarm priorities, signals, and fault detection to ensure that critical conditions and equipment faults are communicated unambiguously and cannot be silently lost. | DC_04 |
-| RE_07 | The Competent Authority / Notified Body wants the device to meet cybersecurity and data-protection obligations, securing patient data in storage and transit and protecting clinical function against compromise to ensure confidentiality, integrity, and availability of safety-relevant data and continued safe operation. | DC_05 |
-| RE_08 | The Competent Authority / Notified Body wants any exchange of patient or diagnostic data with external information systems to use recognised interoperability standards such as HL7 or FHIR with defined interface specifications to ensure that data is transferred without loss, corruption, or misinterpretation across system boundaries. | DC_05 |
-| RE_09 | The Competent Authority / Notified Body wants the device to carry labelling, instructions for use, and competency-based training provisions that convey intended use, limitations, warnings, and the meaning of automated diagnostic output to ensure that trained users operate the device safely and do not over-rely on its suggestions. | DC_02, DC_06 |
-| RE_10 | The Competent Authority / Notified Body wants the manufacturer to maintain a post-market surveillance and vigilance system that monitors field performance, reports serious incidents, and triggers corrective and field-safety actions to ensure that safety obligations continue after market access and that emerging risks are detected and corrected. | DC_06 |
+| RE_01 | The competent authority wants any diagnostic-support medical device software to be developed, maintained, and changed under a documented, standards-conformant software lifecycle (e.g. IEC 62304) with its safety classification justified by a traceable rationale to confirm the software is engineered to a rigour commensurate with the harm it can cause before market access is granted. | DC_17 |
+| RE_02 | The competent authority wants a complete risk-management process (e.g. ISO 14971) applied across the device lifecycle — explicitly addressing AI mis-diagnosis, false or missed alarms, sensor-fault propagation, and use error — with each hazard reduced to an acceptable residual level through verified risk controls, including independent safeguards for safety-critical functions, to ensure the benefit-risk balance is favourable and defensible. | DC_16 |
+| RE_03 | The competent authority wants a usability engineering process (e.g. IEC 62366) that identifies use-related hazards and demonstrates through formative and summative evaluation that foreseeable use errors are mitigated to ensure the device can be operated safely by its intended users in its intended use environments without introducing clinical harm. | DC_07 |
+| RE_04 | The competent authority wants documented clinical evidence and validation of the AI-driven diagnostic decision-support performance — including the validation status, intended-use boundaries, performance characteristics, and known limitations of any off-the-shelf AI component — to confirm the diagnostic output is safe and effective for its stated medical indication and patient population. | DC_21 |
+| RE_05 | The competent authority wants the diagnostic output to be designed and labelled as decision support that informs rather than replaces the qualified clinician, with the clinician retaining final diagnostic and treatment authority, to ensure ultimate responsibility for patient care remains with a competent professional and automation bias is mitigated. | DC_03 |
+| RE_06 | The competent authority wants any alarm and alarm-system behaviour to conform to recognised alarm-safety standards (e.g. IEC 60601-1-8) so that clinically significant conditions and technical faults are signalled correctly, distinguishably, and without unsafe alarm fatigue or missed-alarm risk. | DC_05 |
+| RE_07 | The competent authority wants personal health data acquired, processed, displayed, or exchanged with hospital systems to be handled in conformance with applicable data-protection and privacy law (e.g. GDPR / HIPAA class) and secure interoperability practice to protect patient confidentiality, integrity, and rights throughout the data flow. | DC_22 |
+| RE_08 | The competent authority wants the manufacturer to operate a certified quality management system (e.g. ISO 13485) and to maintain a complete, current, audit-ready technical file or design dossier to enable the notified body and authority to assess conformity and to support the declaration of conformity and lawful market placement. | DC_12, DC_18 |
+| RE_09 | The competent authority wants the device to carry compliant labelling, instructions for use, and demonstrable user-training provisions appropriate to its safety class to ensure intended users understand the device's capabilities, limitations, and safe operation, and to satisfy mandatory information-for-safety obligations. | DC_08, DC_23 |
+| RE_10 | The competent authority wants a credible post-market surveillance, vigilance, and incident-reporting system with end-to-end traceability from a field event back to the responsible design element to ensure emerging safety signals are detected, reported within mandated timelines, and corrected through field safety actions or recalls where required. | DC_19 |
 
 ### Ideal Product Model (KA_*)
 
@@ -197,16 +210,20 @@ The Ideal Product Model is the blueprint that aligns stakeholder expectations wi
 
 | ID | Benefit Driver | Expectation | Proposition Attributes | Superior to | Priority | Feasible | Risk | Rationale |
 |----|----------------|-------------|------------------------|-------------|----------|----------|------|-----------|
-| KA_01 | Faster path to a working diagnosis | UE_02, ME_08, BE_03, RE_04 | MMSS diagnostic pipeline (DPREC pre-processing ≤800 ms, DPROC post-processing ≤200 ms, DEC connector ≤800 ms) that conditions acquired vital signs, invokes the off-the-shelf Open Evidence model, and renders ranked candidates within ≤1 s of receipt; predictive convergence within the 2-min ALGOS budget is owned by the external engine, not by MMSS | Today's passive monitors offer no interpretation — only raw vital signs — leaving the full diagnostic cognitive load on the clinician | High | Conditional — depends on Open Evidence delivering structured candidates and clearing regulatory validation; the 2-min convergence is an ALGOS budget MMSS cannot guarantee, MMSS only owns the ≤800/≤200 ms pre/post-processing budgets. Business condition: the manufacturer can only stand behind the diagnostic claim to the extent the supplier's validation evidence and clearance status are contractually transferable (BE_04) | R_01 (clearance delays gate first revenue), R_02 (model validation complexity), R_03 (real-time integration to external engine); **liability** — the legal manufacturer carries device-level responsibility for a diagnostic claim built on a component it did not develop, so any gap in the supplier's clearance/validation evidence becomes the manufacturer's regulatory and product-liability exposure | The defining differentiator that turns a passive monitor into an active decision-support tool; off-the-shelf model mandated to bound validation risk and transfer clearance risk, but the manufacturer retains residual responsibility for the integrated device |
-| KA_02 | Trust calibrated to the evidence | UE_03, RE_04, RE_09 | Transparent diagnostic presentation — basis, confidence/ranking, and known limitations rendered by DPROC alongside each candidate within the ≤1 s display budget so the clinician applies their own judgement | Competitors that surface AI output without confidence or basis invite over-trust; passive monitors offer nothing to calibrate against | High | Conditional — rendering is within MMSS UI scope, but the basis/confidence/limitations content must be supplied in the Open Evidence structured output; MMSS cannot synthesise data the off-the-shelf model does not emit. Business condition: the supplier contract (BE_04) must guarantee delivery and stability of confidence/basis/limitations fields, since the manufacturer cannot make a transparency claim it cannot source | R_05 (clinician misinterpretation of AI candidates); R_03 (incomplete structured output from external engine); **liability** — this is the primary control against the over-reliance hazard; if the manufacturer markets diagnostic output without defensible, labelled confidence/limitations it carries direct liability for foreseeable misinterpretation (R_05 is Critical), making this transparency the manufacturer's chief liability shield, not a cosmetic feature | Mitigates over-reliance on automation and is required for safe-use and clinical-evidence clearance; load-bearing for the manufacturer's defensible-residual-risk argument (BE_02) |
-| KA_03 | No silent diagnostic gap | UE_06, BE_09, RE_09 | MMSS detects absence of a candidate within the 2-minute ALGOS window and shows an explicit on-screen timeout notification, backed by the independent ALGOS audible timeout signal, so the clinician falls back to standard assessment | Passive monitors have no diagnostic function to fail; a non-transparent AID could leave the clinician waiting indefinitely | High | Yes — visual timeout detection/notification is MMSS logic; the independent audible path is an ALGOS-side mitigation already assumed, keeping the safety control off the single MMSS path | R_06 (timeout not communicated → treatment delay) | Removes a critical-severity failure path; the independent audible mitigation keeps residual MMSS risk acceptable per BE_09 |
-| KA_04 | Decisions on trustworthy data | UE_01, UE_10, ME_03, ME_08 | Continuous low-latency acquisition (AC/DAC drivers and polling, ≥0.1 Hz input) and display of vital signs from the six fixed device interfaces (ECG, pulse oximeter, BP, thermal probe, capnometer, EEG), system ready <10 s and vital-signs display <1 s after acquisition on a 1-s UI update timer | Matches the proven strength of incumbent monitors while integrating with the customer's installed device fleet | High | Conditional — display logic is within MMSS scope, but real-time integration to all six fixed device interfaces depends on the published ICDs being defined and the host RTOS meeting the timing budgets | R_03 (real-time integration / connectivity) | Preserves the actual-state strength clinicians and buyers already rely on; competitive parity baseline (R_08 portability is hardware-side and out of MMSS scope) |
-| KA_05 | Warned before acting on missing or wrong data | UE_04, UE_05, ME_08, RE_06, BE_09 | Unambiguous, prioritised MMSS alarm presentation conforming to IEC 60601-1-8 that distinguishes critical from minor conditions; raises a connection alarm after 5 s of inactivity (displayed <1 s after trigger) and surfaces device-reported misplacement and unreliable-reading flags | Incumbent monitors do not always unambiguously detect misplacement/disconnection and can drive alarm fatigue | High | Conditional — alarm logic and connection-loss timing are within MMSS scope, but misplacement auto-detection is a device-side function (out of software scope); MMSS can only present what the six fixed devices report, so the safety claim depends on the devices emitting misplacement flags | R_04 (misplacement → wrong diagnosis — detection is device-side per mitigation), R_07 (connection failure → missed vitals — independent device audible alarm backs the MMSS connection alarm); **liability** — because misplacement detection is device-side and out of software scope, the manufacturer must label this boundary explicitly and confirm in the ICDs that the fixed devices actually emit misplacement flags; if MMSS presents an alarm the devices cannot reliably trigger, the manufacturer carries liability for a safety claim it cannot fulfil | Directly mitigates two critical-severity hazards and is a regulatory alarm-standard obligation; device-side detection and independent audible alarms keep the safety control off the single MMSS path. Priority High confirmed — safety-critical and a hard regulatory (IEC 60601-1-8) gate |
-| KA_06 | Continuity of care across the handover | UE_09, ME_04, ME_09, ME_10, RE_07, RE_08 | Standards-based HIS interoperability (HL7/FHIR) that shares patient and diagnostic data securely (encryption in transit) for a timely second opinion, sending candidates to the HIS within <1 s, avoiding bespoke integration and vendor lock-in | Manual handover and proprietary formats slow continuity of care and lock buyers in | Medium | Conditional — HIS protocol (HL7 vs FHIR) and the interface ICDs are still TBD per the project assumptions; feasibility and the security claim cannot be confirmed until the ICD is defined. Business condition: with two protocols and undefined ICDs, the manufacturer should fix one protocol at design freeze rather than commit to both, to avoid open-ended integration cost and per-customer bespoke work the business case cannot absorb | R_03 (integration challenges — undefined external interface); **liability/contractual** — exporting patient and diagnostic data engages data-protection and cybersecurity obligations (RE_07), so any breach or data-corruption-across-boundary becomes manufacturer liability; an undefined ICD also risks unbounded per-customer integration commitments that erode margin | Enables continuity and second opinion and removes a procurement lock-in objection; **Priority Medium confirmed** — valuable but not safety-critical and ICD-gated, so it must not be prioritised over the safety-critical KA_03/KA_05; gated on ICD definition and single-protocol design freeze |
-| KA_07 | Defensible market access | ME_01, ME_07, BE_01, BE_02, RE_01, RE_02 | Full IEC 62304 design control with ISO 14971 risk management and safety mitigations reducing the software class from C to B, yielding a complete, auditable safety file | Buyers must otherwise carry approval burden and liability; a non-compliant offering cannot enter clinical use | High | Yes — within established manufacturer QMS competency and design-control capacity; the C→B mitigation depends on the independent alarm/timeout controls in KA_03 and KA_05 actually being independent of MMSS, so the safety-file claim is only defensible if those mitigations hold | R_01 (regulatory clearance delays); **liability** — this safety file is the manufacturer's primary legal defence as the party that places the device on the market and signs the declaration of conformity; an incomplete or unauditable file is not just a launch delay but direct regulatory and post-market liability exposure (ties to BE_01, BE_08) | Without an evidenced, class-mitigated safety file the product cannot be lawfully placed on the market; foundational and correctly High priority |
-| KA_08 | Bounded third-party liability | BE_03, BE_04, RE_05 | Qualified, version-controlled use of the Open Evidence component with binding contractual validation, update, and support commitments and unbroken traceability | A bespoke model would carry full in-house validation cost and risk; an unqualified component breaks traceability | High | Conditional — depends on an enforceable Open Evidence supplier agreement covering validation evidence, version control, change notification, and end-of-support commitments; without it the manufacturer cannot qualify the component to RE_05 nor maintain it post-market (BE_08) | R_01, R_02; **contractual/liability** — the entire diagnostic value proposition (KA_01, KA_02) rests on this single third-party component, so a weak or lapsing supplier agreement, an uncontrolled model update, or supplier end-of-life directly threatens clearance, traceability, and the manufacturer's ability to stand behind the device; this is concentrated single-supplier dependency risk | Transfers validation/clearance risk while keeping regulatory responsibility and traceability intact; **Priority raised Medium→High** — this contractual control gates the safety- and revenue-critical KA_01/KA_02, so it is liability-critical rather than secondary and must not be under-prioritised |
-| KA_09 | Eyes-on-patient operation under pressure | UE_07, UE_08, ME_05, RE_03, RE_09 | Usability engineering to IEC 62366-1 that minimises interaction demand and supports glanceable, low-error operation in moving, noisy, low-light environments, plus a built-in MMSS simulation training mode and competency-based onboarding so clinicians stay focused on the patient rather than the device | Competitors relying on classroom-only training leave use-error risk unmitigated and raise rollout burden | High | Yes — simulation mode and UX are within MMSS software scope and manufacturer competency; sustaining training content and competency records adds an ongoing support/HR commitment the business must staff for | R_05 (foreseeable use error, incl. misinterpretation of AI candidates) is the named mitigation in the risk register for the Critical-severity R_05 hazard; **liability** — IEC 62366-1 usability engineering and competency-based training are how the manufacturer discharges its duty against foreseeable use error and limits its over-reliance liability (with KA_02), so this is a safety mitigation the safety file depends on, not a commercial nicety | Controls foreseeable use error, is a usability-standard obligation, and lowers the buyer's onboarding cost; the low-interaction, glanceable design is what lets the clinician keep their attention on the patient under stress (UE_07), not just be trained for it (UE_08); **Priority raised Medium→High** — it is the register-named mitigation for a Critical hazard and a regulatory (IEC 62366-1) gate, so it cannot rank below ICD-gated convenience features |
-| KA_10 | A viable, supportable product | ME_02, ME_06, BE_05, BE_06, BE_07, BE_10, RE_10 | Software-only scope bounded to the five SW items (AC, DAC, DEC, DPREC, DPROC) integrating with fixed hardware via published ICDs, deliverable within manufacturer capacity, with post-market surveillance and a justified total cost of ownership | An over-scoped offering risks cost, schedule, and serviceability; competitors without PMS expose buyers to unaddressed field risk | High | Yes — the explicit software-only scope boundary holds the undertaking to one discipline within manufacturer capacity and competency; the ongoing cost of post-market surveillance, software maintenance, and third-party-component change management (KA_08) must be funded in the business case (BE_07), not just at launch | R_03 (scope creep into external-interface integration if ICDs slip); **organisational/liability** — PMS and complaint handling are a standing regulatory obligation (RE_10, BE_08), so under-resourcing post-market capacity is itself a liability and audit-finding risk; serviceability of a device dependent on an external AI component also commits the manufacturer to lifecycle support it must staff and fund | Protects feasibility, business-case viability, and lifecycle support, and keeps the undertaking within one discipline (R_08 portability is hardware-side and outside this software scope); Priority High confirmed — it is the scope/viability and post-market obligation that underwrites the whole programme |
+| KA_01 | Act on the patient's real condition instantly | UE_01, UE_05, ME_05 | Continuous real-time acquisition, low-latency processing, and at-a-glance presentation of multi-parameter vital signs from the connected non-invasive measurement devices, with end-to-end acquisition-to-display latency in the sub-second range and readiness for use within a few seconds of power-on. | A passive monitor that displays vital signs but may take longer to become usable after power-on, with no guarantee of glanceable readiness at the bedside. | High | Yes | Low — acquisition and display is an established capability and the latency and activation targets (sub-second display, sub-10-second activation) are comfortably achievable on a real-time-capable embedded platform; the only material exposure is the real-time integration effort across multiple device interfaces (R_03), addressed by early prototyping and ICD definition. | This is the baseline clinical value of the domain; without immediate, trustworthy vital-signs presentation the clinician cannot act on the patient's true state and every downstream capability is moot. The latency and activation budgets are well within reach of the assumed real-time-OS embedded host. |
+| KA_02 | Reach a working diagnosis faster, even alone | UE_02, ME_07, BE_03 | Active diagnostic decision support that integrates a commercially validated, off-the-shelf diagnostic AI capability and presents its ranked diagnostic candidates alongside the raw vital signs, rendering each result promptly on receipt; convergence toward a working diagnosis is the responsibility of the external diagnostic capability, while the product owns reliable acquisition-to-AI feed and prompt candidate presentation. | Passive vital-signs display that leaves all interpretation to the clinician and offers no ranked diagnostic guidance. | High | Partial | High — the dominant exposures are regulatory clearance of the AI-driven diagnostic function (R_01) and AI model validation complexity (R_02), both substantially mitigated by mandating an off-the-shelf, already-validated capability for the first release; diagnostic accuracy and time-to-converge are properties of that external capability, not of the integrating product, so the product-level risk is concentrated in real-time interface integration (R_03) rather than algorithm performance. **Business/liability note**: reliance on an off-the-shelf AI does not transfer product liability away from the legal manufacturer — as the entity placing the integrated device on the market it remains accountable for the diagnostic output's intended-use boundaries and fitness for the indication; this creates a supplier-dependency exposure (continuity of supply, the supplier's own validation maintenance, model updates/versioning, and contractual flow-down of validation evidence) that must be controlled by contract and supplier qualification or it becomes an uncontained liability and market-continuity risk. | This is the central differentiator that turns passive monitoring into active decision support and the core reason a buyer would upgrade. Using a mandated off-the-shelf validated capability is a deliberate de-risking choice: it removes proprietary-model validation from the programme's critical path and bounds the product's responsibility to integration and presentation, limiting Finance's validation spend and Regulatory's evidence burden. The early-convergence target is a budget on the external capability, not on the integrating product. The strategic trade is faster, cheaper market entry in exchange for a managed dependency on the AI supplier, which the business accepts only with enforceable contractual safeguards on validation evidence, change notification, and supply continuity. |
+| KA_03 | Keep clinical judgement in control and trust the output | UE_06, RE_05, BE_02 | Diagnostic candidates presented as ranked, confidence-bearing suggestions whose supporting reasoning and confidence are absorbable at a glance under time pressure (not requiring the clinician to stop and read at length), framed and labelled by design as decision support that informs rather than replaces the clinician, who retains final diagnostic and treatment authority and is never prevented from acting on their own judgement ahead of or against a suggestion. | Diagnostic guidance that offers little or no explanation or confidence, encouraging either mistrust or unsafe automation bias. | High | Partial | High — clinician misinterpretation of AI candidates (R_05) is rated a critical hazard: it depends both on what reasoning and confidence the off-the-shelf capability exposes (not under the product's control) and on disciplined presentation and labelling that resist automation bias; mitigated by clear decision-support framing, presentation design, and the mandated training mode (KA_08). **Business/liability note**: clinician-in-control is the central liability firewall for the legal manufacturer — it is what keeps ultimate responsibility for patient care with a qualified professional and the device defensible as decision support rather than an autonomous diagnostic agent. If the off-the-shelf capability exposes too little reasoning or confidence to make that framing credible, the manufacturer cannot adequately discharge this liability control, so the depth and labelling fidelity of the supplied output is itself a contractual/supplier-qualification requirement, not merely a design constraint. | Trust and controlled liability hinge on transparency and on the clinician staying in control; without reasoning, confidence, and unambiguous decision-support framing the diagnostic output is neither safe to rely on nor defensible to authorities, and the misinterpretation hazard escalates to critical patient impact. The decision-support framing is the manufacturer's primary defence against product-liability claims arising from a wrong AI candidate, so Legal & Compliance treat it as non-negotiable. Feasibility is Partial because the depth of available reasoning/confidence is bounded by the external capability and must be secured from the supplier. |
+| KA_04 | Fall back on own assessment without waiting | UE_08 | Clear, prompt signalling to the clinician when a diagnostic result cannot be produced within the expected convergence time, delivered through two independent paths so the cue does not depend on the diagnostic path that has failed to converge. | Solutions that go silent or stall when no result is available, giving the clinician no timely cue to proceed unaided. | High | Yes | Low — diagnosis-timeout-not-communicated (R_06) is a critical hazard but is rated low probability because two independent notifications cover it: the external diagnostic capability raises its own audible notification on the convergence-time-out, and the product additionally shows a timeout indication, leaving no residual single-point exposure on the product side. | Prevents treatment delay when guidance cannot be produced in time. The two-minute convergence target is a budget on the external diagnostic capability, not on the product; the safety value here is the redundant, independent timeout notification that keeps the clinician acting rather than waiting on an absent result. |
+| KA_05 | Intervene before the patient deteriorates | UE_03, RE_06 | Detection of abnormal vital-sign conditions with immediate, unmistakable, distinguishable alarms — clear about which parameter and how urgent — presented within the sub-second display budget after detection, perceptible in noisy and mobile conditions, and conforming to recognised alarm-safety practice, with alarming realised as a safety-critical function with independent safeguards so a single fault cannot suppress a clinically significant alarm. | Threshold alarming that may be indistinct, prone to fatigue, or not fully aligned with recognised alarm-safety practice. | High | Yes | Medium — the sub-second alarm-display latency is readily met; the residual effort is alarm-safety-standard conformance, avoiding alarm fatigue through human-factors design, and engineering the independent-safeguard architecture that justifies the Class C-to-B safety mitigation. | Timely, trustworthy alarming is essential to act before deterioration and is a regulated, safety-critical expectation of every product in the domain; the independence of the alarm safeguard is what underpins the mitigated safety classification. |
+| KA_06 | Avoid acting on false or missing data | UE_04 | Distinct, clearly differentiated warning — readily distinguishable from a genuine clinical alarm so a sensor fault is not mistaken for real patient deterioration (or vice versa) — when a sensor is disconnected, misplaced, or producing unreliable readings, with the affected parameter no longer presented as if it were trustworthy; disconnection inferred from loss of input over a short inactivity window and misplacement/unreliability surfaced from the measurement device's own fault signalling at the interface, presented within the sub-second display budget. | Monitoring where sensor disconnection, misplacement, or unreliable readings may go undetected, risking decisions on false data. | High | Partial | High — sensor misplacement not detected (R_04) is a critical hazard and connection failure not detected (R_07) a critical one; feasibility is Partial because reliable misplacement detection depends on the measurement devices auto-detecting and reporting it at the interface (outside the product's control), whereas disconnection detection from input inactivity and distinct fault presentation are squarely within the product and well-bounded, supported by the devices' own independent audible alarms as a safeguard. | Sensor-fault propagation is a critical hazard: a wrong or absent reading silently trusted can drive a wrong diagnosis or a missed deterioration, so distinct, prompt fault signalling — and reliance on device-side detection for misplacement — is indispensable. |
+| KA_07 | Keep working when conditions are far from ideal | UE_07, RE_03 | One-handed, glanceable operation that stays legible and reliable in movement, poor light, and noise, underpinned by a usability-engineering process that identifies and mitigates foreseeable use errors through formative and summative evaluation. | Interfaces optimised for fixed, calm clinical settings that are hard to operate one-handed or glanceably in mobile, noisy, poorly lit conditions. | High | Yes | Medium — the interaction design is achievable, but generating summative usability-validation evidence for safety-critical interactions in the mobile environment requires dedicated human-factors effort and is the basis for mitigating use-related hazards including clinician misinterpretation (R_05). | Pre-hospital and mobile use is a defining environment of the domain; usability under adverse conditions is both a clinical-safety and a market-fit necessity, and the usability-engineering evidence is a precondition of the safety case. |
+| KA_08 | Build competence before treating a real patient | UE_09, ME_06, RE_09 | A realistic, risk-free simulated training mode plus the training and labelling provisions appropriate to the device's safety class, with unambiguous, fail-safe separation between training and live clinical operation — including a persistent, glanceable indication of which mode is active at all times — so simulated data can never be mistaken for a real patient and a clinician returning to a device cannot unknowingly treat a live patient in training mode. | Limited or absent risk-free training, so clinicians may first encounter unfamiliar device behaviour on a real patient. | High | Yes | Medium — a simulated training mode is well within reach technically, but because it is the *named* risk-control mitigation for the critical clinician-misinterpretation hazard (R_05) it becomes part of the safety case and must be developed, verified, and documented to that rigour; the fail-safe training/live mode separation is itself a safety-critical requirement (a training scenario mistaken for a real patient is a new critical hazard), and the supplier's clinician-training provision over the service life (ME_06) is an ongoing organisational commitment for Customer Support and HR. | A mandated training mode is the named mitigation for clinician misinterpretation of AI candidates, so from a liability standpoint it is not an optional convenience feature but a documented risk control the manufacturer must stand behind; it reduces use-error before live use, supports safe fleet operation, and helps satisfy the training-provision and information-for-safety obligations for the safety class. Priority is raised to High because its omission directly weakens the safety case for a critical hazard and the device's defensibility to authorities. |
+| KA_09 | Secure a second opinion and smooth handover | UE_10, ME_04 | Standards-based, secure exchange of patient data and diagnostic findings with hospital information systems over recognised healthcare interoperability standards (e.g. HL7/FHIR class), delivering findings within the sub-second outbound budget and fitting existing records and handover workflows. | Bespoke, costly, or absent data exchange with hospital systems for second opinion and handover. | Medium | Partial | Medium — the interoperability protocol is not yet fixed (HL7/FHIR to be confirmed, ICDs still to be defined) and this exchange sits within the broader real-time/connectivity integration challenge (R_03); conformance plus secure handling of personal health data add integration effort that is bounded once the ICD is settled. | Standards-based data sharing enables second opinion and continuity of care while sparing the buyer bespoke integration cost. Feasibility is Partial chiefly because the protocol and interface contract are still open, not because the capability is in doubt. |
+| KA_10 | Standardise across care environments | ME_09, ME_03 | A single monitoring solution whose behaviour and interfaces fit both fixed clinical settings and mobile/pre-hospital constraints, integrating through defined interface contracts with the buyer's existing monitors, measurement devices, and clinical IT estate across the mandated set of six device types. | Different equipment for fixed versus mobile use and rip-and-replace integration, increasing fleet complexity and cost. | Medium | Partial | Medium — cross-environment fit and integration with a heterogeneous installed base across six device types raise compatibility and ICD-definition effort (part of R_03); physical portability constraints (R_08) sit with the host hardware and are outside the software scope, so they do not bear on this capability's feasibility. | One cross-environment, integration-friendly solution reduces fleet complexity and total cost of ownership and protects prior capital investment; the cross-environment fit is achieved through interface compatibility, the physical-form aspects being a hardware concern beyond scope. |
+| KA_11 | Deploy lawfully without market-access delay | ME_01, BE_01, RE_08, RE_01, RE_04 | Demonstrated readiness for regulatory clearance and lawful market access — a complete, audit-ready technical file produced under a standards-conformant software lifecycle (medical-device software-lifecycle class) with a justified safety classification and documented clinical/diagnostic validation evidence covering the off-the-shelf AI capability's validation status, intended-use boundaries, performance, and known limitations. | Solutions lacking demonstrable conformity readiness, exposing the buyer and manufacturer to market-access delay. | High | Partial | High — AI algorithm regulatory clearance delays (R_01) and AI model validation complexity (R_02) are the dominant programme risks; both are deliberately mitigated by mandating a commercially validated off-the-shelf capability for the first release and engaging the authorities early, which shifts much of the validation evidence onto the supplier of the AI capability. **Business/liability note**: that shift is only as strong as the manufacturer's contractual right to obtain, reference, and rely on the supplier's validation evidence in its own technical file — if the supplier will not flow that evidence down, or its scope does not cover the device's intended use and patient population, the validation burden reverts to the manufacturer and the market-access timeline (and the planned revenue it protects) is at risk; per-market variation in clearance pathways and reimbursement also makes this a Regulatory Affairs and Sales/Commercial dependency, not a single binary event. | Regulatory clearance is a precondition of release and reimbursement; without it the product cannot lawfully reach the clinician regardless of clinical merit, and slipped clearance directly erodes the business case and planned launch revenue. The off-the-shelf-validated-AI constraint is the principal lever that keeps this from being an open-ended programme risk, but the lever only holds if supplier validation evidence is contractually secured and demonstrably covers the device's intended use. |
+| KA_12 | Keep liability and clinical risk defensible | ME_08, BE_02, RE_02, RE_04 | Reduction of clinical risk — AI mis-diagnosis, false or missed alarms, sensor-fault propagation, use error — to an acceptable, documented residual level through a full lifecycle risk-management process, with the highest-criticality functions (alarming and diagnosis) mitigated by allocation to independent safeguards so that the overall safety classification is reduced from the initial worst-case to the mitigated level. | Solutions with weaker or undocumented residual-risk control and few independent safeguards for safety-critical functions. | High | Partial | High — the critical hazards (R_04 sensor misplacement, R_05 clinician misinterpretation, R_06 timeout, R_07 connection failure) plus AI mis-diagnosis must all be driven to a defensible residual level; feasibility is Partial but the path is credible because the safety-classification mitigation is achieved by independence — alarming and diagnosis are mitigated to independent systems, and several hazards already carry independent safeguards (device-side fault alarms, dual timeout notification). **Business/liability note**: the validity of the safety-class reduction (worst-case to mitigated) hinges on the *demonstrated genuine independence* of those safeguards — if an audit or a field event later shows the safeguards share a common-cause failure with the function they protect, the mitigated classification collapses, re-opening the higher-rigour obligations and exposing the manufacturer to enforcement and liability; some safeguards also reside in elements outside the software scope (device-side detection, supplier-side timeout notification), so the manufacturer's safety case depends on assured behaviour it does not itself build, which must be verified and contractually underwritten. | Validated-safety and controlled-liability assurance is what governance boards and authorities require to approve and defend a safety-critical diagnostic device, and it is the manufacturer's principal shield against product-liability claims. The independence-based mitigation that lowers the safety class is the central architectural commitment underpinning the whole safety case; because the lower class also reduces lifecycle and re-validation cost, the business has a strong incentive to protect that independence rigorously rather than let it erode over the product's life. |
+| KA_13 | Justify the investment and stay viable | ME_02, BE_06, BE_09 | A favourable total cost of ownership across licensing, deployment, support, and lifecycle updates, delivered within committed budget and time-to-market, and architected for reuse and configurability across settings and future lines, including a modular software structure aligned with the device-driver and processing decomposition. | Higher-cost or single-purpose solutions that are costly to own, update, and extend across the portfolio. | High | Partial | Medium — cost, schedule, and reuse targets compete directly with the heavy regulatory and safety-evidence effort (R_01, R_02) and the integration effort (R_03), and must be balanced against the manufacturer's existing capacity; the software-only scope and reuse of an off-the-shelf AI capability help contain cost. **Business note**: the off-the-shelf AI is a double-edged TCO lever — it cuts up-front validation and development cost, but it introduces an ongoing licensing cost and a pricing/continuity dependency on a single external supplier whose fee changes, end-of-life decisions, or model updates (each potentially triggering re-validation) flow straight into lifetime cost and margin; the business case is viable only if those terms are fixed contractually over the service life, so this is a Finance and Sales/Commercial dependency as much as an engineering one. | Affordable ownership and a reusable, configurable architecture keep the buyer's business case and the manufacturer's investment return viable across the portfolio; the software-only scope and mandated off-the-shelf AI are the main cost-containment levers. Priority is raised to High because business-case viability is the gating condition for the whole investment — without a defensible TCO and protected margin the programme is not financeable regardless of clinical merit, and reuse/configurability is what amortises the regulatory and safety-evidence spend across future lines. |
+| KA_14 | Stay safe, current, and supportable over its life | ME_06, BE_04, BE_05, BE_07, BE_08, RE_10, RE_07 | High reliability and availability for continuous critical-care use, a controlled standards-conformant software lifecycle enabling safe, modular updates without full re-validation of unchanged parts, dependable support and serviceability, operable post-market surveillance with end-to-end field-to-design traceability, and personal health data handled in conformance with applicable data-protection and secure-interoperability practice. | Solutions that are hard to update safely, with weaker support, surveillance, traceability, or data-protection posture over the service life. | High | Partial | Medium — no single dominant risk, but sustaining reliability, modular lifecycle controls, surveillance, traceability, and data protection together is a broad, ongoing organisational commitment; a traceable, decomposed software structure and the controlled lifecycle make change-scoped re-validation and field-to-design traceability achievable. **Business/liability note**: post-market surveillance, vigilance, and mandated incident-reporting timelines are direct legal obligations of the legal manufacturer with their own enforcement and recall exposure, and they must extend to the off-the-shelf AI component — the manufacturer must receive timely notice of the supplier's model changes and field issues to keep its own surveillance and field-to-design traceability complete, another supplier-dependency that has to be contractually secured. Data-protection non-conformance (GDPR/HIPAA class) carries standalone regulatory and financial liability independent of clinical safety. Sustaining this over the service life is a standing capacity commitment for Quality, Regulatory Affairs, and Customer Support that must be staffed and budgeted, not a one-off project cost. | A safety-critical device must remain available, supportable, updatable, surveilled, and privacy-compliant throughout its service life, or it cannot be trusted or lawfully maintained in the field; modular change control is what keeps update cost and re-validation scope bounded and the lower mitigated safety class affordable to maintain. The ongoing post-market and data-protection obligations are unavoidable lifecycle liabilities the business must resource for the full service life. |
 
 ### Business 'Requirements' (BR_*)
 
@@ -214,20 +231,25 @@ Conceptual project inputs from all business stakeholders that apply across the w
 
 | ID | Description | Rationale | Stakeholder | Importance | Traces |
 |----|-------------|-----------|-------------|------------|--------|
-| BR_01 | The first release (v1.0) shall use the commercially available, validated Open Evidence AI model as a mandated off-the-shelf component, integrated only through MMSS's DEC connector against the model's published structured-output interface; no custom or in-house diagnostic model shall be developed. | Transfers diagnostic validation and regulatory-clearance risk to a cleared third-party component and avoids the cost, schedule, and liability of qualifying a bespoke equivalent for v1.0; an explicit project constraint. Architecturally feasible only as an integration boundary, not a model-development task: MMSS owns the DEC connector contract (request format, structured-candidate parsing, error/timeout handling) but treats the model as a black box, so the design depends on Open Evidence exposing a stable, versioned API and structured candidate fields — if those are absent the off-the-shelf strategy is not implementable. | R&D / Executive & Strategy | High | KA_01, KA_08, BE_03 |
-| BR_02 | The MMSS software shall be developed, documented, and maintained across its full lifecycle in conformity with ANSI/AAMI IEC 62304, with the software safety classification established as Class C and mitigated to Class B. | A non-conformant offering cannot lawfully enter clinical use; lifecycle rigour must match the patient harm a software failure could cause, and the C→B mitigation underpins the defensible safety file; a mandated project constraint. | Quality Management / Regulatory Affairs | High | KA_07, BE_01, BE_02 |
-| BR_03 | Risk management shall be conducted in conformity with ISO 14971 throughout the lifecycle, demonstrating that all residual risks — including any risk controls relied upon to reduce the software class from C to B — are reduced to an acceptable, defensible level. | The class-mitigation claim is only defensible if the independent alarm and diagnostic-timeout controls are evidenced rather than asserted, bounding the manufacturer's product-liability exposure. | Quality Management / Legal & Compliance | High | KA_07, KA_03, KA_05 |
-| BR_04 | The software shall support acquisition from exactly the six mandated non-invasive device types — ECG monitor, pulse oximeter, blood-pressure monitor, thermal probe, capnometer, and EEG monitor — through their published, defined-and-frozen interface control documents, including the device-reported connection-loss, misplacement, and unreliable-reading flags MMSS presents. | Protects the customer's installed device-fleet investment and defines the fixed integration boundary; an explicit project constraint and competitive-parity baseline. Architecturally, "supported" means one acquisition driver and polling path per interface within the AC/DAC items; this is implementable only against ICDs that are defined and stable at design freeze, and the dependent alarm/misplacement claims (KA_05) hold only if the six ICDs confirm the devices actually emit those status flags — an unspecified or changing ICD makes the corresponding driver and safety presentation unverifiable. | R&D / Operations | High | KA_04, ME_03, ME_08 |
-| BR_05 | The undertaking shall be confined to software only — the five software items AC, DAC, DEC, DPREC, and DPROC — integrating with fixed hardware exclusively through published ICDs; no hardware design, selection, or modification shall be in scope. | Holds the programme to a single, bounded discipline within the manufacturer's capacity and competency, protecting feasibility, cost, and schedule; an explicit scope constraint. | Operations / R&D / Executive & Strategy | High | KA_10, BE_05, BE_06 |
-| BR_06 | The 2-minute diagnosis-convergence target shall be owned by the external ALGOS/Open Evidence engine, not committed to as an MMSS budget; MMSS shall be bound only by its own display-latency budget of ≤1 s, decomposed across the software items as DPREC ≤800 ms (pre-processing) and DPROC ≤200 ms (post-processing/render), and shall explicitly exclude the DEC round-trip to the external engine from this display budget. | The manufacturer cannot stand behind a convergence claim it does not control; clarifying the budget boundary prevents an unfulfillable contractual commitment and bounds liability to what MMSS owns; an explicit project constraint. Architecturally the ≤1 s display budget is per-item and met on the RTOS host, but it is only feasible if the external-engine call (DEC, ≤800 ms) is treated as a separate, asynchronous round-trip and not folded into the synchronous display path — otherwise variable network/engine latency would silently break a budget MMSS is held to. The convergence and DEC budgets therefore sit on the supplier/interface side; only DPREC and DPROC are guaranteed by MMSS's own scheduling. | R&D / Legal & Compliance | High | KA_01, BE_04 |
-| BR_07 | Any externally sourced critical component (Open Evidence) shall be qualified as SOUP under IEC 62304, version-controlled, and governed by a binding supplier agreement covering validation evidence, interface stability, change/version notification, update, and end-of-support commitments, with unbroken traceability maintained post-market. | The entire diagnostic value proposition rests on a single third-party component; an enforceable agreement is required to qualify the component, preserve traceability, and bound the manufacturer's liability where it relies on a supplier's output. Architecturally this is the SOUP-qualification obligation of IEC 62304 §5.3/§8: because MMSS integrates the model only through the DEC connector (BR_01), the supplier agreement must also pin the API/structured-output contract version, so that a silent model or interface change cannot break MMSS's parsing or invalidate its diagnostic claim without triggering change control. | Legal & Compliance / Quality Management | High | KA_08, BE_04 |
-| BR_08 | The product shall meet the manufacturer's cost, margin, and investment targets and present a justified, itemised total cost of ownership to the buyer that separates one-off costs (licensing, deployment, integration, training) from recurring costs (software maintenance, support, AI-component subscription/renewal) across the deployed life. | Confirms a viable business case before resources are committed and, on the buyer side, is the decisive purchasing criterion: hospital/EMS procurement must justify the spend against an internal budget and cannot secure approval without a defensible, no-surprises TCO that exposes recurring AI-component and maintenance costs up front. An itemised TCO is also what lets the buyer compare against incumbent monitors at selection. | Finance / Sales & Commercial | High | KA_10, BE_07, ME_02 |
-| BR_09 | The manufacturer shall establish and maintain a post-market surveillance, vigilance, and complaint-handling capability, together with contractually committed software-maintenance, security-patch, and supplier-change-management service levels (including response/resolution targets) throughout the product's deployed life. | Post-market surveillance is a standing regulatory obligation; on the buyer side, dependable, contractually committed vendor service and support is a primary procurement criterion — hospital/EMS buyers will not deploy a safety-critical, AI-dependent device without defined maintenance and security-patch service-level commitments, since under-supported software directly threatens continued safe operation and exposes the buyer to clinical and field risk. | Customer Support & Service / Regulatory Affairs | High | KA_10, BE_08, ME_06 |
-| BR_10 | The product shall provide usability engineering to IEC 62366-1 and a built-in simulation training mode with competency-based onboarding, supported by labelling and instructions for use that convey intended use, limitations, and the meaning of automated diagnostic output. | Controls foreseeable use error and clinician over-reliance — the named mitigation for a Critical-severity hazard — discharging the manufacturer's safe-use duty while lowering the buyer's rollout and onboarding burden. | Quality Management / Human Resources / Customer Support & Service | High | KA_09, KA_02, ME_05 |
-| BR_11 | HIS interoperability shall be delivered over a recognised open interoperability standard (HL7/FHIR), with a single protocol fixed at design freeze and the interface ICD defined and frozen before the DEC/HIS connector design is committed, and patient/diagnostic data secured in transit. | Using an open standard rather than a proprietary format removes the buyer's most common procurement objection — bespoke per-site integration cost and vendor lock-in — and protects the buyer's freedom to evolve its monitoring fleet (ME_10); for the manufacturer, fixing one protocol and defining the ICD avoids open-ended, per-customer integration commitments the business case cannot absorb. This is the one genuinely undefined external interface and the principal architectural risk in the design: an HL7-vs-FHIR choice and an undefined ICD are not implementable as a verifiable connector, so this BR is feasible only if the protocol selection and ICD precede design freeze. The data-sharing path is also non-safety-critical and must remain isolated from the acquisition/alarm path so HIS unavailability cannot degrade monitoring (consistent with the Medium priority). | Operations / Sales & Commercial / Legal & Compliance | Medium | KA_06, ME_04, ME_10 |
-| BR_12 | The offering shall align with the manufacturer's strategic portfolio direction and innovation roadmap. | Ensures the investment strengthens rather than fragments the organisation's market position and justifies the commitment of organisational resources. | Executive & Strategy | Medium | KA_10, BE_10 |
-| BR_13 | The product shall deploy onto the buyer's existing portable-monitor and six-device measurement fleet without requiring replacement of compatible installed hardware, and shall avoid proprietary lock-in to a single vendor's devices, sensors, or data formats by relying on the published device ICDs and open interoperability standards. | Fit with the installed fleet and freedom from vendor lock-in is a make-or-break purchasing criterion for hospital/EMS procurement: as a software-only solution MMSS's principal commercial advantage is that it upgrades existing monitors rather than forcing wholesale capital replacement, protecting prior investment and preserving the buyer's future purchasing leverage. A solution that mandated specific proprietary devices or locked data into a closed format would be rejected at selection regardless of clinical merit. | Sales & Commercial / Operations | High | KA_04, KA_06, ME_03, ME_10 |
-| BR_14 | The product shall satisfy hospital/EMS information-security and data-protection requirements — protecting patient and diagnostic data in storage and transit, controlling access, and supporting the buyer's internal security and privacy review — and shall provide the documentation needed to evidence this at procurement. | Passing the buyer's internal information-security and data-protection review is a hard procurement gate: hospital/EMS purchasing cannot sign off on a connected, data-exporting medical device without evidence that it meets cybersecurity and patient-privacy obligations, so failing security review is a showstopper that blocks the sale irrespective of clinical or cost merit. Providing the supporting documentation up front shortens the procurement cycle and de-risks the sale. | Legal & Compliance / Quality Management / Sales & Commercial | High | KA_06, ME_09, RE_07 |
+| BR_01 | The solution shall be developed, maintained, and changed under a documented, standards-conformant medical-device software lifecycle (software-lifecycle class commensurate with its safety class), with planning, configuration management, and change control applied from project start. | A controlled lifecycle is a precondition of lawful market access and is what allows the device to be safely updated and patched over its service life without re-incurring full re-validation each change; it is mandated by applicable medical-device software law and harmonised standards. | R&D / Quality Management | High | KA_11, KA_14 |
+| BR_02 | The solution's safety classification shall be assessed and recorded with a traceable rationale, and the design shall reduce that classification from its initial worst-case level to a lower mitigated level by allocating the highest-criticality functions (alarming and diagnosis) to safeguards that are demonstrably independent of the function they protect, including safeguards realised in elements outside the software boundary (the measurement devices and the external diagnostic capability). | A justified classification scales development rigour to the harm the software can cause; the independence-based mitigation lowers the class, which bounds lifecycle and re-validation cost. Because the software-only scope places part of each safeguard in fixed external elements accessed through their interfaces, the mitigated class holds only if that genuine, common-cause-free independence is verified and contractually underwritten — otherwise the higher-rigour obligations re-open. | Regulatory Affairs / R&D | High | KA_05, KA_12 |
+| BR_03 | The first release shall incorporate a commercially validated, ready-made diagnostic capability rather than a proprietary in-house model, used as an off-the-shelf component. | Mandating an already-validated capability removes proprietary-model validation from the critical path, limits the manufacturer's validation, evidence, and liability burden, and shortens the path to market — the principal de-risking lever for the programme. | Executive / Strategy | High | KA_02 |
+| BR_04 | The clinical risk of the solution — covering AI mis-diagnosis, false or missed alarms, sensor-fault propagation, and use error — shall be reduced to an acceptable, documented residual level through a complete lifecycle risk-management process (risk-management standard class) with verified risk controls and independent safeguards for safety-critical functions. | Validated-safety and controlled-liability assurance is required by governance boards and authorities to approve and defend a safety-critical diagnostic device, and is the manufacturer's principal shield against product-liability claims; the documented residual risk underpins the favourable benefit-risk balance. | Quality Management / Legal & Compliance | High | KA_12, KA_05, KA_06, KA_07 |
+| BR_05 | The diagnostic output shall be designed and labelled as decision support that informs rather than replaces the clinician, who retains final diagnostic and treatment authority, with the supporting reasoning and confidence of each suggestion made available. | Clinician-in-control is the central liability firewall that keeps ultimate responsibility for patient care with a qualified professional and keeps the device defensible as decision support rather than an autonomous diagnostic agent; it also mitigates automation bias. | Legal & Compliance | High | KA_03 |
+| BR_06 | The solution shall demonstrate readiness for regulatory clearance and lawful market access in the target markets as a precondition of release, evidenced by a complete, audit-ready technical file. | Regulatory clearance is a precondition of release and reimbursement; without it the product cannot lawfully reach the clinician regardless of clinical merit, and slipped clearance directly erodes the planned launch revenue and business case. | Regulatory Affairs | High | KA_11 |
+| BR_07 | The manufacturer shall operate a certified quality management system (quality-management standard class) and generate and retain design-control, quality, and risk-management evidence as a complete, current, audit-ready technical file throughout the lifecycle. | Notified-body, authority, and internal-governance audits must be satisfied and the declaration of conformity defended; a certified QMS and current technical file are the basis for assessing conformity and supporting lawful market placement. | Quality Management | High | KA_11, KA_14 |
+| BR_08 | The solution shall be delivered within the manufacturer's committed budget, cost targets, and time-to-market window, and shall achieve a favourable, demonstrable total cost of ownership for the buyer across licensing, deployment, integration, support, training, and lifecycle updates over the service life — including the recurring licensing and update cost of the off-the-shelf diagnostic capability. | Business-case viability is the gating condition for the whole investment; without a defensible TCO and protected margin the programme is not financeable regardless of clinical merit, and time-to-market protects planned revenue. From the buyer's side, TCO is a primary purchasing criterion evaluated over the whole service life — not just acquisition price — and procurement will discount or reject a solution whose recurring licensing, integration, and support costs are unclear or unbounded, so the buyer-facing TCO must be demonstrable, not merely asserted. | Finance / Executive | High | KA_13 |
+| BR_09 | The reliance on an off-the-shelf diagnostic capability shall be governed by contractual supplier safeguards covering validation-evidence flow-down, change and field-issue notification, version/model management, supply continuity, and licensing terms fixed over the service life. | Off-the-shelf reliance does not transfer product liability away from the legal manufacturer; the de-risking, cost, and market-continuity benefits only hold if the supplier dependency is contractually secured, otherwise the validation burden, liability, and lifetime cost revert to the manufacturer. | Legal & Compliance / Sales & Commercial | High | KA_02, KA_11, KA_13, KA_14 |
+| BR_10 | The solution shall exchange patient data and diagnostic findings with hospital and EMS information systems over a recognised healthcare interoperability standard (interoperability-standard class, e.g. HL7/FHIR class) to be confirmed and fixed in a defined interface contract before development of the exchange completes, and shall interface with the buyer's existing measurement devices and clinical estate strictly through their published interface contracts across the mandated set of measurement-device types, without modifying those external elements. | Standards-based interoperability and compatibility with the installed base enable second opinion and smooth handover, protect prior capital investment, and spare the buyer bespoke integration cost. Integration fit with the existing IT and device estate is a make-or-break purchasing criterion: a solution that forces rip-and-replace of monitors, devices, or records integration, or that demands bespoke per-site interfacing, raises TCO and deployment risk to the point of rejection, so standards-based exchange and published-contract compatibility are commercial preconditions, not just technical ones. The exact interoperability standard is not yet fixed and the interface contracts are still to be defined, so the requirement commits to the standard *class* and to settling the contract before completion rather than to a specific protocol; the software-only scope means external elements are reached only through published contracts, not adapted to. | Sales & Commercial / Operations | High | KA_09, KA_10 |
+| BR_11 | The solution shall be producible, serviceable, and supportable at the required scale and quality using the organisation's existing competencies and capacity, with dependable support, maintenance, and lifecycle updates available throughout the product's service life, on service terms (response times, availability commitments, escalation, and update cadence) that the buyer can rely on and contract for. | The manufacturer must deliver and support the deployed fleet reliably without overrunning operational capability; dependable lifecycle support keeps the deployed fleet safe, current, and competently operated. Vendor dependability and contractable service commitments are a core procurement selection criterion for a safety-critical fleet — buyers assess supplier viability and committed service levels before purchase and will not accept open-ended or best-effort support for equipment used at the point of care. | Operations & Manufacturing / Customer Support & Service | High | KA_13, KA_14 |
+| BR_12 | The solution shall include a realistic, risk-free simulated training mode with fail-safe separation between training and live clinical operation, and the manufacturer shall provide clinician training and labelling/instructions-for-use provisions appropriate to the device's safety class over the service life. | The training mode is the named risk control for the critical clinician-misinterpretation hazard and so forms part of the safety case; mandatory information-for-safety and training-provision obligations for the safety class must also be met to support safe fleet operation. | Customer Support & Service / Regulatory Affairs / HR | High | KA_08, KA_03 |
+| BR_13 | The manufacturer shall operate a credible post-market surveillance, vigilance, complaint-handling, and incident-reporting capability with end-to-end traceability from a field event back to the responsible design element, extending to field issues and changes in the off-the-shelf diagnostic component. | Post-market surveillance and mandated incident-reporting timelines are direct legal obligations of the legal manufacturer with enforcement and recall exposure; field-to-design traceability is what lets emerging safety signals be detected, reported, and corrected through field safety actions. | Regulatory Affairs / Quality Management | High | KA_14 |
+| BR_14 | The solution shall acquire, process, display, and exchange personal health data in conformance with applicable data-protection and privacy law (data-protection-law class, e.g. GDPR/HIPAA class) and secure interoperability practice throughout the data flow. | Data-protection non-conformance carries standalone regulatory and financial liability independent of clinical safety, and patient confidentiality, integrity, and rights must be protected wherever personal health data is handled or exchanged. | Legal & Compliance / Quality Management | High | KA_14, KA_09 |
+| BR_15 | The solution shall be architected for reuse and configurability across deployment settings and future product lines, with a modular software structure aligned to the device-acquisition and processing decomposition. | A reusable, configurable architecture amortises the heavy regulatory and safety-evidence spend across the portfolio, maximises return on the development investment, and lowers the cost of extending the product line and of change-scoped re-validation. | R&D / Executive | Medium | KA_13, KA_14 |
+| BR_16 | The solution shall demonstrate high reliability and availability for continuous critical-care use, including readiness for use within seconds of switching on, so the monitor is not unavailable at the point of care. | An unavailable monitor at the point of care is an operational and clinical risk that buyers will not accept; demonstrated reliability and rapid readiness avoid clinical downtime and underpin the baseline clinical value of the device. | Operations & Manufacturing / Quality Management | High | KA_14, KA_01 |
+| BR_17 | The solution shall produce documented clinical and diagnostic-performance validation evidence — including the validation status, intended-use boundaries, performance characteristics, and known limitations of the off-the-shelf diagnostic component — covering the device's stated indication and patient population. | Authorities require documented clinical evidence to confirm the diagnostic output is safe and effective for its stated indication; the validation evidence for the off-the-shelf component must demonstrably cover the device's intended use or the validation burden and market-access risk revert to the manufacturer. | Regulatory Affairs / R&D | High | KA_11, KA_02 |
+| BR_18 | The solution shall meet the boundary-observable timeliness the clinician relies on — sub-second presentation of vital signs, alarms, sensor-fault warnings, and received diagnostic candidates after the system has the data — while the time to converge on a diagnosis is owned by the external diagnostic capability and is not a commitment of the solution. | At-a-glance, low-latency presentation is the baseline clinical value and a safety property: a delayed alarm or stale reading can cause harm. The input fixes a sub-second display budget at the system boundary, whereas diagnosis-convergence time is explicitly an external-capability budget, so the business commitment must be drawn at the boundary the clinician actually observes and must not absorb the external convergence time. | R&D / Quality Management | High | KA_01, KA_05, KA_04 |
+| BR_19 | The solution shall deliver active diagnostic decision support beyond passive vital-signs display as a demonstrable clinical-value differentiator over baseline monitoring, with a value proposition (improved time-to-working-diagnosis and decision support where expert consultation is unavailable) that the buyer can evidence and defend when justifying upgrade or replacement of existing equipment to its clinical, finance, and governance boards. | A buyer with a functioning installed base will only invest in replacement or upgrade if the new capability delivers clear, defensible incremental clinical value over what it already owns; diagnostic decision support is the differentiator that justifies that spend, and procurement must be able to substantiate the value case internally. Without an articulated, evidenced upgrade justification the solution competes only on price against adequate incumbents and the purchase is hard to defend — making this a distinct commercial buying criterion not fully captured by the safety, validation, or cost requirements. | Sales & Commercial / Executive | High | KA_02 |
 
 ## Context (FORMAL)
 
@@ -239,78 +261,23 @@ Write the intended use as a single, flowing prose statement that naturally cover
 
 | ID | Description |
 |----|-------------|
-| IU_01 | The Mobile Monitoring Software Solution (MMSS) is medical device software that turns an existing portable patient monitor into an active clinical decision-support tool, intended to provide continuous, real-time monitoring of the vital signs of critically ill patients and to present AI-driven diagnostic support that assists — but does not replace — the clinician's own assessment, so that trained medical professionals such as paramedics, emergency physicians, and ICU and ER nurses can reach a working diagnosis and make rapid, safe treatment decisions at the patient's side, for use in intensive care units, emergency rooms, and mobile and pre-hospital medical units; it operates by acquiring data from a defined set of non-invasive measurement devices (ECG, pulse oximeter, blood-pressure monitor, thermal probe, capnometer, and EEG) through standardised interfaces, processing that data through the externally sourced, commercially validated Open Evidence AI engine, presenting raw vital signs together with ranked diagnostic candidates and their basis, confidence, and known limitations on the connected monitor display as decision support that the qualified user must interpret and act upon under their own clinical judgement and responsibility, generating prioritised, perceptible (audible and visual) clinical alarms for abnormal patient conditions and for sensor-misplacement and connection faults so that they are noticed even when the clinician's attention is on the patient rather than the display, and optionally sharing patient and diagnostic data with hospital information systems over standard interoperability protocols for continuity of care and a timely second opinion; the software does not by itself make, confirm, or override a diagnosis or treatment decision, and is not intended as a sole basis for clinical decision-making or as a substitute for the clinician's professional judgement. |
+| IU_01 | The Mobile Monitoring Software Solution (MMSS) is regulated medical device software (software as part of a medical device under IEC 62304) that turns an existing portable patient monitor into an active clinical decision-support tool for the continuous, real-time monitoring of critically ill or unstable patients, intended to support the early detection of patient deterioration and the formation of a working diagnosis by presenting the patient's vital signs at a glance, raising clinical alarms for abnormal vital-sign conditions and sensor faults, and offering ranked, real-time diagnostic candidates alongside the raw data as decision support that informs but does not replace the clinician; the diagnostic output is adjunctive and non-autonomous, is not intended to be used as the sole basis for any diagnostic or treatment decision, and does not control therapy or actuate any treatment. It is intended for use only by trained, qualified medical professionals — paramedics, emergency physicians, and ICU/ER nurses competent to interpret vital signs and diagnostic information — in fixed critical-care and pre-hospital settings such as intensive care units, emergency rooms, and mobile medical units including ambulances and on-scene emergency response, where it must be operable one-handed and glanceably under time pressure and in moving, noisy, or poorly lit conditions; it is not intended for unsupervised use by lay users or for home use. It works by acquiring data through standardised interfaces from a defined set of non-invasive measurement devices (ECG, pulse oximeter, blood-pressure monitor, thermal probe, capnometer, and EEG), processing that data through its acquisition, conversion, and decision software items and feeding it to a commercially validated off-the-shelf diagnostic AI capability used within the validated scope of its own intended use, then presenting the vital signs and the AI's ranked diagnostic candidates with their supporting reasoning and confidence on the connected monitor display, distinctly signalling sensor disconnection, misplacement, or unreliable readings and diagnosis time-outs, and optionally exchanging patient data and diagnostic findings with hospital information systems over recognised interoperability standards, while the clinician retains final diagnostic and treatment authority at all times. |
 
 ### Medical Device Classification (MD_01)
 
 | ID | Description | Traces |
 |----|-------------|--------|
-| MD_01 | Under ANSI/AAMI IEC 62304, the MMSS software system is initially classified as Class C, because absent any external risk control a failure or latent flaw in its diagnostic-support, monitoring, or alarming functions could contribute to a hazardous situation resulting in death or serious injury of the patient. Applying the IEC 62304 §4.3 segregation principle, the classification is reduced to Class B by hardware-and-system-level risk-control measures, implemented and verified outside the MMSS software, that break every sequence of events leading to serious harm: the safety-critical connection-loss and sensor-misplacement alarming is provided independently by the measurement devices (device-generated audible alarms), and the diagnostic-timeout safety signal is provided independently by the ALGOS engine (independent audible notification on the 2-minute timeout). Because these external systems are independent of MMSS and are not by themselves dependent on correct MMSS operation, no single failure of the MMSS software can, by itself, result in unmitigated serious patient harm; the residual harm a software failure could still cause is non-serious, justifying Class B for the MMSS software items. This reduction holds only for as long as ISO 14971 risk-management evidence (BR_03) demonstrates the independence and effectiveness of those external mitigations; if that independence is not substantiated, the affected software items revert to Class C. The assessed software safety class is therefore Class B (initial Class C, mitigated to B). | IU_01 |
+| MD_01 | MMSS is regulated medical device software whose safety is classified under IEC 62304 (software safety classification, Clause 4.3). The software system's **initial** classification is **Class C** — failure or latent fault of the software could contribute to a hazardous situation that, absent further risk control, could result in **death or serious injury** — because erroneous, missed, or delayed vital-signs presentation, alarming, or diagnostic output in critical-care use is a foreseeable sequence to severe patient harm. Per IEC 62304 Clause 4.3 the classification is determined from the worst-case harm that could result from the software contributing to the hazardous situation **assuming the hazardous situation occurs**, and may be reduced where external risk-control measures — hardware or other software outside the software item — prevent that hazardous situation from leading to the worst-case harm. On this basis the worst-case contribution of the two highest-criticality functions — alarming and diagnosis — is mitigated so that no single MMSS failure can, on its own, lead to death or serious injury: for sensor disconnection, misplacement, and unreliable-reading conditions the measurement devices raise their own independent audible connection/fault alarms, and the external diagnostic capability raises an independent audible time-out notification on convergence failure; combined with the clinician retaining final diagnostic and treatment authority over non-autonomous, adjunctive output, the residual worst-case harm of an MMSS-only failure in these functions is reduced to a non-serious level. The abnormal-vital-sign threshold alarm, by contrast, has no equivalent device-side independent re-annunciation — a measurement device signals its own connection or fault state but does not independently re-raise a missed out-of-range physiological alarm — so the safety of that function is assured not by an external safeguard but by engineering it to the rigour commensurate with its criticality and by the clinician's continuous observation of the at-a-glance vital-signs display. The resulting software safety classification is therefore **Class B**. This reduction is admissible only because the safeguards are **segregated from and demonstrably independent of MMSS** — they reside in the measurement devices and the external diagnostic capability, outside the MMSS software boundary, and do not share a common-cause failure with the function they protect (consistent with the IEC 62304 segregation expectation that risk controls relied upon to lower a classification be independent of the item they protect). The Class B classification holds only while that genuine, common-cause-free independence is verified through the ISO 14971 risk-management process and contractually underwritten with the device and AI suppliers; if independence cannot be demonstrated, or is eroded by a design or supplier change, the higher-rigour Class C lifecycle obligations re-open and the residual-risk and benefit-risk argument supporting market access must be re-established. | IU_01 |
 
 ### Context Diagram
 
 The context diagram identifies the system of interest in relation to its context. The system of interest contains all elements that are part of the design.
 
-Author the diagram as Graphviz DOT in the fenced `dot` block below: put the System of Interest (and its system elements) in a central cluster, the context elements as surrounding nodes, and the external interfaces (IF_*) as labelled edges between them. The converter renders this block to an image and inserts it into the document.
-
-```dot
-digraph context {
-  rankdir=LR;
-  compound=true;
-  node [shape=box, style=rounded, fontname="Helvetica"];
-  edge [fontname="Helvetica", fontsize=10];
-
-  subgraph cluster_soi {
-    label="System of Interest: MMSS (Mobile Monitoring Software Solution)";
-    style="rounded,filled";
-    fillcolor="#eef3fb";
-    color="#2b5fa6";
-    fontname="Helvetica";
-
-    AC    [label="AC\nAcquisition"];
-    DAC   [label="DAC\nDevice Acquisition\n(drivers / polling)"];
-    DEC   [label="DEC\nDiagnostic Engine\nConnector"];
-    DPREC [label="DPREC\nDiagnostic\nPre-processing"];
-    DPROC [label="DPROC\nDiagnostic Processing\n(display / alarms)"];
-
-    // internal data flow (informative, not an external interface)
-    DAC -> AC      [style=dashed, color="#7790b0", arrowhead=open, constraint=false];
-    AC -> DPREC    [style=dashed, color="#7790b0", arrowhead=open, constraint=false];
-    DPREC -> DEC   [style=dashed, color="#7790b0", arrowhead=open, constraint=false];
-    DEC -> DPROC   [style=dashed, color="#7790b0", arrowhead=open, constraint=false];
-    AC -> DPROC    [style=dashed, color="#7790b0", arrowhead=open, constraint=false];
-  }
-
-  // Context elements (not part of the design)
-  node [style="rounded,filled", fillcolor="#f5f5f5", color="#555555"];
-  ECG     [label="ECG Monitor"];
-  SPO2    [label="Pulse Oximeter"];
-  NIBP    [label="BP Monitor"];
-  TEMP    [label="Thermal Probe"];
-  CAP     [label="Capnometer"];
-  EEG     [label="EEG Monitor"];
-  DISPLAY [label="Monitor Display"];
-  HOST    [label="Host CPU /\nRTOS Platform"];
-  ALGOS   [label="Open Evidence\nAI Engine (ALGOS)"];
-  HIS     [label="Hospital Information\nSystem (HIS)"];
-
-  // External interfaces (IF_*) as labelled edges between SOI and context elements
-  ECG     -> DAC   [label="IF_01 ECG acquisition"];
-  SPO2    -> DAC   [label="IF_02 SpO2 acquisition"];
-  NIBP    -> DAC   [label="IF_03 BP acquisition"];
-  TEMP    -> DAC   [label="IF_04 Temperature acquisition"];
-  CAP     -> DAC   [label="IF_05 Capnography acquisition"];
-  EEG     -> DAC   [label="IF_06 EEG acquisition"];
-  DPROC   -> DISPLAY [label="IF_07 Display & alarm output"];
-  DEC     -> ALGOS [label="IF_08 Diagnostic request", dir=both];
-  DPROC   -> HIS   [label="IF_09 HIS data exchange (HL7/FHIR, TBD)"];
-  HOST    -> AC    [label="IF_10 Platform / RTOS services", style=bold, color="#2b5fa6", lhead=cluster_soi];
-}
-```
+_To be added_
 
 #### Product Information
 
-The **Mobile Monitoring Software Solution (MMSS)** is a software-only, IEC 62304-regulated medical device software product that runs on an existing portable patient monitor and transforms it from a passive vital-signs display into an active, AI-driven clinical decision-support tool. It delivers continuous, low-latency vital-signs monitoring together with ranked, real-time diagnostic candidates and prioritised clinical alarms, and optionally shares patient and diagnostic data with hospital information systems for continuity of care and a second opinion. It operates as a pipeline of five cooperating software items hosted on the monitor's embedded real-time platform: drivers and polling logic acquire data from six fixed non-invasive measurement devices through published interfaces (DAC, AC), the acquired data is conditioned and forwarded over a connector to the externally sourced, commercially validated Open Evidence AI engine (DPREC, DEC), and the returned diagnostic candidates — with their basis, confidence, and known limitations — are rendered alongside raw vital signs and alarms on the connected monitor display (DPROC). MMSS owns its ≤1 s display-latency budget (DPREC ≤800 ms, DPROC ≤200 ms); the 2-minute diagnosis-convergence target and the diagnostic round-trip are owned by the external engine, and the safety-critical connection-loss, sensor-misplacement, and diagnostic-timeout signals are backed by independent device- and engine-side alarms, which is what reduces the software safety class from C to B.
+The Mobile Monitoring Software Solution (MMSS) is regulated medical device software (IEC 62304) that runs on an existing portable patient monitor and turns it from a passive vital-signs display into an active clinical decision-support tool for critical-care and pre-hospital use. It delivers three things to the clinician: a real-time at-a-glance presentation of the patient's vital signs, clinical alarms for abnormal vital-sign conditions and sensor faults, and ranked, real-time diagnostic candidates with their supporting reasoning and confidence. MMSS operates by acquiring measurement data through standardised interfaces from a defined set of six non-invasive measurement device types, processing and conditioning that data on the host platform, feeding it to a commercially validated off-the-shelf diagnostic AI capability that returns structured diagnostic candidates, then rendering the vital signs, alarms, and diagnostic output on the connected monitor display — and, optionally, exchanging patient data and diagnostic findings with a hospital information system over recognised interoperability standards. The diagnostic output is adjunctive and non-autonomous; the clinician retains final diagnostic and treatment authority at all times.
 
 #### System of Interest
 
@@ -318,12 +285,7 @@ The part of the broader system this document is about — the product, subsystem
 
 | System Element | Description |
 |----------------|-------------|
-| MMSS | The complete Mobile Monitoring Software Solution — the software stack under design, decomposed into the five software items below. It hosts the acquisition-to-presentation pipeline on the monitor's embedded RTOS platform and owns every interface to the surrounding context elements. |
-| AC (Acquisition) | The acquisition-orchestration item: consolidates the polled device readings from DAC into a coherent, time-stamped vital-signs stream, manages the ≥0.1 Hz input rate and the 1 s UI update timing, detects connection loss (5 s inactivity), and feeds both the presentation path (DPROC) and the diagnostic path (DPREC). |
-| DAC (Device Acquisition) | The device-driver and polling layer: one acquisition driver and polling path per measurement-device interface, reading vital signs and device-reported connection-loss, misplacement, and unreliable-reading flags from the six fixed devices through their published ICDs. |
-| DEC (Diagnostic Engine Connector) | The connector to the external Open Evidence AI engine (ALGOS): formats the diagnostic request, performs the asynchronous round-trip (≤800 ms budget, excluded from the display budget), parses the returned structured diagnostic candidates, and handles engine error and 2-minute timeout conditions. |
-| DPREC (Diagnostic Pre-processing) | The diagnostic pre-processing item: conditions and structures the acquired vital-signs data into the input expected by the AI engine, within a ≤800 ms budget, before it is dispatched through DEC. |
-| DPROC (Diagnostic Processing) | The post-processing and presentation item: renders raw vital signs, ranked diagnostic candidates with their basis/confidence/limitations, and prioritised clinical and fault alarms on the monitor display within the ≤200 ms / ≤1 s display budget, and emits patient and diagnostic data to the HIS. |
+| MMSS | The Mobile Monitoring Software Solution as a whole — the complete application software stack treated as a single black box at its external boundary. MMSS acquires data from the six measurement device types via published device interfaces, conditions and processes it on the host platform, exchanges data with the external diagnostic AI capability to obtain ranked diagnostic candidates, presents vital signs, alarms, and diagnostic output on the monitor display, and optionally shares data with the hospital information system. This is the only element being designed in this project; its internal software decomposition is addressed at the Architecture level and is out of scope here. |
 
 #### Context Elements
 
@@ -331,16 +293,17 @@ Essential elements for your product that are not part of the design.
 
 | Context Element | Description |
 |-----------------|-------------|
-| ECG Monitor | Existing, fixed non-invasive ECG measurement device. Supplies cardiac/heart-rate vital signs and device status flags to MMSS through its published ICD; its internal design is out of scope. |
-| Pulse Oximeter | Existing, fixed non-invasive SpO2/pulse measurement device. Supplies oxygen-saturation and pulse vital signs and device status flags to MMSS through its published ICD. |
-| BP Monitor | Existing, fixed non-invasive blood-pressure measurement device. Supplies blood-pressure vital signs and device status flags to MMSS through its published ICD. |
-| Thermal Probe | Existing, fixed non-invasive temperature measurement device. Supplies body-temperature vital signs and device status flags to MMSS through its published ICD. |
-| Capnometer | Existing, fixed non-invasive capnography (end-tidal CO2) measurement device. Supplies respiratory CO2 vital signs and device status flags to MMSS through its published ICD. |
-| EEG Monitor | Existing, fixed non-invasive EEG measurement device. Supplies neurological/brain-activity vital signs and device status flags to MMSS through its published ICD. |
-| Monitor Display | The existing portable monitor's display hardware on which MMSS renders raw vital signs, ranked diagnostic candidates, and prioritised visual/audible alarms. Physical display hardware is fixed and out of scope. |
-| Host CPU / RTOS Platform | The compact embedded CPU with real-time-OS capabilities on which MMSS executes. Provides scheduling, timing, memory, and I/O services that MMSS relies on to meet its latency budgets. Hardware and OS are fixed and out of scope. |
-| Open Evidence AI Engine (ALGOS) | The externally sourced, commercially validated off-the-shelf AI diagnostic engine, used as a black-box SOUP component. Receives conditioned data from MMSS and returns structured ranked diagnostic candidates; owns the 2-minute convergence budget and emits an independent audible timeout notification. |
-| Hospital Information System (HIS) | The receiving hospital's information system. Exchanges patient and diagnostic data with MMSS over a standard interoperability protocol (HL7/FHIR) for continuity of care and a second opinion. External system; protocol and ICD still to be defined. |
+| Host CPU platform | The existing compact embedded CPU platform with real-time OS capabilities on which MMSS executes. Fixed hardware/OS accessed via published interface; provides the runtime, timing services, and resources for MMSS but is not designed in this project. |
+| ECG monitor | Existing measurement device acquiring cardiac electrical activity via electrodes. Fixed device accessed through a published interface; provides Heart Rate to MMSS and raises its own independent connection/fault alarms. |
+| Pulse oximeter | Existing measurement device acquiring peripheral oxygen saturation via an SpO₂ probe. Fixed device accessed through a published interface; provides SpO2 and Pulse Rate to MMSS and raises its own independent connection/fault alarms. |
+| Blood pressure (BP) monitor | Existing measurement device acquiring non-invasive blood pressure via an NIBP cuff. Fixed device accessed through a published interface; provides Systolic BP, Diastolic BP, and MAP to MMSS and raises its own independent connection/fault alarms. |
+| Thermal probe | Existing measurement device acquiring body temperature. Fixed device accessed through a published interface; provides Temperature to MMSS and raises its own independent connection/fault alarms. |
+| Capnometer | Existing measurement device acquiring respiratory parameters via an EtCO₂ sampling line. Fixed device accessed through a published interface; provides Respiratory Rate and EtCO2 to MMSS and raises its own independent connection/fault alarms. |
+| EEG monitor | Existing measurement device acquiring cortical electrical activity via electrodes and deriving a bispectral index. Fixed device accessed through a published interface; provides BIS to MMSS and raises its own independent connection/fault alarms. |
+| Monitor display | The existing connected display of the portable patient monitor on which MMSS renders vital signs, alarms, and diagnostic candidates. Fixed hardware accessed via a published display interface. |
+| External diagnostic AI capability | A commercially validated, off-the-shelf diagnostic AI service (Open Evidence class) external to MMSS, used within the validated scope of its own intended use. Receives conditioned patient data from MMSS and returns structured, ranked diagnostic candidates with reasoning and confidence; raises its own independent audible time-out notification on convergence failure. Not designed in this project. |
+| Hospital information system (HIS) | An external clinical information system with which MMSS optionally exchanges patient data and diagnostic findings for a second opinion. Interoperability over HL7/FHIR-class standards; protocol and ICD to be defined. Not designed in this project. |
+| Patient | The critically ill or unstable patient to whom the measurement devices are non-invasively attached and whose physiological signals are the ultimate source of all acquired parameters. Outside the MMSS software boundary; interacts with MMSS only indirectly through the measurement devices. |
 
 #### External Interfaces (IF_*)
 
@@ -348,16 +311,34 @@ Connections between the system of interest and the context elements (mechanical,
 
 | ID | Name | Port 1 | Port 2 | ICD |
 |----|------|--------|--------|-----|
-| IF_01 | ECG acquisition interface | ECG Monitor | MMSS:DAC | Defined (published device ICD) |
-| IF_02 | Pulse-oximeter acquisition interface | Pulse Oximeter | MMSS:DAC | Defined (published device ICD) |
-| IF_03 | Blood-pressure acquisition interface | BP Monitor | MMSS:DAC | Defined (published device ICD) |
-| IF_04 | Temperature acquisition interface | Thermal Probe | MMSS:DAC | Defined (published device ICD) |
-| IF_05 | Capnography acquisition interface | Capnometer | MMSS:DAC | Defined (published device ICD) |
-| IF_06 | EEG acquisition interface | EEG Monitor | MMSS:DAC | Defined (published device ICD) |
-| IF_07 | Display and alarm output interface | MMSS:DPROC | Monitor Display | Defined (host display ICD) |
-| IF_08 | Diagnostic-engine interface | MMSS:DEC | Open Evidence AI Engine (ALGOS) | Defined (Open Evidence published structured-output API); bidirectional request/response |
-| IF_09 | HIS data-exchange interface | MMSS:DPROC | Hospital Information System (HIS) | TBD (HL7/FHIR — protocol and ICD to be defined and frozen before connector design) |
-| IF_10 | Host platform / RTOS services interface | Host CPU / RTOS Platform | MMSS (AC) | Defined (host RTOS API/runtime contract) |
+| IF_01 | Host platform / OS interface | MMSS | Host CPU platform | Host platform/RTOS ICD — defined by host vendor (existing) |
+| IF_02 | ECG acquisition interface | MMSS | ECG monitor | Device ICD — defined (existing, published) |
+| IF_03 | Pulse oximeter acquisition interface | MMSS | Pulse oximeter | Device ICD — defined (existing, published) |
+| IF_04 | BP monitor acquisition interface | MMSS | Blood pressure (BP) monitor | Device ICD — defined (existing, published) |
+| IF_05 | Thermal probe acquisition interface | MMSS | Thermal probe | Device ICD — defined (existing, published) |
+| IF_06 | Capnometer acquisition interface | MMSS | Capnometer | Device ICD — defined (existing, published) |
+| IF_07 | EEG acquisition interface | MMSS | EEG monitor | Device ICD — defined (existing, published) |
+| IF_08 | Display interface | MMSS | Monitor display | Display ICD — defined (existing, published) |
+| IF_09 | Diagnostic AI interface | MMSS | External diagnostic AI capability | Diagnostic AI library API ICD — defined by supplier (Open Evidence class) |
+| IF_10 | Hospital information system (HIS) interface | MMSS | Hospital information system (HIS) | HIS interoperability ICD — TBD (HL7/FHIR class) |
+
+#### Acquired Parameters / Signals
+
+Whenever the product acquires, exchanges, or presents a **set** of parameters, signals, or data items from a set of source elements (measurement devices, sensors, sub-systems, services), enumerate that set here instead of leaving it as a collective phrase elsewhere. One row per source-element/parameter combination, taken from the input. If no such parameter set applies to this product, write `_Not applicable_`.
+
+| Source Element | Parameter / Signal | Unit / Typical Range | Interface |
+|----------------|--------------------|----------------------|-----------|
+| ECG monitor (electrodes) | Heart Rate | bpm; typical 40–180 (adult 60–100 normal) | IF_02 |
+| Blood pressure (BP) monitor (NIBP cuff) | Systolic BP | mmHg; typical 70–200 (adult ~120 normal) | IF_04 |
+| Blood pressure (BP) monitor (NIBP cuff) | Diastolic BP | mmHg; typical 40–120 (adult ~80 normal) | IF_04 |
+| Blood pressure (BP) monitor (NIBP cuff) | MAP (Mean Arterial Pressure) | mmHg; typical 50–130 (adult 70–105 normal) | IF_04 |
+| Pulse oximeter (SpO₂ probe) | SpO2 | % saturation; typical 70–100 (normal ≥ 95) | IF_03 |
+| Pulse oximeter (SpO₂ probe) | Pulse Rate | bpm; typical 40–180 | IF_03 |
+| Capnometer (EtCO₂ sampling line) | Respiratory Rate | breaths/min; typical 5–40 (adult 12–20 normal) | IF_06 |
+| Capnometer (EtCO₂ sampling line) | EtCO2 (end-tidal CO₂) | mmHg; typical 20–60 (normal 35–45) | IF_06 |
+| Thermal probe | Temperature | °C; typical 30–42 (normal ~37) | IF_05 |
+| EEG monitor (electrodes) | BIS (Bispectral Index) | dimensionless index 0–100 (40–60 typical for general anaesthesia) | IF_07 |
+| External diagnostic AI capability | Ranked diagnostic candidates (with supporting reasoning and confidence) | Structured list; each candidate with confidence/likelihood score (0–1 or %) | IF_09 |
 
 ## Users
 
@@ -367,11 +348,11 @@ Collections of users who share common characteristics (a synonym is User Role).
 
 | User | User Group | User Profile |
 |------|------------|--------------|
-| Paramedic / EMS field clinician | Pre-hospital clinician | Trained, licensed emergency medical professional operating in ambulances and mobile medical units. Works hands-on at the patient's side, frequently while the vehicle is moving and in noisy, low-light, vibrating, time-pressured and uncontrolled environments. Often the sole or lead caregiver, managing multiple urgent tasks at once with gloved hands and divided attention; needs glanceable information and minimal device interaction. Competent with portable monitors but not a software or device specialist; relies on the device being ready in seconds and on unambiguous alarms. |
-| Emergency physician | Hospital acute-care clinician | Highly trained, licensed physician working in the emergency room and resuscitation bays. Makes rapid differential-diagnosis and treatment decisions on unstable patients, often supervising a team and integrating monitoring data with clinical examination. High clinical-reasoning capability; values transparent diagnostic support (basis, confidence, limitations) to calibrate trust and apply independent judgement. Interrupt-driven, simultaneously managing several patients, limited time per patient. |
-| ICU / ER nurse | Hospital critical-care nurse | Trained, licensed nurse providing continuous bedside monitoring and care of critically ill patients in intensive care and emergency settings. The most frequent and sustained user of the monitor — sets up devices, connects sensors, responds first to alarms, and manages connection and sensor-misplacement faults. Skilled with patient-monitoring equipment and alarm management; sensitive to alarm fatigue. Works long shifts, often managing several monitored patients, and performs handover to receiving units. |
-| Clinical educator / simulation trainer | Training user | Clinical or nurse educator responsible for onboarding and maintaining the competency of clinical staff on the monitor. Uses the built-in simulation training mode to deliver realistic, hands-on practice and to assess competency without a live patient. Clinically experienced and familiar with the device's intended use, limitations, and the meaning of automated diagnostic output; needs a safe, non-clinical operating mode clearly distinguishable from live use. |
-| Biomedical / clinical engineer | Technical support user | Hospital or EMS biomedical engineering staff responsible for deployment, configuration, integration (device fleet and HIS), commissioning, and ongoing service of the monitor. Technically trained, not a primary clinical decision-maker; needs the software to deploy onto the existing portable-monitor and six-device fleet through published ICDs, to interoperate with the HIS over HL7/FHIR, and to support information-security and maintenance obligations. |
+| Paramedic / pre-hospital clinician | Pre-hospital Clinician | Trained, certified paramedic or pre-hospital emergency clinician who connects the patient and operates MMSS at the scene and in a moving ambulance. Highly competent at acquiring vital signs and stabilising patients, but typically works alone or in a small crew with no physician on hand and limited ability to consult a colleague. Operates under severe time pressure, often one-handed with attention split across driving/transport, patient handling, and the device, in moving vehicles, poor light, noise, vibration, and cramped space. Needs MMSS to be ready within seconds of power-on, glanceable, operable one-handed, to surface ranked diagnostic candidates with reasoning/confidence to compensate for the absence of expert backup, to alarm unmistakably on abnormal vital signs and sensor faults, and to share data ahead of arrival with the receiving hospital. Is the primary intended user for whom the mobile/pre-hospital usability and safety case must be demonstrated. |
+| Emergency physician | Emergency Physician | Trained, qualified physician (ER / emergency medicine, or transport/critical-care physician) who uses MMSS in the emergency room and on incoming critically ill patients, and who carries final diagnostic and treatment authority. Deep clinical knowledge; uses the AI diagnostic candidates as adjunctive decision support and is expected to critically appraise reasoning and confidence rather than defer to them, so MMSS must reinforce decision-support framing and resist automation bias. Works in a busy, interruption-rich ER, frequently managing several patients at once, and needs at-a-glance vital signs, trustworthy alarms, clear timeout signalling when no diagnosis can be produced, and smooth data exchange/handover with the hospital information system for second opinion and continuity of care. |
+| ICU / ER nurse | Critical-Care Nurse | Trained, registered critical-care or emergency nurse who provides continuous bedside monitoring in the ICU or ER, the user most often watching MMSS over extended shifts. Sets up sensors, responds first to alarms, tracks trends, and escalates to a physician. Needs distinguishable, fatigue-resistant alarms (clinically significant condition vs sensor fault), clear sensor disconnection/misplacement warnings so care is not based on false data, glanceable continuous display while attending to other tasks and patients, and reliable, available operation throughout the shift. Interprets vital signs and diagnostic information within their scope of practice but escalates diagnostic and treatment decisions; primary user for sustained-use alarm-safety and sensor-fault interactions. |
+| Clinical trainer / super-user | Clinical Trainer / Super-User | Experienced clinician (often a senior nurse, paramedic educator, or clinical specialist) designated as the local expert who trains colleagues and champions safe use of MMSS within the deploying organisation. Primary user of the risk-free simulated training mode: runs realistic scenarios to build competence before live patient use, and is responsible for ensuring trainees never confuse simulated data with a real patient. Needs unambiguous, fail-safe, persistently indicated separation between training and live clinical operation, realistic scenario behaviour, and the ability to demonstrate and explain AI candidate reasoning/confidence and correct interpretation. Because the training mode is the named risk control for the critical clinician-misinterpretation hazard, this user is central to mitigating use error across the deployed fleet. |
+| Biomedical / clinical engineer | Biomedical / Clinical Engineer | Trained biomedical or clinical engineering technician within the hospital/EMS clinical-engineering department responsible for installing, configuring, integrating, verifying, and maintaining MMSS on the host platform across the fleet. Not a clinical user during patient care; works in a calm technical or workshop setting (and occasionally at the point of care for commissioning/servicing). Connects MMSS to the six measurement-device types and to the hospital information system through their defined interface contracts, validates correct acquisition, alarming, and data exchange, applies controlled software updates, and supports troubleshooting and serviceability over the service life. Needs reliable configuration/diagnostic tooling, clear interface and fault feedback, and update procedures that fit a standards-conformant lifecycle without disrupting deployed devices. |
 
 ### User Requirements / Needs (UR_*)
 
@@ -379,121 +360,172 @@ The user expectations translated over the product context into requirements spec
 
 | ID | Description | Classification | Traces |
 |----|-------------|----------------|--------|
-| UR_01 | As a pre-hospital clinician I want MMSS to continuously acquire and display the patient's vital signs from the six connected non-invasive devices with vital-signs shown within 1 second of acquisition on a 1-second update, so that I can make rapid, safe treatment decisions at the bedside on current data. | High | IU_01, KA_04, BR_04, UE_01 |
-| UR_02 | As a pre-hospital clinician I want MMSS to be ready for monitoring within 10 seconds of being switched on and connected, so that I can begin monitoring an unstable patient without losing critical time. | High | IU_01, KA_04, BR_04, UE_10 |
-| UR_03 | As an emergency physician I want MMSS to present early, ranked diagnostic candidates alongside the raw vital signs within 1 second of receiving them from the AI engine, so that I can reach a working diagnosis faster when minutes matter. | High | IU_01, KA_01, BR_01, UE_02 |
-| UR_04 | As an emergency physician I want each diagnostic candidate to be shown with its basis, confidence/ranking, and known limitations, so that I can apply my own clinical judgement and avoid over-trusting an automated suggestion. | High | IU_01, KA_02, BR_10, UE_03 |
-| UR_05 | As an emergency physician I want MMSS to clearly notify me on screen when no diagnostic candidate can be produced within the 2-minute window, backed by the independent ALGOS audible signal, so that I fall back on standard clinical assessment without an unnoticed delay in treatment. | High | IU_01, KA_03, BR_03, UE_06 |
-| UR_06 | As an ICU / ER nurse I want MMSS to unambiguously alarm me when a sensor is misplaced, disconnected, or producing unreliable readings — raising a connection alarm after 5 seconds of inactivity and surfacing device-reported misplacement and unreliable-reading flags — so that I never act on incorrect or missing patient data. | High | IU_01, KA_05, BR_04, UE_04 |
-| UR_07 | As an ICU / ER nurse I want MMSS alarms to be prioritised and conformant to IEC 60601-1-8 so that genuinely critical conditions are clearly distinguished from minor or transient ones, so that I can respond decisively without being desensitised by alarm fatigue. | High | IU_01, KA_05, BR_03, UE_05 |
-| UR_08 | As a pre-hospital clinician I want MMSS to present vital signs, alarms, and diagnostic output glanceably and with minimal interaction in a moving, noisy, low-light, or chaotic setting, so that I can keep my attention on the patient rather than on the device. | High | IU_01, KA_09, BR_10, UE_07 |
-| UR_09 | As an ICU / ER nurse I want MMSS to make perceptible (audible and visual) alarms that are noticed even when my attention is on the patient rather than the display, so that critical conditions and equipment faults are never silently lost. | High | IU_01, KA_05, BR_03, UE_05, UE_04 |
-| UR_10 | As an emergency physician I want MMSS to share the relevant patient data and ranked diagnostic candidates with the receiving hospital information system over a standard protocol (HL7/FHIR) within 1 second, so that continuity of care and a timely second opinion are preserved at handover. | Medium | IU_01, KA_06, BR_11, UE_09 |
-| UR_11 | As an ICU / ER nurse I want the HIS data-sharing function to be isolated from the acquisition and alarm path, so that unavailability of the hospital information system can never degrade live monitoring or alarming of my patient. | Medium | IU_01, KA_06, BR_11, UE_01 |
-| UR_12 | As a clinical educator / simulation trainer I want MMSS to provide a built-in simulation training mode with competency-based onboarding that is clearly distinguishable from live clinical use, so that clinicians become competent and stay confident through realistic hands-on practice without risk to a real patient. | High | IU_01, KA_09, BR_10, UE_08 |
-| UR_13 | As an emergency physician I want MMSS to convey, through its labelling and on-screen presentation, that the diagnostic output is decision support that I must interpret and that the software does not make, confirm, or override a diagnosis, so that I retain clinical responsibility and do not over-rely on automation. | High | IU_01, KA_02, BR_10, UE_03 |
-| UR_14 | As a biomedical / clinical engineer I want MMSS to deploy onto the existing portable-monitor and six-device measurement fleet through the published device ICDs without requiring replacement of compatible hardware, so that the buyer's prior investment is protected and no proprietary lock-in is introduced. | High | IU_01, KA_04, BR_13, ME_03 |
-| UR_15 | As a biomedical / clinical engineer I want MMSS to protect patient and diagnostic data in storage and transit and support the buyer's information-security and privacy review, so that the solution can be commissioned and operated in compliance with data-protection obligations. | High | IU_01, KA_06, BR_14, ME_09 |
-| UR_16 | As a pre-hospital clinician I want MMSS to alert me to sensor misplacement, disconnection, or unreliable readings without my having to inspect the display — so that, as the sole caregiver in a moving vehicle with no one to cross-check, I never silently treat on incorrect or missing data. | High | IU_01, KA_05, BR_04, UE_04 |
+| UR_01 | As a Pre-hospital Clinician I want MMSS to present, within 1 second of acquisition, an at-a-glance real-time display of every acquired vital-sign parameter listed in the Acquired Parameters / Signals table (Context) refreshed at least once per second and showing each value with its unit and clearly flagged as out-of-range when abnormal, so that I can read the patient's true current condition correctly at a glance without searching, mental conversion, or delay. | High; Safety-critical (Class B) | IU_01, BR_18, BR_16 |
+| UR_02 | As a Pre-hospital Clinician I want MMSS to become ready for clinical use within 10 seconds of switching on, so that I can start caring for the patient at the scene without waiting through a slow start-up. | High; Availability | IU_01, BR_16 |
+| UR_03 | As a Critical-Care Nurse I want MMSS to remain reliably available and continue presenting vital signs throughout an extended shift of continuous monitoring, so that the monitor is not unavailable at the point of care when I am attending to other patients and tasks. | High; Availability | IU_01, BR_16 |
+| UR_04 | As an Emergency Physician I want MMSS to present, within 1 second of receipt from the external diagnostic AI capability, ranked real-time diagnostic candidates (the diagnostic-candidates parameter in the Acquired Parameters / Signals table) alongside the raw vital signs, so that I can reach a working diagnosis faster, including when no colleague is available to consult. | High; Differentiator | IU_01, BR_19, BR_18 |
+| UR_05 | As an Emergency Physician I want each diagnostic candidate presented with its confidence and its supporting reasoning — including which of the patient's vital signs drove it — in a form absorbable at a glance under time pressure yet available in more detail when I choose to look, so that I can judge whether the suggestion fits the patient in front of me, keep my clinical judgement in control, and recognise when a candidate rests on a parameter I already distrust. | High; Safety-critical / Liability | IU_01, BR_05 |
+| UR_06 | As an Emergency Physician I want MMSS to frame and label the diagnostic output unambiguously as decision support that informs rather than replaces me, and to never prevent me from acting on my own judgement ahead of or against a suggestion, so that final diagnostic and treatment authority remains with me and automation bias is mitigated. | High; Safety-critical / Liability | IU_01, BR_05 |
+| UR_07 | As a Pre-hospital Clinician I want MMSS to clearly and promptly signal to me when a diagnostic result cannot be produced within the expected convergence time — through a positive, perceptible indication independent of the diagnostic path that has failed, rather than leaving the candidate area simply blank — so that I know not to keep waiting and can fall back on my own assessment without delaying care. | High; Safety-critical (Class B) | IU_01, BR_05, BR_18 |
+| UR_08 | As a Critical-Care Nurse I want MMSS to raise, within 1 second of detection, an immediate, unmistakable, and distinguishable alarm identifying which acquired vital-sign parameter (per the Acquired Parameters / Signals table) is abnormal and how urgent it is, perceptible in noisy and mobile conditions and remaining active until the condition resolves or I acknowledge it, so that I can intervene before the patient deteriorates and a clinically significant alarm is never missed because I was attending to another patient. | High; Safety-critical (Class B) | IU_01, BR_18, BR_04 |
+| UR_09 | As a Critical-Care Nurse I want MMSS alarms to conform to recognised alarm-safety practice and to be distinguishable from sensor-fault warnings without causing alarm fatigue, so that clinically significant conditions are signalled correctly over sustained use and are never mistaken for a technical fault or vice versa. | High; Safety-critical / Regulatory | IU_01, BR_04 |
+| UR_10 | As a Critical-Care Nurse I want MMSS to detect and clearly warn me, within 1 second, when any measurement device in the Acquired Parameters / Signals table is disconnected, misplaced, or producing unreliable readings, and to visibly mark the affected parameter as untrustworthy rather than continue showing a stale or implausible value as if it were live, with the warning readily distinguishable from a genuine clinical alarm, so that I do not act on false or missing data or mistake a sensor fault for real patient deterioration. | High; Safety-critical (Class B) | IU_01, BR_04 |
+| UR_11 | As a Pre-hospital Clinician I want MMSS to be operable one-handed and to stay glanceable and legible in movement, poor light, noise, and vibration, so that I can keep working safely when conditions in the ambulance or at the scene are far from ideal. | High; Safety-critical / Usability | IU_01, BR_04, BR_12 |
+| UR_12 | As a Clinical Trainer / Super-User I want MMSS to provide a realistic, risk-free simulated training mode in which I can run scenarios and demonstrate AI candidate reasoning, confidence, and correct interpretation, so that clinicians build competence before using the device on a real patient. | High; Safety-critical (named risk control) | IU_01, BR_12 |
+| UR_13 | As a Clinical Trainer / Super-User I want MMSS to enforce fail-safe separation between training and live clinical operation, with a persistent, glanceable indication of which mode is active at all times, so that simulated data can never be mistaken for a real patient and a clinician returning to a device cannot unknowingly treat a live patient in training mode. | High; Safety-critical (Class B) | IU_01, BR_12 |
+| UR_14 | As an Emergency Physician I want MMSS to exchange the patient's vital-sign data and diagnostic findings with the hospital information system over a recognised interoperability standard, delivering diagnostic candidates within 1 second of availability, so that I can secure a second opinion and hand over care smoothly and securely. | High; Interoperability | IU_01, BR_10, BR_18 |
+| UR_15 | As an Emergency Physician I want MMSS to handle and exchange the patient's personal health data in conformance with applicable data-protection and privacy law throughout the data flow, so that patient confidentiality, integrity, and rights are protected when data is displayed or shared with the hospital. | High; Regulatory / Privacy | IU_01, BR_14, BR_10 |
+| UR_16 | As a Biomedical / Clinical Engineer I want MMSS to connect to each of the six measurement-device types and to the hospital information system strictly through their published interface contracts, and to give clear interface and fault feedback during commissioning, so that I can install, integrate, and verify correct acquisition, alarming, and data exchange across the fleet without modifying the external elements. | High; Integration | IU_01, BR_10, BR_11 |
+| UR_17 | As a Biomedical / Clinical Engineer I want MMSS to support controlled software updates that fit a standards-conformant lifecycle without disrupting deployed devices, so that I can keep the fleet safe, current, and serviceable over the product's service life. | High; Lifecycle / Maintainability | IU_01, BR_01, BR_11 |
 
 ### User DFMEA (USER_DFMEA_*)
 
 A structured analysis of how users might misuse, misinterpret, or fail to operate the product, the consequences, and the mitigations the design must include.
 
+Severity scale: **Critical** = use error can plausibly contribute to patient death or serious irreversible harm; **Serious** = can contribute to serious but recoverable harm or significant treatment delay; **Moderate** = limited or transient harm, or notable inefficiency; **Minor** = inconvenience or minor inefficiency with no clinical harm.
+
 | ID | Item/Function | Requirement | Failure Mode | End-effect | Rationale | Failure Cause | Severity | Prevention | Classification | Traces |
 |----|---------------|-------------|--------------|------------|-----------|---------------|----------|------------|----------------|--------|
-| USER_DFMEA_01 | Sensor-fault alerting (misplacement / unreliable reading) | UR_06 | Clinician does not notice or acts despite a device-reported sensor-misplacement or unreliable-reading flag and treats the patient on the displayed value as if it were valid. | Treatment or escalation decision based on incorrect vital-signs data; potential wrong intervention or missed deterioration (R_04). | R_04 (Critical): misplacement not acted upon → wrong diagnosis. Misplacement detection is device-side; the user-side hazard is the alert being unnoticed or overridden. | Alert not salient enough among other on-screen information; clinician under time pressure and divided attention; trust that a displayed number must be correct (automation/display bias). | Critical | MMSS must present the misplacement/unreliable-reading flag as a prioritised, perceptible (audible + visual) alarm conforming to IEC 60601-1-8, visually distinct from a normal reading, and must not display the flagged value as a trusted vital sign without an unambiguous fault indication. | High | UR_06 |
-| USER_DFMEA_02 | Sole-caregiver fault alerting without display inspection | UR_16 | Pre-hospital clinician, as the sole caregiver in a moving vehicle, fails to detect a sensor-misplacement / disconnection because their eyes are on the patient and not on the display. | Silent treatment on incorrect or missing data with no second person to cross-check (R_04 / R_07). | R_04/R_07 (Critical): a single field clinician has no redundancy; a purely visual alert can be missed entirely. | No bystander to cross-check; visual-only signalling; vibration, noise, low light, and motion of the vehicle reduce display attention. | Critical | MMSS must raise an attention-independent audible alarm (not visual-only) for misplacement / disconnection / unreliable readings, audible above the ambient noise of a moving unit, so detection does not depend on the clinician looking at the screen. | High | UR_16 |
-| USER_DFMEA_03 | Connection-loss alarming | UR_06 | Clinician does not perceive that a sensor has disconnected and continues to treat using stale or absent vital-signs data. | Missed vital signs and undetected patient deterioration (R_07). | R_07 (Critical): connection failure not detected → missed vital signs. User-side hazard is failure to perceive the connection alarm. | Connection alarm not salient or masked by other alarms; alarm fatigue from frequent transient alerts; attention on the patient. | Critical | MMSS must raise a connection alarm after 5 s of inactivity, displayed <1 s after trigger, as a prioritised perceptible alarm, backed by the independent device-generated audible alarm so the safety signal does not rest on MMSS alone. | High | UR_06 |
-| USER_DFMEA_04 | Alarm prioritisation / alarm fatigue / silencing under load | UR_07 | Clinician ignores or becomes desensitised to alarms, or deliberately silences/pauses an alarm under load and fails to notice it stays silenced, and misses a genuinely critical condition among minor or transient alerts. | Delayed response to a critical patient condition (alarm-fatigue / latched-silence hazard). | A monitor that does not distinguish critical from minor conditions trains the user to ignore alarms; an audio-pause that silently persists removes the safety signal entirely — both defeat the alarm's purpose, and both are documented high-frequency real-world errors under workload. | Too many low-priority/transient alarms; poor priority differentiation; deliberate silence/pause with no clear, time-limited, visible reminder that audio is suspended; cognitive overload and habituation (alarm fatigue). | High | MMSS alarms must be prioritised and conformant to IEC 60601-1-8 with clearly differentiated critical vs. minor signals, suppressing or de-prioritising transient/minor events; any audio-pause/silence must be time-limited, persistently and visibly indicated while active, and must not suppress a new higher-priority alarm — so critical alarms remain distinguishable, decisive, and cannot be silently latched off. | High | UR_07 |
-| USER_DFMEA_05 | Perceptibility of alarms (audible + visual) | UR_09 | A critical or fault alarm is silently lost because it is not perceived when the clinician's attention is on the patient rather than the display. | Critical condition or equipment fault goes unnoticed and unaddressed. | A visual-only or low-perceptibility alarm can be silently missed; alarms must be noticed even with attention off the display. | Visual-only signalling; ambient noise/light; attention directed at the patient; no redundancy of alarm modality. | Critical | MMSS must make alarms perceptible through both audible and visual channels at intensities appropriate to the use environment, so that critical conditions and equipment faults cannot be silently lost. | High | UR_09 |
-| USER_DFMEA_06 | Diagnostic-candidate presentation (over-reliance) | UR_04 | Clinician over-trusts a ranked diagnostic candidate and acts on it without applying independent clinical judgement or weighing its basis/confidence/limitations. | Anchoring on an incorrect AI suggestion leading to wrong or delayed diagnosis (R_05). | R_05 (Critical): clinician misinterpretation/over-reliance on AI candidates is the primary use-error hazard for the diagnostic function. | Automation bias / over-trust; basis, confidence, and limitations not noticed or not understood; time pressure shortcuts independent reasoning. | Critical | MMSS must render each candidate together with its basis, confidence/ranking, and known limitations so trust is calibrated to the evidence; presentation must not imply certainty or a confirmed diagnosis. | High | UR_04 |
-| USER_DFMEA_07 | Decision-support framing / labelling | UR_13 | Clinician treats the AI output as a confirmed diagnosis the device has made, rather than as decision support they must interpret. | Clinician cedes clinical responsibility to automation; wrong action taken on an unconfirmed suggestion (R_05). | R_05 (Critical): misframing the device's role drives over-reliance; the device must never appear to make or confirm a diagnosis. | Output presented in language/format implying a decision; insufficient labelling/IFU; mental model that the device "diagnoses". | Critical | Labelling, IFU, and on-screen presentation must convey that the output is decision support the user interprets and that MMSS does not make, confirm, or override a diagnosis; competency-based training reinforces this framing. | High | UR_13 |
-| USER_DFMEA_08 | Diagnostic-timeout notification | UR_05 | Clinician waits for a diagnostic candidate that will not arrive because the on-screen timeout notification is not noticed, delaying fallback to standard assessment. | Treatment delay while the clinician expects automated support (R_06). | R_06 (Critical): timeout not communicated → delay of treatment. User-side hazard is the timeout cue being missed. | Notification not salient; clinician's mental model assumes a result is imminent; no audible backstop perceived. | Critical | MMSS must show an explicit on-screen timeout notification when no candidate is produced within the 2-minute window, backed by the independent ALGOS audible timeout signal, so the clinician falls back to standard assessment without an unnoticed delay. | High | UR_05 |
-| USER_DFMEA_09 | Glanceable, low-interaction operation under stress | UR_08 | Clinician misreads or cannot extract the needed vital sign / alarm / diagnostic state at a glance, or makes an input error, in a moving, noisy, low-light, chaotic setting. | Slowed or incorrect decision; attention diverted from the patient to the device; potential use error. | A dense or high-interaction UI in a hostile environment induces misreading and slips, undermining safe operation (IEC 62366-1 foreseeable use). | High cognitive/interaction load; small or low-contrast display elements; vibration, low light, gloved hands, divided attention. | High | MMSS must present vital signs, alarms, and diagnostic output glanceably with minimal interaction, using high-contrast, legible, robustly laid-out elements validated for the moving/noisy/low-light use environment under IEC 62366-1. | High | UR_08 |
-| USER_DFMEA_10 | Simulation vs. live-mode distinction | UR_12 | User confuses simulation training mode with live clinical use — either treating a real patient while in simulation, or dismissing real alarms believing the device is in training. | Real patient monitored/alarmed by a non-clinical mode, or live alarms ignored as simulated (use-error hazard). | If training and live modes are not unmistakably distinct, mode confusion can cause monitoring or alarms to be disregarded on a real patient. | Insufficiently distinct mode indication; mode persists unexpectedly; educator/clinician mental-model error about current mode. | High | MMSS must make simulation mode persistently and unmistakably distinguishable from live clinical use, with a clear, always-visible mode indicator and safeguards preventing simulation mode from being mistaken for live monitoring. | High | UR_12 |
-| USER_DFMEA_11 | System readiness before monitoring | UR_02 | Clinician begins relying on MMSS to monitor an unstable patient before it is actually ready/acquiring, assuming readiness. | A window of unmonitored patient time with no vital signs or alarms while the clinician believes monitoring is active. | If readiness is not clearly indicated, the clinician may assume monitoring has started when it has not, leaving the patient unmonitored. | Absence of a clear ready/acquiring indication; expectation of instant readiness; time pressure with an unstable patient. | High | MMSS must be ready within 10 s of switch-on/connection and present an unambiguous indication of monitoring/acquisition state, so the clinician does not assume active monitoring before it has begun. | High | UR_02 |
-| USER_DFMEA_12 | Acting on stale or not-yet-updated data | UR_01 | Clinician reads a vital-signs value as current when it is stale or not yet updated, and decides on out-of-date data. | Decision made on data no longer reflecting the patient's state. | Continuous, low-latency, clearly-current display is the basis for safe bedside decisions; a stale value mistaken for current is a use-error hazard. | No clear data-freshness/timestamp cue; update cadence not apparent; assumption that the displayed value is always live. | High | MMSS must display vital signs within 1 s of acquisition on a 1-second update and convey data freshness (and clearly indicate when a value is stale or absent) so the clinician does not act on out-of-date data. | High | UR_01 |
-| USER_DFMEA_13 | Patient identity at handover / HIS sharing | UR_10 | Clinician shares vital-signs and ranked diagnostic data to the receiving HIS under the wrong patient's identity, or, during a rushed multi-patient handover, acts on or hands over data they believe belongs to one patient but which is in fact another's. | Data attributed to or acted on for the wrong patient; wrong intervention, contaminated downstream record, and a misdirected second opinion. | Wrong-patient association is one of the most frequent and highest-consequence use errors in busy ICU/ER and pre-hospital handover; the device shares diagnostic data outward (UR_10) into a setting where several patients are managed at once and identity must be unambiguous to keep the share and the handover safe. | Multiple monitored patients managed at once; no clear patient-identity confirmation before sharing; handover under time pressure and interruption; mental-model error about which patient is currently displayed. | Critical | MMSS must make the currently monitored/displayed patient identity unambiguous on screen and require/confirm the correct patient association before patient and diagnostic data are shared to the HIS, so data cannot be silently attributed to or acted on for the wrong patient at handover. | High | UR_10 |
+| USER_DFMEA_01 | Vital-signs display (at-a-glance reading of acquired parameters) | MMSS shall present, within 1 s of acquisition, an at-a-glance display of every acquired vital-sign parameter (Acquired Parameters / Signals table) with unit and out-of-range flag (UR_01). | Clinician reads a vital sign and misses or misreads an abnormal value (e.g. SpO2, HR, EtCO2 from the Acquired Parameters / Signals table), failing to recognise deterioration. | Abnormal condition not acted on; patient deteriorates before intervention. | The display is the clinician's primary window onto the patient's true state; a misread or overlooked abnormal value drives a missed or delayed life-saving intervention. | Small/dense numerals, no per-parameter unit, weak out-of-range distinction, glanceable read in poor light/movement, attention split across patients. | Critical | High-contrast glanceable layout with consistent placement; each value shown with its unit; abnormal values made visually unmistakable (colour + shape/icon, not colour alone) and reinforced by the parameter alarm (UR_08); 1 s refresh so values are never stale; summative usability validation in mobile conditions. | High; Safety-critical (Class B) | UR_01 |
+| USER_DFMEA_02 | Vital-signs display (start-up readiness) | MMSS shall become ready for clinical use within 10 s of switch-on (UR_02). | Clinician begins reading and acting on the display before all parameters are actually live, treating not-yet-acquired channels as if confirmed. | Decision made on incomplete data; a yet-to-appear abnormal value is missed. | During the start-up window the clinician under time pressure may assume a blank or zero channel is "normal" rather than "not yet acquired". | No explicit "acquiring / not ready" state per channel; absence of a value read as a normal value; pressure to act within seconds. | Serious | Persistent per-channel acquisition state (acquiring / live / no-data) that is visually distinct from a real measured value; clear "ready" indication when activation completes; never render an unacquired channel as a plausible normal number. | High; Availability | UR_02 |
+| USER_DFMEA_03 | Diagnostic decision support (AI candidate presentation) | MMSS shall present ranked real-time diagnostic candidates alongside the raw vital signs within 1 s of receipt (UR_04). | Clinician over-trusts the top-ranked AI candidate and adopts it as the diagnosis without independent appraisal (automation bias). | Wrong working diagnosis pursued; correct condition missed or delayed; potential serious patient harm. | R_05: clinician misinterpretation of AI candidates is a critical hazard; automation bias is the dominant human-factors driver of acting on a wrong AI suggestion. | Ranking presented as authority; high apparent confidence; time pressure; fatigue; reasoning/confidence not absorbed; trust built up over prior correct suggestions. | Critical | Present candidates as ranked *suggestions* with confidence and supporting reasoning at a glance (UR_05); unambiguous decision-support framing/labelling that informs rather than replaces (UR_06); never gate or pre-select treatment on a candidate; mandatory simulation training mode covering automation bias (UR_12). | High; Safety-critical / Liability | UR_04, UR_05, UR_06 |
+| USER_DFMEA_04 | Diagnostic decision support (confidence & reasoning) | MMSS shall present each candidate with confidence and supporting reasoning, including which vital signs drove it, absorbable at a glance (UR_05). | Clinician misinterprets the confidence score or the ranking — reads a low-confidence or low-ranked candidate as a firm finding, or dismisses a clinically relevant lower-ranked candidate. | Misdirected or prematurely narrowed diagnostic reasoning; appropriate differential not considered; a treatable time-critical condition (e.g. a low-ranked but life-threatening differential) acted on too late. | Confidence and rank are easily misread under pressure; a number without clear framing invites over- or under-weighting, escalating the R_05 misinterpretation hazard; dismissing a low-ranked but lethal differential can be as harmful as over-trusting the top candidate. | Confidence shown as a bare percentage without interpretive framing; ranking implies certainty; reasoning/driving parameters not visible at a glance; no training on reading confidence. | Serious | Express confidence with clear, consistent interpretive framing (not a bare number alone); show the driving vital-sign parameters so the clinician can see whether a candidate rests on a parameter they distrust; expandable detail on demand; cover confidence/ranking interpretation explicitly in the training mode (UR_12). | High; Safety-critical / Liability | UR_05, UR_06 |
+| USER_DFMEA_05 | Sensor-fault detection (acting on faulty/misplaced sensor data) | MMSS shall detect and clearly warn, within 1 s, when any measurement device is disconnected, misplaced, or unreliable, and mark the affected parameter as untrustworthy (UR_10). | Clinician acts on a value from a misplaced or faulty sensor, trusting it as a true reading. | Decision made on false data — e.g. a falsely reassuring SpO2 or BP — leading to a wrong diagnosis or missed deterioration. | R_04 (sensor misplacement) is a critical hazard: a silently-trusted wrong reading can drive a wrong diagnosis or mask a real deterioration. | Misplacement not detected/reported by the device at the interface; affected parameter still shown as a plausible live value; fault warning not noticed or not distinguishable; clinician unaware the channel is suspect. | Critical | Reliance on device-side misplacement/fault signalling at the interface plus disconnection inference from input inactivity; affected parameter visibly marked untrustworthy (not shown as a normal live value); distinct sensor-fault warning readily distinguishable from a clinical alarm (UR_09); device-side independent audible alarms as safeguard. | High; Safety-critical (Class B) | UR_10, UR_09 |
+| USER_DFMEA_06 | Sensor-fault detection (stale value mistaken for live) | MMSS shall mark the affected parameter as untrustworthy rather than continue showing a stale or implausible value as if live (UR_10). | Clinician reads a frozen/stale parameter value as the patient's current reading after a sensor has silently failed. | Care based on out-of-date data; a real change in the patient's condition goes unnoticed. | A stale value indistinguishable from a live one is more dangerous than a blank, because it positively misleads. | Last-good value retained on screen with no staleness/no-data indication; disconnection not yet detected; clinician assumes continuously updating display. | Serious | On loss of input over the short inactivity window, replace the value with an explicit no-data/untrustworthy state; never persist a stale value as if live; timestamp or freshness cue; couple with the connection/disconnection warning. | High; Safety-critical (Class B) | UR_10 |
+| USER_DFMEA_07 | Vital-sign alarm (missed alarm in noisy/mobile setting) | MMSS shall raise within 1 s an unmistakable, distinguishable alarm identifying the abnormal parameter and urgency, perceptible in noisy/mobile conditions and active until resolved or acknowledged (UR_08). | Clinician misses a vital-sign alarm in a noisy, moving, multi-patient environment. | Clinically significant deterioration not acted on in time; patient harm. | A missed alarm defeats the core safety function; the pre-hospital/ER environment (noise, vibration, attention split) is exactly where alarms are most likely to be missed. | Insufficient loudness/contrast for the environment; non-latching alarm self-clears before notice; alarm not distinguishable from background; alarm fatigue desensitisation. | Critical | Multi-modal, conspicuous alarms (audible + visual) tuned for noisy/mobile use and conforming to alarm-safety practice (UR_09); latching until resolved or explicitly acknowledged; distinct urgency encoding; alarm-fatigue mitigation through prioritisation; device-side independent audible alarms as safeguard. | High; Safety-critical (Class B) | UR_08, UR_09 |
+| USER_DFMEA_08 | Vital-sign alarm vs sensor-fault warning (confusion) | MMSS alarms shall be distinguishable from sensor-fault warnings without alarm fatigue (UR_09). | Clinician confuses a sensor-fault warning with a genuine clinical alarm (or vice versa) and responds inappropriately. | Real deterioration treated as a "false alarm" and ignored, or a technical fault triggers unnecessary clinical intervention. | Mistaking a fault for deterioration (or the reverse) is an explicit alarm-safety hazard (R_06/R_07 family) that leads directly to wrong or omitted action. | Clinical alarm and fault warning share similar tone/colour/wording; high alarm load erodes discrimination; ambiguous labelling of which condition is signalled. | Serious | Clearly differentiated alarm vs technical-fault signalling (distinct tone, colour, icon, and text per IEC 60601-1-8 class practice); explicit statement of which parameter/device and what kind of condition; consistent encoding reinforced in training (UR_12). | High; Safety-critical / Regulatory | UR_09, UR_10 |
+| USER_DFMEA_09 | Diagnosis-timeout signalling (not noticing no result) | MMSS shall clearly and promptly signal when a diagnostic result cannot be produced in the expected convergence time, via a positive perceptible indication independent of the failed path, not a blank area (UR_07). | Clinician does not notice that no diagnosis was produced and keeps waiting for a result that will not arrive. | Treatment delayed while the clinician waits instead of falling back on their own assessment. | R_06: diagnosis timeout not communicated is a critical hazard; a blank candidate area is read as "still computing" rather than "no result". | Empty candidate area indistinguishable from "in progress"; timeout cue absent or too subtle; reliance on the same path that failed to converge. | Serious | Positive, perceptible timeout indication delivered independently of the diagnostic path (UR_07), reinforced by the external capability's own independent audible timeout notification; explicit "no diagnosis available — proceed on your own assessment" message; never leave the area silently blank. | High; Safety-critical (Class B) | UR_07 |
+| USER_DFMEA_10 | Training/live mode separation (live patient in training mode) | MMSS shall enforce fail-safe separation between training and live operation with a persistent glanceable indication of the active mode (UR_13). | Clinician unknowingly operates MMSS on a live patient while it is still in simulated training mode (or treats simulated data as a real patient). | Simulated data acted on as real, or a real patient monitored by a non-clinical simulation — directly endangering the patient. | A training scenario mistaken for a real patient is itself a critical hazard and the named risk control (training mode) becomes a hazard source if mode is ambiguous. | Mode indication absent, subtle, or not persistent; device left in training mode by a previous user; no fail-safe default to live; glanceable cue missed in poor light. | Critical | Persistent, unmistakable, always-visible mode indicator (distinct colour/banner) that cannot be dismissed; fail-safe behaviour on return/restart; explicit confirmation when entering/leaving training mode; clear watermarking of simulated data; covered as a safety task in training (UR_12). | High; Safety-critical (Class B) | UR_13, UR_12 |
+| USER_DFMEA_11 | Decision-support authority (over-reliance / loss of control) | MMSS shall frame the diagnostic output as decision support that informs rather than replaces the clinician and never prevent the clinician from acting on their own judgement (UR_06). | Clinician defers final diagnostic/treatment authority to MMSS, withholding or delaying their own action pending or against the AI output. | Clinician's superior contextual judgement is not applied; correct action delayed or not taken; liability firewall undermined. | Clinician-in-control is the central liability and safety control; if the workflow nudges the clinician to defer, the device drifts toward an unsafe autonomous role. | Output presented authoritatively; workflow appears to require the AI result before proceeding; no clear affordance to override or act independently. | Serious | Design the workflow so the clinician can always act ahead of or against a suggestion; explicit decision-support framing and labelling (UR_06); no hard dependency on an AI result to deliver care; reinforce clinician authority in training (UR_12). | High; Safety-critical / Liability | UR_06, UR_05 |
+| USER_DFMEA_12 | One-handed glanceable operation (use error in adverse conditions) | MMSS shall be operable one-handed and stay glanceable and legible in movement, poor light, noise, and vibration (UR_11). | Clinician makes a slip or selection error (e.g. wrong control, mis-acknowledged alarm) while operating one-handed in a moving vehicle. | Unintended action — e.g. an alarm silenced or a setting changed inadvertently — degrading monitoring safety. | Pre-hospital/mobile use is a defining environment; controls not designed for adverse conditions invite use errors that can suppress safety functions. | Small/closely-spaced targets; controls needing two hands or precise input; legibility lost in poor light/vibration; no confirmation on safety-significant actions. | Serious | Large, well-spaced, one-handed-operable controls; confirmation or guarding on safety-significant actions (e.g. alarm-off); high legibility under movement and poor light; formative and summative usability evaluation in the mobile environment. | High; Safety-critical / Usability | UR_11, UR_08 |
+| USER_DFMEA_13 | Continuous availability (assuming live monitoring during a gap) | MMSS shall remain reliably available and continue presenting vital signs throughout an extended shift (UR_03). | Nurse assumes continuous monitoring is active and unattended during a display freeze, restart, or availability gap. | A deterioration occurring during the gap is not detected while the clinician believes the patient is being monitored; an unattended patient can arrest unobserved. | A silent availability gap on an unattended critical patient gives a false sense of safety and removes the very surveillance the patient depends on — realistically capable of contributing to an unwitnessed deterioration or arrest, so rated Critical. | Display freeze or restart not signalled; no heartbeat/health indication; clinician attending other patients trusts the monitor is live. | Critical | Continuous self-monitoring with an explicit, perceptible alert on any monitoring interruption or restart; visible system-health/heartbeat indication; never present a frozen screen as if live; device-side independent alarms as safeguard. | High; Availability | UR_03 |
+| USER_DFMEA_14 | Data sharing / handover (wrong or incomplete transfer) | MMSS shall exchange vital-sign data and diagnostic findings with the HIS over a recognised standard, delivering candidates within 1 s of availability (UR_14). | Clinician believes data/findings were shared with the receiving hospital when the exchange failed, was partial, or went to the wrong record. | Receiving team acts without (or on incomplete/mismatched) information; second opinion and handover compromised. | Handover is a known high-risk transition; a silent transfer failure leaves both ends with a false belief that information is in hand. | No confirmation of successful transfer; partial transfer not flagged; ambiguous patient/record association; connectivity failure (R_03) unsurfaced. | Serious | Explicit success/failure confirmation of the exchange; clear flag on partial or failed transfer with retry; unambiguous patient-record association; secure, standards-based exchange handled per data-protection requirements (UR_15). | High; Interoperability | UR_14, UR_15 |
+| USER_DFMEA_15 | Patient-data privacy (unintended disclosure during use) | MMSS shall handle and exchange personal health data in conformance with data-protection law throughout the data flow (UR_15). | Clinician inadvertently exposes or mis-shares patient data (e.g. shares to an unintended recipient, leaves identifiable data visible). | Breach of patient confidentiality; regulatory and liability exposure independent of clinical safety. | Data-protection non-conformance carries standalone regulatory/financial liability; use error is a common breach pathway. | Sharing targets not clearly confirmed; identifiable data persistently displayed; no safeguards on the exchange/recipient selection. | Moderate | Confirm recipient/target before exchange; minimise and protect identifiable data on display; secure-by-default exchange with access controls per UR_15; cover privacy-safe handling in training. | High; Regulatory / Privacy | UR_15, UR_14 |
+| USER_DFMEA_16 | Commissioning / integration (mis-configured device mapping) | MMSS shall connect to each device type and the HIS through their published interface contracts and give clear interface and fault feedback during commissioning (UR_16). | Biomedical engineer mis-maps or mis-configures a device channel during commissioning (e.g. a parameter routed to the wrong display field) and it goes unnoticed. | A parameter is displayed/alarmed against the wrong channel in clinical use, propagating to wrong clinical decisions. | A configuration error made once at commissioning silently affects every subsequent patient until detected. | Unclear commissioning feedback; no verification step confirming each channel maps to the correct device/parameter; ambiguous interface status. | Serious | Clear per-channel interface and fault feedback during commissioning; a guided verification/confirmation step that each parameter maps to the correct device before clinical release; unambiguous interface status indicators. | High; Integration | UR_16 |
+| USER_DFMEA_17 | Software update (update applied to a deployed in-use device) | MMSS shall support controlled software updates that fit a standards-conformant lifecycle without disrupting deployed devices (UR_17). | Engineer applies an update to a device that is (or is about to be) in clinical use, or returns it to service without confirming monitoring is restored. | Monitoring unavailable during patient care, or device returned to service in an unverified state. | An update that disrupts an in-use safety-critical monitor, or an unverified return-to-service, directly removes monitoring from a patient. | No safeguard against updating an in-use device; no post-update verification/confirmation before return to service; unclear device-state visibility to the engineer. | Serious | Update workflow that prevents/guards updating a device in active clinical use; required post-update verification of correct operation before return to service; clear device-state visibility; controlled, standards-conformant lifecycle procedure. | High; Lifecycle / Maintainability | UR_17 |
+| USER_DFMEA_18 | Diagnostic decision support (anchoring on an early candidate) | MMSS shall present ranked real-time diagnostic candidates that converge over time as evidence accumulates (UR_04), each with confidence and reasoning (UR_05). | Clinician anchors on the first diagnostic candidate shown early in the encounter and stops re-appraising as the candidate list updates, converges, or is revised by later data. | Premature diagnostic closure: the working diagnosis is fixed on an early, low-evidence candidate; a condition the AI later up-ranks (or that the clinician's own assessment would catch) is pursued late or missed. | Anchoring and premature closure are among the best-documented diagnostic errors in emergency and critical care; an early ranked suggestion shown before convergence is a powerful anchor, and a clinician who has mentally committed rarely revisits as the list changes. | Early, still-converging candidates not visibly distinguished from a settled result; ranking changes not made salient; no cue that the list has materially revised since the clinician last looked; time pressure rewards early commitment; reasoning/driving parameters not re-checked. | Critical | Visibly distinguish a still-converging/provisional list from a settled one and signal materially changed ranking so a revision is noticed rather than missed; show the driving vital-sign parameters and confidence so a candidate can be re-appraised against current data (UR_05); decision-support framing that invites continued differential thinking rather than early closure (UR_06); explicitly cover anchoring and premature closure in the training mode (UR_12). | High; Safety-critical / Liability | UR_04, UR_05, UR_06 |
+| USER_DFMEA_19 | Vital-sign alarm (deliberate silence during resuscitation not restored) | MMSS shall raise distinguishable alarms active until resolved or acknowledged (UR_08) and conform to alarm-safety practice without alarm fatigue (UR_09). | Clinician deliberately silences or suspends alarms during a busy, noisy resuscitation to reduce distraction and then does not re-enable them, leaving the patient effectively unmonitored afterward. | Subsequent deterioration goes unalarmed because the safety function was intentionally suppressed and never restored; harm occurs in a window the team believes is covered. | Audio-off / alarm-suspend during a code is normal, justified clinical behaviour, but failing to restore it is one of the most frequently reported real alarm-safety incidents; a permanent or forgotten silence is far more dangerous than a missed individual alarm. | Silence/suspend has no automatic time limit or auto-reactivation; no persistent, conspicuous reminder that alarms are currently off; the suppressed state is not glanceable amid the resus; no handover prompt that alarms remain disabled. | Critical | Time-limited alarm suspend that auto-restores after a bounded interval rather than indefinite silence; a persistent, conspicuous, glanceable indication whenever alarms are suspended that cannot be lost amid activity; escalating reminder as the suspend window expires; conform to IEC 60601-1-8 audio-pause practice (UR_09); device-side independent audible alarms as a safeguard; cover safe alarm-suspend/restore in training (UR_12). | High; Safety-critical (Class B) | UR_08, UR_09 |
+| USER_DFMEA_20 | Handover / shift change (working state not carried across) | MMSS shall present and exchange vital-sign data and diagnostic findings to support second opinion and handover (UR_14), and persistently indicate trustworthiness and alarm/mode state (UR_03, UR_09, UR_10). | At shift change or patient transfer the oncoming clinician does not pick up the current working diagnosis, which channels are flagged untrustworthy, or that alarms/limits were adjusted or suspended, because that state is not surfaced at handover. | Care continues on stale assumptions: a suspect channel is trusted again, an adjusted/suspended alarm is not noticed, or the prior reasoning is lost — leading to a wrong decision or a missed deterioration after handover. | Clinical handover is a recognised high-risk transition where most information loss and downstream error originates; a monitor that holds critical state silently (suspect channels, modified alarm limits, suspended alarms, current candidates) lets that state fall through the gap between two clinicians. | Current trust/alarm/mode state not glanceable to an arriving clinician; modified alarm limits or suspended alarms not flagged on screen; working diagnostic state not summarisable for handover; reliance on verbal handover alone. | Serious | Make the safety-relevant working state persistently glanceable to any clinician arriving at the device — which channels are flagged untrustworthy (UR_10), whether alarms/limits are modified or suspended (UR_09), and the current candidate state; support a concise handover summary/exchange to the receiving clinician or HIS (UR_14); cover structured handover with the device in training (UR_12). | High; Safety-critical (Class B) | UR_14, UR_03, UR_09, UR_10 |
 
 ### Use Scenarios
 
 Concrete narratives of how the product is used in the real world, walking from a triggering situation to a successful outcome. Each scenario contains use tasks (UT_*).
 
-#### Scenario 1 — Pre-hospital pickup of an unstable patient in a moving ambulance
+#### Scenario 1 — Pre-hospital patient pickup and connection in an ambulance
 
-A paramedic responds to a collapsed, hypotensive patient. Alone in the back of a moving, noisy, vibrating ambulance, the paramedic must connect the patient to the portable monitor, get monitoring running within seconds, and keep eyes on the patient while MMSS tracks vitals and surfaces early diagnostic support during transport to the receiving hospital.
-
-| ID | Use Task | Task Description | Traces |
-|----|----------|------------------|--------|
-| UT_01 | Power on and confirm readiness | The paramedic switches on the monitor and, with the patient already deteriorating, confirms via an unambiguous "ready/acquiring" indication that MMSS is live within 10 seconds of being switched on and connected, so monitoring is relied on only once it is actually acquiring rather than assumed. | UR_02 |
-| UT_02 | Connect the non-invasive sensors | The paramedic attaches the ECG leads, pulse-oximeter probe, BP cuff, thermal probe and capnometer to the patient; MMSS begins acquiring from each connected device through its published ICD. | UR_01, UR_14 |
-| UT_03 | Read current vital signs at a glance | While managing the airway and securing the patient, the paramedic glances at the high-contrast display to read current, clearly-fresh vital signs updated each second, without stopping patient care to interact with the device. | UR_01, UR_08 |
-| UT_04 | Rely on audible fault alerting hands-free | As the sole caregiver with eyes on the patient and no one to cross-check, the paramedic relies on MMSS to raise an attention-independent audible alarm — audible over road and engine noise — if any sensor disconnects, is misplaced, or returns unreliable readings. | UR_16, UR_06, UR_09 |
-| UT_05 | Receive early diagnostic support en route | During transport, MMSS presents ranked diagnostic candidates alongside the raw vitals within 1 second of receiving them from the AI engine, with each candidate's basis, confidence and known limitations, which the paramedic notes while keeping clinical judgement his own. | UR_03, UR_04, UR_13, UR_08 |
-
-#### Scenario 2 — ICU admission and continuous bedside monitoring
-
-An ICU nurse admits a critically ill patient to a bed and sets up continuous monitoring for a long shift in which several patients are watched at once. The nurse configures the sensors, manages alarms over hours, and depends on prioritised alarming to respond to genuinely critical changes without being worn down by alarm fatigue.
+A paramedic crew reaches a collapsed patient at a roadside. Working alone in a cramped, moving ambulance with no physician on hand, the paramedic powers on MMSS, attaches the non-invasive sensors, and needs the patient's true condition and early diagnostic guidance within seconds to begin stabilising during transport.
 
 | ID | Use Task | Task Description | Traces |
 |----|----------|------------------|--------|
-| UT_06 | Set up and connect the full sensor set | The nurse connects ECG, pulse oximeter, BP, thermal probe, capnometer and EEG to the admitted patient on the existing fleet hardware; MMSS acquires and displays all channels and confirms monitoring is active. | UR_01, UR_02, UR_14 |
-| UT_20 | Confirm patient identity and configure alarm limits | Before relying on monitoring on a ward where several patients are watched at once, the nurse confirms the unambiguously displayed identity of this patient and sets patient-appropriate alarm limits, so alarms and data are unmistakably associated with the correct patient over the shift. | UR_10, UR_07 |
-| UT_07 | Establish continuous, current vitals display | The nurse verifies that vital signs update every second and are clearly current, so subsequent bedside decisions over the shift are made on live rather than stale data. | UR_01 |
-| UT_08 | Tune to prioritised alarming | Over the shift the nurse relies on IEC 60601-1-8-conformant prioritised alarms that clearly separate critical conditions from minor or transient events, so genuinely critical changes stand out and alarm fatigue is reduced. | UR_07, UR_09 |
-| UT_09 | Respond to a critical alarm | When a critical alarm fires — perceptible audibly and visually even while the nurse's attention is on another patient — the nurse identifies the affected patient and condition and intervenes promptly, with no critical alarm silently lost. | UR_07, UR_09 |
+| UT_01 | Power on and reach readiness | The paramedic switches on the host platform; MMSS starts and reaches clinical readiness within 10 seconds, showing an explicit "ready" indication and a per-channel acquisition state so the paramedic knows which channels are live versus still acquiring. | UR_02 |
+| UT_02 | Attach priority sensors and confirm acquisition | Working alone, the paramedic attaches sensors in clinical priority order — the SpO₂ probe and ECG electrodes first to capture oxygenation and rhythm, then the NIBP cuff, capnometer line, thermal probe, and EEG leads as the situation allows (the source devices in the Acquired Parameters / Signals table); MMSS marks each channel as live only once valid acquisition is confirmed and flags any not-yet-connected, still-acquiring, or unreliable channel rather than showing a plausible normal value, so the paramedic does not trust a value before its sensor is confirmed seated. | UR_01, UR_10 |
+| UT_03 | Read vital signs at a glance one-handed | While managing the patient one-handed in the moving vehicle and poor light, the paramedic glances at MMSS and reads each acquired vital-sign parameter (Acquired Parameters / Signals table) with its unit, refreshed at least once per second, with abnormal values unmistakably flagged, and cross-checks each reading against the patient's clinical appearance before relying on it. | UR_01, UR_11 |
+| UT_04 | Receive early diagnostic candidates | Having already begun stabilising on the vital signs, the paramedic receives — within seconds of stable acquisition — ranked real-time diagnostic candidates with confidence and supporting reasoning presented alongside the raw vital signs, giving the lone paramedic decision support in the absence of a colleague to consult without holding up immediate care. | UR_04, UR_05 |
+| UT_05 | Act on own judgement during transport | The paramedic appraises the candidates as adjunctive decision support, retains authority to begin and adjust treatment on their own assessment, and continues monitoring the glanceable display throughout transport. | UR_06, UR_11 |
 
-#### Scenario 3 — ER deterioration with AI diagnostic support
+#### Scenario 2 — ICU bedside continuous monitoring with an abnormal-condition alarm
 
-An emergency physician is managing an unstable patient in a resuscitation bay while supervising the team. As the patient deteriorates, the physician uses MMSS's ranked diagnostic candidates to converge faster on a working diagnosis, deliberately weighing the AI's basis and confidence against independent clinical reasoning.
-
-| ID | Use Task | Task Description | Traces |
-|----|----------|------------------|--------|
-| UT_10 | Monitor the deteriorating patient | The physician tracks the live, continuously-updated vital signs as the patient's condition changes, with critical-condition alarms presented unambiguously. | UR_01, UR_07 |
-| UT_11 | Review ranked diagnostic candidates | MMSS displays ranked diagnostic candidates alongside the vitals within 1 second of receipt, each shown with its basis, confidence/ranking and known limitations. | UR_03, UR_04 |
-| UT_12 | Calibrate trust and apply clinical judgement | The physician reads the basis, confidence and limitations of the top candidates, treats the output explicitly as decision support that MMSS does not confirm or override, and applies independent judgement to select a working diagnosis. | UR_04, UR_13 |
-| UT_13 | Handle a diagnostic timeout | When no candidate is produced within the 2-minute window, the physician notices the explicit on-screen timeout notification, backed by the independent ALGOS audible signal, and falls back to standard clinical assessment without an unnoticed delay in treatment. | UR_05 |
-
-#### Scenario 4 — Sensor misplacement event during care
-
-A nurse is monitoring a restless patient when an ECG lead is dislodged and a pulse-oximeter probe slips, producing unreliable and missing readings. MMSS must alert the nurse unambiguously so that no treatment decision is made on incorrect or absent data, and care continues once the sensors are corrected.
+A critical-care nurse is responsible for several ICU patients across an extended shift. MMSS continuously monitors one ventilated patient at the bedside while the nurse attends to others; a vital sign deteriorates and the alarm must reach the nurse reliably.
 
 | ID | Use Task | Task Description | Traces |
 |----|----------|------------------|--------|
-| UT_14 | Detect the sensor fault | A lead dislodges and a probe slips; MMSS raises a connection alarm after 5 seconds of inactivity and surfaces the device-reported misplacement and unreliable-reading flags as prioritised, perceptible audible-and-visual alarms displayed within 1 second of trigger. | UR_06, UR_09 |
-| UT_15 | Avoid acting on flagged data | The nurse recognises that the affected values are flagged as faulty rather than valid vital signs and withholds any treatment decision based on the incorrect or missing readings. | UR_06, UR_16 |
-| UT_16 | Correct the sensors and confirm recovery | The nurse repositions the dislodged lead and probe; MMSS clears the fault alarm and resumes displaying current, trustworthy vital signs, confirming monitoring is fully restored. | UR_01, UR_06 |
+| UT_06 | Maintain continuous bedside monitoring | MMSS remains reliably available throughout the shift, continuously presenting the patient's acquired vital signs (Acquired Parameters / Signals table) with a visible system-health indication so the nurse can trust that monitoring is live while attending to other patients. | UR_03 |
+| UT_07 | Detect deterioration and alarm | A vital-sign parameter crosses an abnormal threshold; within 1 second MMSS raises an immediate, unmistakable, distinguishable alarm identifying which parameter is abnormal and its urgency, perceptible across the noisy unit and latching until resolved or acknowledged. | UR_08, UR_09 |
+| UT_08 | Distinguish clinical alarm from technical fault | The nurse recognises from the alarm's tone, colour, icon, and text that this is a genuine clinical condition and not a sensor-fault warning, and responds clinically rather than dismissing it. | UR_09, UR_10 |
+| UT_09 | Verify the patient, intervene, and acknowledge | The nurse returns to the bedside, reads the flagged parameter and current candidates at a glance, confirms against the patient that the alarm reflects a true clinical change rather than motion artefact, intervenes, and acknowledges the alarm; MMSS keeps the alarm active until the condition resolves or it is explicitly acknowledged. | UR_08, UR_01 |
 
-#### Scenario 5 — HIS handover to the receiving hospital
+#### Scenario 3 — Sensor disconnection or misplacement during transport
 
-A physician completes care of a transported patient and hands over to the receiving unit. To preserve continuity of care and enable a timely second opinion, the relevant patient data and ranked diagnostic candidates are shared with the hospital information system over a standard protocol, securely and under the correct patient identity, without interrupting live monitoring.
+During a bumpy inter-facility transfer a sensor is jostled loose or misplaced. MMSS must keep the clinician from acting on false or stale data and clearly distinguish the technical fault from a real clinical alarm.
 
 | ID | Use Task | Task Description | Traces |
 |----|----------|------------------|--------|
-| UT_17 | Confirm the correct patient identity | Before sharing, the physician confirms the unambiguously displayed identity of the currently monitored patient, so data cannot be attributed to the wrong patient during a rushed multi-patient handover. | UR_10, UR_15 |
-| UT_18 | Share data and diagnostics to the HIS | The physician triggers the secure share of patient data and ranked diagnostic candidates to the receiving HIS over the standard HL7/FHIR protocol, delivered within 1 second and protected in transit. | UR_10, UR_15 |
-| UT_19 | Continue monitoring uninterrupted | Throughout and after the share, live acquisition and alarming continue unaffected, because the HIS data-sharing function is isolated from the acquisition and alarm path even if the HIS is slow or unavailable. | UR_11 |
+| UT_10 | Detect sensor disconnection or misplacement | A measurement device (from the Acquired Parameters / Signals table) becomes disconnected, misplaced, or starts producing unreliable readings; within 1 second MMSS detects the condition from device-side fault signalling and input inactivity and raises a sensor-fault warning distinguishable from a clinical alarm. | UR_10, UR_09 |
+| UT_11 | Mark the affected parameter untrustworthy | MMSS visibly marks the affected parameter as untrustworthy and replaces the value with an explicit no-data/untrustworthy state rather than continuing to show a stale or implausible value as if it were live. | UR_10 |
+| UT_12 | Re-seat the sensor and restore trust | The clinician identifies the affected channel from the warning, re-seats or repositions the sensor, and MMSS returns the channel to a live, trusted state once valid acquisition resumes. | UR_10, UR_01 |
+
+#### Scenario 4 — AI diagnostic candidate review and clinician decision in the ER
+
+An emergency physician receives a critically ill patient handed over from the ambulance. The physician uses MMSS's diagnostic candidates as decision support while retaining final authority, guarding against automation bias and premature closure.
+
+| ID | Use Task | Task Description | Traces |
+|----|----------|------------------|--------|
+| UT_13 | Review ranked candidates with reasoning | Alongside their own primary survey of the handed-over patient, the physician reviews the ranked diagnostic candidates presented within 1 second of receipt, reading each candidate's confidence and the driving vital-sign parameters at a glance, with expandable detail on demand. | UR_04, UR_05 |
+| UT_14 | Appraise against the patient | The physician judges whether each candidate fits the patient in front of them, recognising when a candidate rests on a parameter they already distrust, and keeps the wider differential open as the still-converging list updates. | UR_05, UR_06 |
+| UT_15 | Decide and retain authority | The physician forms a working diagnosis, acting ahead of or against a suggestion as their judgement dictates; MMSS frames the output as decision support that informs rather than replaces and never gates treatment on a candidate. | UR_06 |
+| UT_16 | Share findings for second opinion | The physician shares the vital-sign data and diagnostic findings with the hospital information system over the recognised interoperability standard to obtain a second opinion, with explicit confirmation of successful, secure transfer. | UR_14, UR_15 |
+
+#### Scenario 5 — Diagnosis timeout handling
+
+The patient's presentation is ambiguous and the external diagnostic capability cannot converge on candidates within the expected time. MMSS must tell the clinician clearly so they do not wait indefinitely.
+
+| ID | Use Task | Task Description | Traces |
+|----|----------|------------------|--------|
+| UT_17 | Recognise the timeout positively | When no diagnostic result can be produced within the expected convergence time, MMSS presents a positive, perceptible timeout indication delivered independently of the failed diagnostic path — never leaving the candidate area silently blank — reinforced by the external capability's own independent audible notification. | UR_07 |
+| UT_18 | Fall back on own assessment | Reading the explicit "no diagnosis available — proceed on your own assessment" indication, the clinician stops waiting and proceeds on their own clinical judgement without delaying care, while continuing to monitor the vital signs. | UR_07, UR_06 |
+
+#### Scenario 6 — Handover to the receiving hospital
+
+The ambulance arrives at the receiving hospital and care is transferred to the ED team. MMSS surfaces the working state and shares data so nothing critical falls through the gap between clinicians.
+
+| ID | Use Task | Task Description | Traces |
+|----|----------|------------------|--------|
+| UT_19 | Surface the working state for handover | At handover MMSS makes the safety-relevant working state glanceable to the arriving clinician — which channels are flagged untrustworthy, whether alarms or limits are modified or suspended, and the current diagnostic candidate state. | UR_10, UR_09, UR_03 |
+| UT_20 | Share data and findings to HIS | MMSS exchanges the patient's vital-sign data and diagnostic findings with the hospital information system over the recognised interoperability standard, delivering candidates within 1 second of availability, with explicit confirmation of a successful, complete transfer to the correct patient record. | UR_14 |
+| UT_21 | Hand over securely and privately | The clinician confirms the receiving recipient before exchange and MMSS handles the personal health data in conformance with data-protection law throughout, so confidentiality and integrity are preserved through the transfer. | UR_15, UR_14 |
+| UT_29 | Confirm continuous monitoring is taken over | Before the ambulance crew disconnects, the receiving clinician transfers the patient onto the ED's monitoring and confirms vital-sign acquisition and alarming are live there; MMSS keeps presenting the patient's vital signs and active alarm state until this handover is complete, so monitoring never lapses in the gap between the two clinicians. | UR_03, UR_08 |
+
+#### Scenario 7 — Training-mode practice session
+
+A clinical trainer runs a risk-free simulated session to build clinician competence — particularly in interpreting AI candidates and avoiding automation bias — with fail-safe separation from live clinical use.
+
+| ID | Use Task | Task Description | Traces |
+|----|----------|------------------|--------|
+| UT_22 | Enter training mode safely | The trainer enters the simulated training mode with explicit confirmation; MMSS displays a persistent, unmistakable, always-visible mode indicator and watermarks all simulated data so it can never be mistaken for a real patient. | UR_13, UR_12 |
+| UT_23 | Run a realistic scenario | The trainer runs realistic scenarios in which simulated vital signs, alarms, sensor faults, and AI candidates behave as in live use, letting clinicians practise reading the display, responding to alarms, and handling timeouts risk-free. | UR_12 |
+| UT_24 | Demonstrate AI interpretation and bias avoidance | The trainer demonstrates AI candidate reasoning and confidence and correct interpretation, explicitly coaching against automation bias, anchoring, and premature closure so clinicians keep their judgement in control. | UR_12, UR_05 |
+| UT_25 | Exit to live with fail-safe separation | The trainer exits training mode with explicit confirmation; MMSS enforces fail-safe separation and defaults to live operation on return or restart, so a clinician arriving at the device cannot unknowingly treat a live patient in training mode. | UR_13 |
+
+#### Scenario 8 — Commissioning and lifecycle update by clinical engineering
+
+A biomedical engineer installs and verifies MMSS on the host platform across the fleet and, later, applies a controlled software update without disrupting devices in clinical use.
+
+| ID | Use Task | Task Description | Traces |
+|----|----------|------------------|--------|
+| UT_26 | Connect and verify device interfaces | The engineer connects MMSS to each of the six measurement-device types and to the hospital information system strictly through their published interface contracts, using clear per-channel interface and fault feedback during commissioning. | UR_16 |
+| UT_27 | Confirm correct parameter mapping | The engineer completes a guided verification step confirming that each acquired parameter (Acquired Parameters / Signals table) maps to the correct device and display field, and that acquisition, alarming, and data exchange behave correctly, before releasing the device for clinical use. | UR_16 |
+| UT_28 | Apply a controlled software update | The engineer applies a software update through the controlled, standards-conformant lifecycle workflow, which prevents updating a device in active clinical use and verifies correct operation before the device is returned to service. | UR_17 |
 
 ### Usability FMEA (UFMEA_*)
 
-An FMEA focused on usability: where the user interface, workflow, or interaction model can lead to errors, slow operation, or unsafe outcomes.
+An FMEA focused on usability: where the user interface, workflow, or interaction model can lead to errors, slow operation, or unsafe outcomes. Where the User DFMEA above asks *how a user might misuse or misinterpret the product*, this UFMEA asks *where the concrete UI, display, alarm, and interaction design lets a competent, motivated user err or slow down* — and is anchored to the use tasks (UT_*) in which the error actually occurs.
+
+**Usability Impact Level (UIL) scale** — combines the clinical consequence of the use error with how readily the interaction provokes it:
+
+- **UIL-4 (Critical)**: an interaction failure that can plausibly contribute to patient death or serious irreversible harm (e.g. a safety-critical signal not perceived, false data trusted as real).
+- **UIL-3 (High)**: an interaction failure that can contribute to serious but recoverable harm, a significant treatment delay, or a wrong clinical decision.
+- **UIL-2 (Medium)**: an interaction failure causing notable inefficiency, slow task completion, or a recoverable error with limited/transient clinical impact.
+- **UIL-1 (Low)**: minor friction or inconvenience with no clinical consequence.
 
 | ID | Scenario Title | Use Error | Cause | Effect | HF Cause | Rationale | Usability Impact Level | Mitigation (existing) | Mitigation (new) | Classification | Traces |
 |----|----------------|-----------|-------|--------|----------|-----------|------------------------|-----------------------|------------------|----------------|--------|
-| UFMEA_01 | Scenario 1, UT_01 — Power on and confirm readiness | Paramedic begins treating and relying on monitoring before MMSS is actually acquiring, because the start-up screen looks like a live monitoring screen before any sensor data is flowing. | Boot/initialising state visually indistinguishable from the live monitoring layout; no positive "acquiring" confirmation distinct from the empty live display. | A window of unmonitored patient time during which the paramedic believes vitals and alarms are active when they are not. | Expectation mismatch under time pressure — the clinician's mental model is "screen on = monitoring on"; a populated-looking layout confirms that false assumption. | An empty live layout and an initialising layout that look alike is a classic state-perception slip; in a seconds-matter pre-hospital pickup the clinician will not pause to verify, so the UI must signal readiness unambiguously rather than rely on the user inferring it. | Critical | UR_02 / USER_DFMEA_11 require an unambiguous monitoring/acquisition-state indication and <10 s readiness. | Provide a visually distinct, full-screen start-up/acquiring state (not the live layout) that transitions to the live screen only when acquisition is confirmed, with an explicit, persistent per-channel "acquiring/ready" indicator the clinician can confirm at a single glance. | High | UT_01 |
-| UFMEA_02 | Scenario 1, UT_02 / Scenario 2, UT_06 — Connect the non-invasive sensors | Clinician believes all attached sensors are acquiring, but one channel is silently not connected/streaming and shows blank or placeholder rather than an explicit not-connected state. | Per-channel connection state is weakly indicated; a non-streaming channel renders ambiguously (blank tile) that can read as "no value yet" rather than "not connected". | Patient monitored on an incomplete sensor set; a missing channel (e.g. capnometer) goes unnoticed and a deterioration on that channel is never alarmed. | Perception/attention — under load the clinician scans for present values, not for absent tiles; an absence is far harder to detect than a salient fault cue. | Detecting a missing element is a known weak point of human visual search; with six channels connected in haste, one un-acquiring channel is easily overlooked unless its not-connected state is positively and distinctly signalled at setup. | High | UR_01/UR_06 require continuous acquisition and connection-loss alarming after 5 s; device-side connection alarms back this. | Show an explicit per-channel state (connected-acquiring / connected-no-data / not-connected) at setup with a distinct, non-blank visual treatment for any expected-but-absent channel, so an unconnected sensor cannot be mistaken for one that is merely warming up. | High | UT_02, UT_06 |
-| UFMEA_03 | Scenario 1, UT_03 — Read current vital signs at a glance | Paramedic reads a displayed number as the current value when it is stale, frozen, or last-known, while the vehicle moves and attention is split. | No salient data-freshness cue; a last-valid value persists on screen looking identical to a live-updating one when updates stall. | Treatment decision made on out-of-date data that no longer reflects the patient's state. | Perception under motion/divided attention — a static number gives no motion cue that it has stopped updating; the clinician assumes "displayed = live". | A frozen-but-plausible value is more dangerous than a blank one because it invites confident wrong action; in a vibrating, glance-only setting the freshness of each value must be perceptible without the user having to interrogate it. | High | UR_01/USER_DFMEA_12 require <1 s display on a 1 s update and conveyance of data freshness, indicating stale/absent values. | Render a continuous, glanceable freshness cue per value (e.g. update heartbeat/timestamp age) and visibly degrade or flag any value that has not refreshed within the expected cadence, so a stalled value cannot be read as current. | High | UT_03 |
-| UFMEA_04 | Scenario 1, UT_04 / Scenario 4, UT_14 — Hands-free audible fault alerting | A misplacement/disconnection/unreliable-reading fault is not perceived because the audible fault signal is masked by ambient noise or is indistinct from other monitor tones in a moving unit. | Fault-alarm loudness/timbre not adapted to the high-noise pre-hospital environment; fault tone not clearly distinct from physiological-alarm tones. | Sole caregiver continues treating on incorrect or missing data with no one to cross-check (R_04/R_07). | Perception — auditory masking in high ambient noise and limited auditory discrimination between similar tones under load defeat a hearing-dependent safety signal. | The pre-hospital clinician depends on hearing the fault because eyes are on the patient; if the signal is masked or confusable, the attention-independent safety path fails exactly when there is no visual or human backup. | Critical | UR_16/UR_09 + USER_DFMEA_02 require an attention-independent audible alarm audible above ambient noise; device-side audible alarms back it (MD_01). | Specify IEC 60601-1-8-conformant fault-alarm signals with an environment-appropriate, distinct auditory signature and adequate level/headroom validated against representative moving-unit ambient noise, distinguishable from physiological alarms. | High | UT_04, UT_14 |
-| UFMEA_05 | Scenario 1, UT_05 / Scenario 3, UT_11 — Present early diagnostic candidates | Clinician reads the top-ranked candidate as a confirmed diagnosis because ranking is presented prominently while basis/confidence/limitations are de-emphasised, collapsed, or below the fold. | Visual hierarchy emphasises the candidate label/rank over the calibrating context; basis/confidence/limitations require an extra interaction to reveal. | Anchoring on an unconfirmed AI suggestion; over-reliance leading to wrong or delayed diagnosis (R_05). | Cognition/automation bias — a prominent ranked label reads as an authoritative answer; calibrating information that is hidden behind interaction is effectively absent under time pressure. | The transparency that calibrates trust (KA_02) only works if it is co-presented with the candidate, not gated behind a tap; emphasising rank alone manufactures false certainty and is the primary over-reliance hazard. | Critical | UR_04/UR_13 + USER_DFMEA_06/07 require basis, confidence/ranking and limitations rendered with each candidate and a non-confirmatory framing. | Present each candidate with its basis, confidence/ranking and limitations co-located and visible without extra interaction, and visually frame the panel as decision support (never as a confirmed/own-device diagnosis), with ranking subordinated to the confidence/limitations context. | High | UT_05, UT_11 |
-| UFMEA_06 | Scenario 2, UT_20 / Scenario 5, UT_17 — Confirm patient identity before relying on / sharing data | Clinician relies on, configures alarms for, or shares data under the wrong patient's identity because the on-screen patient identity is small, ambiguous, or not confirmed before the action. | Patient-identity field not persistently prominent; no explicit identity confirmation step gating alarm-limit setting and HIS sharing in a multi-patient setting. | Alarm limits or shared diagnostic data attributed to the wrong patient; misdirected second opinion and contaminated downstream record (wrong-patient hazard). | Cognition/expectation — in a multi-patient, interrupt-driven ward the clinician assumes the screen in front of them is "this" patient; without a forcing confirmation the wrong-patient slip is silent. | Wrong-patient association is among the highest-frequency, highest-consequence use errors in busy ICU/ER and handover; an identity that is merely displayed but never confirmed before a consequential action does not prevent the slip. | Critical | UR_10 + USER_DFMEA_13 require unambiguous on-screen patient identity and confirmation of the correct association before HIS sharing. | Make patient identity persistently prominent on the live screen and require an explicit, unmistakable identity confirmation step before alarm-limit configuration and before any HIS share, so a consequential action cannot proceed under an unconfirmed or wrong identity. | High | UT_20, UT_17 |
-| UFMEA_07 | Scenario 2, UT_08 / UT_09 — Prioritised alarming and critical-alarm response | Nurse becomes desensitised to alarms and misses a genuinely critical one because frequent low-priority/transient alarms are not visually and audibly de-prioritised against critical ones. | Insufficient priority differentiation in the alarm signals; transient/minor events presented with near-critical salience, training habituation. | Delayed response to a critical patient condition (alarm fatigue). | Cognition — habituation: when minor and critical alarms look and sound alike, the user learns to discount all of them, and the critical signal loses its meaning. | A monitor that does not clearly separate critical from minor conditions actively trains the high-frequency real-world error of ignoring alarms; differentiation must be perceptual and consistent, not just a logged priority level. | High | UR_07/UR_09 + USER_DFMEA_04 require IEC 60601-1-8-conformant prioritised alarms differentiating critical from minor and suppressing transient events. | Implement perceptually distinct critical-vs-minor alarm signals (audible and visual) per IEC 60601-1-8, de-prioritise/suppress transient minor events, and validate that a critical alarm remains salient against a realistic background of minor alarms. | High | UT_08, UT_09 |
-| UFMEA_08 | Scenario 2, UT_09 — Respond to a critical alarm (silence/pause under load) | Nurse silences/pauses an alarm to manage another patient and fails to notice the audio remains suspended, leaving a subsequent critical condition silently un-signalled. | Audio-pause not time-limited or not persistently/visibly indicated while active; no clear reminder that audio is suspended; pause can mask a new higher-priority alarm. | A later critical alarm is silently latched off; delayed response to a critical condition. | Cognition/workload — prospective-memory failure: the user intends to re-enable audio but, under competing tasks, forgets the suspended state with no persistent cue. | Deliberate silencing is a normal, necessary workflow; the hazard is a silence that silently persists. The interaction must bound and continuously signal the suspended state and must never let a pause swallow a new higher-priority alarm. | High | UR_07 + USER_DFMEA_04 require any audio-pause to be time-limited, persistently/visibly indicated, and never to suppress a new higher-priority alarm. | Make any audio-pause time-limited with auto-restore, display a persistent, prominent "audio paused" indicator and countdown while active, and force a new higher-priority alarm to override and break the pause. | High | UT_09 |
-| UFMEA_09 | Scenario 3, UT_13 — Handle a diagnostic timeout | Physician keeps waiting for a candidate that will not arrive because the on-screen timeout notification is not salient against a busy resuscitation display and is overlooked. | Timeout notice rendered as a low-salience or transient on-screen message that competes with vitals, alarms and candidate panels. | Treatment delayed while the clinician expects automated support that is not coming (R_06). | Perception/expectation — the mental model "a result is imminent" biases attention away from a quiet status change; a low-salience notice is easily missed on a dense screen. | The whole point of the timeout cue (KA_03) is to break the waiting state; a notice that blends into the display does not, so the cue must be salient and persist until acknowledged, backed by the independent audible signal. | High | UR_05 + USER_DFMEA_08 require an explicit on-screen timeout notification backed by the independent ALGOS audible timeout signal. | Render the diagnostic-timeout notification as a salient, persistent, acknowledge-to-clear notice in the diagnostic region that explicitly directs fallback to standard assessment, co-signalled by the independent audible timeout cue. | High | UT_13 |
-| UFMEA_10 | Scenarios 1/3, UT_03 / UT_10 — Glanceable operation under stress | Clinician misreads a value or alarm state at a glance, or makes an input slip, because display elements are too dense, low-contrast, or small for a moving, low-light or bright-sunlight, gloved-hand environment. | UI density and contrast not validated for the hostile use environment (including direct sunlight / glare washout at a roadside as well as low light); touch/control targets too small for gloved, vibrating-vehicle interaction. | Slowed or incorrect decision; attention diverted from patient to device; input use error. | Perception + motor — both low light/vibration and bright-sunlight glare degrade legibility, and small targets under gloved hands degrade input accuracy; reading and input accuracy both suffer. | A UI tuned for a calm office reads and operates very differently in a dark vibrating ambulance and in glare-washed daylight at a roadside; foreseeable-use legibility and target-size must be designed and validated across the actual range of ambient lighting per IEC 62366-1. | High | UR_08 + USER_DFMEA_09 require glanceable, minimal-interaction, high-contrast, robustly laid-out presentation validated under the use environment. | Specify and validate (IEC 62366-1) minimum legibility, contrast, element size and control-target size across the full ambient range of the use environment — low-light and direct-sunlight/glare — for the moving/noisy/gloved setting, and minimise the number of interactions required to read state or respond. | High | UT_03, UT_10 |
-| UFMEA_11 | Scenario 4, UT_15 — Avoid acting on flagged data | Nurse acts on a misplacement/unreliable-flagged value as if it were a valid vital sign because the flagged value is still shown as a normal-looking number alongside its fault indication. | Flagged value retains its normal numeric presentation; the fault flag is adjacent rather than overriding the value's appearance. | Treatment or escalation decision made on incorrect data (R_04). | Cognition/display bias — a clearly rendered number is trusted as valid; an adjacent caution flag is weaker than the strong "this is a reading" signal of the number itself. | The risk is not failing to alarm but continuing to display a discredited value in a trustworthy form; the value's own presentation must change so it cannot be read as a valid vital sign. | Critical | UR_06 + USER_DFMEA_01 require the flagged value not to be displayed as a trusted vital sign without an unambiguous fault indication. | When a value is flagged misplaced/unreliable, suppress or visibly invalidate the numeric presentation itself (not just an adjacent flag) so a discredited reading cannot be read as a valid vital sign, restoring normal presentation only on recovery. | High | UT_15 |
-| UFMEA_13 | Scenario 1, UT_01 / Scenario 2, UT_06 — Power on / set up and connect | Clinician relies on a non-live screen — a demo/training, frozen, or held/standby state showing plausible vital signs and waveforms — as if it were the live patient, and treats or withholds treatment on data that does not belong to this patient now. | No persistent, unmistakable distinction between a live-monitoring state and any non-live state (demo/training, frozen capture, standby/held); a non-live screen renders vitals in the same trustworthy form as live monitoring. | Treatment decisions made on data that is not the live patient — or a true deterioration unmonitored — because the clinician believes a non-live display is live. | Cognition — mode confusion: a plausible-looking screen confirms the default mental model "this is my patient, live", and the user has no salient cue that the mode is not live; under time pressure the mode is never questioned. | Mistaking a demo, frozen, or standby screen for live monitoring is a classic high-consequence mode-confusion error across pre-hospital, ward and training use, especially where the same hardware is used for familiarisation; without a persistent, distinct mode indication the slip is silent and the data looks fully trustworthy. | Critical | UR_02 + USER_DFMEA_11 require an unambiguous monitoring/acquisition-state indication; the live-vs-not-live distinction is the same forcing need extended to all non-live modes. | Make any non-live state (demo/training, frozen, standby/held) persistently and unmistakably distinct from live monitoring — distinct full-screen treatment, persistent mode banner and visibly altered vital-sign presentation — so a non-live screen can never be read as live patient data, and require explicit confirmation to leave a non-live mode. | High | UT_01, UT_06 |
-| UFMEA_12 | Scenario 5, UT_19 — Continue monitoring during/after HIS share | Clinician assumes live monitoring has degraded, or conversely ignores monitoring, during a slow/failed HIS share because the share workflow visually intrudes on or obscures the live monitoring view. | HIS-share progress/error UI overlays or competes with the live vitals/alarm region; share latency or failure is not visually isolated from monitoring. | Either distraction from live monitoring during handover, or misbelief that monitoring is affected by the share. | Workload/expectation — a modal or intrusive share dialog captures attention away from the always-on monitoring task and blurs the boundary between the isolated share and live monitoring. | UR_11 mandates the share path be isolated from acquisition/alarming; the interaction model must also keep it visually isolated so a slow/failed share neither distracts from nor appears to degrade live monitoring. | Medium | UR_11 requires HIS data-sharing isolated from the acquisition and alarm path so HIS unavailability cannot degrade monitoring/alarming. | Confine the HIS-share UI (progress, success, failure) to a non-intrusive region that never overlays or suppresses the live vitals/alarm view, and clearly signal that share status is independent of live monitoring. | Medium | UT_19 |
+| UFMEA_01 | Pre-hospital pickup and connection | Paramedic overlooks an abnormal vital-sign value (e.g. SpO2, HR, EtCO2 from the Acquired Parameters / Signals table) while glancing at the display one-handed in a moving, poorly lit ambulance. | Cluttered or low-contrast layout; many parameters competing for attention; out-of-range distinction carried by colour alone and washed out by glare/vibration; sub-second glance time. | Deterioration not recognised; intervention delayed; patient harm. | Limited attention and a brief glance under motion and poor light; pre-attentive search fails when abnormal values are not visually segregated from normal ones. | A glanceable display is the paramedic's primary window; if an abnormal value does not "pop out" in a one-second glance the safety value of real-time display is lost — exactly the high-workload, low-light condition where this is most likely. | High-contrast glanceable layout with consistent fixed placement per parameter; value shown with unit; abnormal values encoded by colour + shape/icon (not colour alone) and reinforced by the parameter alarm; 1 s refresh. | Validate maximum at-a-glance read time and abnormal-value detection rate in a representative moving/low-light rig during summative testing; tune luminance/contrast and abnormal-value salience to that rig; redundant non-colour coding verified for colour-vision-deficient users. | High; Safety-critical (Class B) | UT_03 |
+| UFMEA_02 | Pre-hospital pickup and connection | Paramedic reads a not-yet-acquired channel as a confirmed normal value during the start-up / sensor-attachment window. | A blank, zero, or placeholder rendering is not visually distinct from a real measured value; pressure to act within seconds of power-on; sensors attached in sequence so some channels lag. | Decision made on incomplete data; a yet-to-appear abnormal value missed. | Absence of information read as "normal" rather than "not yet measured" (a classic absence-vs-zero confusion) under time pressure. | The 10 s readiness and staggered sensor attachment create a window where some channels are live and others are not; an undistinguished placeholder positively misleads the user about which data is trustworthy. | Explicit "ready" indication on activation; per-channel acquisition state (acquiring / live / no-data) shown; unacquired channels never rendered as a plausible normal number. | Make the acquiring / no-data state visually unmistakable and never numeric; require valid acquisition before a channel shows a value; verify in formative testing that users correctly classify each channel's state at a glance during the start-up window. | High; Availability | UT_01, UT_02 |
+| UFMEA_03 | Pre-hospital pickup and connection | Paramedic trusts and acts on a value from a sensor that is attached but misplaced/poorly seated, which the display shows as a normal live reading. | Misplacement signalled (if at all) only subtly; affected parameter still rendered as a plausible live value; no glanceable per-channel trust cue. | Wrong or falsely reassuring reading drives a wrong diagnosis or masks deterioration (R_04). | Trust calibration fails: a value that looks identical to a good reading carries no perceptual cue that it is suspect. | Sensor misplacement is a Critical risk-register hazard; if the interaction does not surface "this channel is suspect" the clinician cannot calibrate trust and acts on false data. | MMSS marks not-yet-connected / still-acquiring / unreliable channels rather than showing a plausible normal value; reliance on device-side misplacement signalling plus input-inactivity inference; distinct sensor-fault warning. | Add a persistent per-channel trust/quality cue alongside each value (not only an event warning) so suspect channels are continuously visible at a glance; validate that users do not act on a channel marked suspect in formative testing. | High; Safety-critical (Class B) | UT_02 |
+| UFMEA_04 | AI diagnostic candidate review | Clinician adopts the top-ranked AI candidate as the diagnosis without independent appraisal (automation bias). | Ranking and a high confidence number presented with the visual authority of a result; reasoning/confidence not absorbed at a glance; time pressure; trust built from prior correct suggestions. | Wrong working diagnosis pursued; correct condition missed or delayed (R_05). | Automation bias — a confident, ranked machine output is over-weighted relative to the clinician's own assessment, especially under load. | R_05 is a Critical hazard; the interaction model (how authoritatively the candidate is rendered) is the lever that either provokes or resists over-trust. | Candidates shown as ranked *suggestions* with confidence and supporting reasoning at a glance; unambiguous decision-support framing/labelling; treatment never gated/pre-selected on a candidate; simulation training covers automation bias. | Use non-authoritative visual framing for candidates (suggestion styling, persistent "decision support — not a diagnosis" affordance); measure automation-bias incidence with seeded plausible-but-wrong candidates in summative testing and set an acceptance threshold. | High; Safety-critical / Liability | UT_13, UT_15 |
+| UFMEA_05 | AI diagnostic candidate review | Clinician misreads a confidence score or rank — treats a low-confidence/low-ranked candidate as firm, or dismisses a clinically critical lower-ranked differential. | Confidence shown as a bare percentage without interpretive framing; ranking implies certainty; driving vital-sign parameters not visible at a glance. | Diagnostic reasoning misdirected or narrowed; a treatable time-critical differential acted on late (R_05). | Bare numbers invite mis-weighting; without framing the user cannot tell what a confidence value operationally means. | Mis-reading confidence/rank escalates the R_05 misinterpretation hazard in both directions (over- and under-weighting), so it is a distinct interaction failure from raw over-trust. | Confidence expressed with consistent interpretive framing (not a bare number alone); driving vital-sign parameters shown; expandable detail on demand; confidence/ranking interpretation covered in training. | Standardise a tested confidence-framing scheme (e.g. banded + worded) and verify in formative testing that users interpret high/low confidence correctly; show driving parameters inline so a candidate can be judged against data the user distrusts. | High; Safety-critical / Liability | UT_13, UT_14 |
+| UFMEA_06 | AI diagnostic candidate review | Clinician anchors on an early, still-converging candidate and does not notice the ranked list materially revise as evidence accumulates. | Provisional/converging list not visibly distinguished from a settled result; ranking changes not made salient; no cue the list changed since the user last looked. | Premature diagnostic closure; a later up-ranked or self-assessed condition pursued late or missed. | Anchoring and premature closure — once committed, clinicians rarely revisit a changing list, especially under time pressure that rewards early commitment. | An early ranked suggestion shown before convergence is a powerful anchor; the interaction must signal change, not silently update, or the convergence behaviour itself becomes a hazard. | Decision-support framing inviting continued differential thinking; reasoning and driving parameters available for re-appraisal; anchoring/premature closure covered in training. | Visibly distinguish a provisional/converging list from a settled one and make a materially changed ranking salient (change indication) so a revision is noticed rather than missed; verify in testing that users detect a seeded mid-encounter ranking change. | High; Safety-critical / Liability | UT_13, UT_14 |
+| UFMEA_07 | ICU bedside continuous monitoring | Nurse does not perceive a vital-sign alarm in a noisy, multi-patient unit while attending another patient away from the bedside. | Insufficient loudness/visual contrast for the environment; alarm not distinguishable from background noise/other alarms; desensitisation from alarm load; nurse out of line-of-sight and earshot of this bed. | Deterioration of a ventilated, dependent patient goes unrescued in the critical first minutes; respiratory/cardiac arrest or irreversible harm before anyone responds (R_07 family). | Auditory/visual signal detection fails under high ambient noise and divided attention across several patients; the nurse is physically remote from the alarming bed; alarm fatigue erodes responsiveness. | A missed alarm defeats the core safety function; perceptibility in noise is a usability/HF property of the alarm design itself, distinct from whether an alarm is raised. | Multi-modal conspicuous alarms (audible + visual) tuned for noisy/mobile use and conforming to alarm-safety practice; latching until resolved/acknowledged; distinct urgency encoding; device-side independent audible alarms as safeguard. | Validate alarm detectability at representative ambient noise levels and viewing distances/angles in summative testing; apply alarm-burden/prioritisation design to limit fatigue and verify detection rate stays acceptable under sustained load. | High; Safety-critical (Class B) | UT_07 |
+| UFMEA_08 | ICU bedside continuous monitoring | Nurse confuses a sensor-fault warning with a genuine clinical alarm (or vice versa) and responds inappropriately. | Clinical alarm and fault warning share similar tone/colour/wording; high alarm load erodes discrimination; ambiguous statement of which condition is signalled. | Real deterioration dismissed as a "false alarm", or a technical fault triggers unnecessary clinical intervention. | Signal discrimination fails when two categories of signal are perceptually similar, compounded by alarm fatigue. | Mistaking fault for deterioration (or the reverse) is an explicit alarm-safety hazard leading directly to wrong or omitted action. | Differentiated alarm vs technical-fault signalling (distinct tone, colour, icon, text per IEC 60601-1-8 class); explicit statement of which parameter/device and what condition; consistent encoding reinforced in training. | Validate that users reliably and quickly categorise clinical alarm vs sensor-fault warning (low confusion rate) in summative testing across the full alarm/warning set; lock the distinguishing encoding as a design rule. | High; Safety-critical / Regulatory | UT_08, UT_10 |
+| UFMEA_09 | Sensor disconnection or misplacement | Nurse/clinician reads a frozen last-good value as the patient's current reading after a sensor silently fails. | Last-good value retained on screen with no staleness/no-data cue; disconnection not yet inferred; display assumed to be continuously updating. | A deterioration occurring behind the frozen value is actively masked — the reassuring stale number suppresses any clinical suspicion — so a treatable change is missed until the patient is overtly compromised. | A stale value is perceptually identical to a live one, so the user has no cue to distrust it — more dangerous than a blank. | The interaction's handling of input loss (persist vs replace) directly determines whether the user is positively misled. | On input loss over the short inactivity window the value is replaced with an explicit no-data/untrustworthy state; never persists a stale value as live; coupled with the connection/disconnection warning. | Add a freshness/last-updated cue per parameter so even a momentary stall is visible; verify in formative testing that users detect a silently stalled channel before acting on it. | High; Safety-critical (Class B) | UT_11, UT_10 |
+| UFMEA_10 | Diagnosis timeout handling | Clinician does not notice that no diagnosis was produced and keeps waiting for a result that will not arrive. | Empty candidate area indistinguishable from "still computing"; timeout cue absent or too subtle; reliance on the same display path that failed to converge. | Treatment delayed while the clinician waits instead of falling back on their own assessment (R_06). | A blank area is read as "in progress" — absence of a result interpreted as work continuing rather than as failure. | R_06 is a Critical hazard; the failure is purely an interaction one — a silent blank versus a positive "no result" signal. | Positive, perceptible timeout indication delivered independently of the failed diagnostic path; explicit "no diagnosis available — proceed on your own assessment" message; reinforced by the external capability's own independent audible timeout notification; never silently blank. | Verify in summative testing that users recognise the timeout and switch to their own assessment within an acceptable time, with no user reading the timeout state as "still computing". | High; Safety-critical (Class B) | UT_17, UT_18 |
+| UFMEA_11 | Training-mode practice session | Clinician unknowingly operates MMSS on a live patient while it is still in simulated training mode (or treats simulated data as real). | Mode indication absent, subtle, or not persistent; device left in training mode by a previous user; glanceable mode cue missed in poor light. | Simulated data acted on as real, or a real patient monitored by a simulation — directly endangering the patient. | Mode error / loss of mode awareness — the user's mental model of the device state diverges from the actual state, a classic mode-confusion failure. | The training mode is the named risk control for the Critical clinician-misinterpretation hazard; if mode is ambiguous the control itself becomes a hazard source. | Persistent, unmistakable, always-visible mode indicator (distinct colour/banner) that cannot be dismissed; fail-safe default to live on return/restart; explicit confirmation entering/leaving training; simulated data watermarked. | Validate that every user correctly identifies the active mode at a glance in all lighting conditions, and that a user arriving at a device left in training mode cannot begin live monitoring without an unmistakable cue; set zero-tolerance acceptance for undetected mode. | High; Safety-critical (Class B) | UT_22, UT_25 |
+| UFMEA_12 | Pre-hospital transport (one-handed mobile use) | Clinician makes a slip/selection error one-handed in a moving vehicle — e.g. silences an alarm, changes a setting, or mis-acknowledges — unintentionally. | Small/closely-spaced targets; controls needing precise input or two hands; legibility lost in vibration/poor light; no confirmation/guard on safety-significant actions. | Unintended action degrades monitoring safety (e.g. alarm silenced, limit changed) or slows the task. | Motor slips and reduced precision under vibration and one-handed operation; small targets exceed achievable pointing accuracy. | Mobile/pre-hospital one-handed use is a defining environment; controls not designed for it invite slips that can suppress safety functions or slow time-critical tasks. | Large, well-spaced, one-handed-operable controls; confirmation/guarding on safety-significant actions (e.g. alarm-off); high legibility under movement/poor light; usability evaluation in the mobile environment. | Specify and verify minimum touch-target size/spacing and confirm acceptable error/slip rate and task time for safety-significant actions in a representative moving rig; guard destructive/safety actions against single accidental activation. | High; Safety-critical / Usability | UT_05, UT_03 |
+| UFMEA_13 | ICU resuscitation (alarm suspend) | Clinician silences/suspends alarms during a busy resuscitation and the suspended state is not noticed afterward, leaving the patient effectively unmonitored. | Suspend has no visible time limit or auto-restore; no persistent conspicuous "alarms off" reminder; the suppressed state not glanceable amid resus activity; the silence often set by one clinician but inherited by another after the team disperses. | Subsequent deterioration goes entirely unalarmed because the safety function stays suppressed indefinitely; harm or arrest occurs in a window the whole team falsely believes is actively monitored. | Prospective-memory failure — the intention to re-enable alarms is lost amid high workload and the post-resus handoff; the suppressed state lacks a salient persistent cue and no one owns its restoration. | Forgotten alarm suspension is among the most frequently reported real alarm-safety incidents; the interaction (time-limited vs indefinite, salient vs hidden) determines whether the lapse is caught. | Time-limited suspend with auto-restore; persistent conspicuous glanceable "alarms suspended" indication that cannot be lost; escalating reminder as the window expires; conform to IEC 60601-1-8 audio-pause practice; device-side independent audible alarms as safeguard. | Verify in summative testing that users always perceive the suspended-alarm state and that auto-restore/escalating reminders prevent an indefinitely silenced monitor; bound the maximum suspend interval. | High; Safety-critical (Class B) | UT_07, UT_09 |
+| UFMEA_14 | Handover to the receiving hospital | Arriving clinician misses safety-relevant working state at handover — which channels are untrustworthy, that alarms/limits are modified or suspended, or the current candidate state. | Trust/alarm/mode state not glanceable to an arriving clinician; modified limits or suspended alarms not flagged on screen; working diagnostic state not summarised; reliance on verbal handover alone. | Care continues on stale assumptions — a suspect channel re-trusted, a suspended alarm unnoticed, prior reasoning lost — causing a wrong decision or missed deterioration after handover. | Information transfer loss at a handover boundary — state held silently by the device falls through the gap between two clinicians. | Clinical handover is a recognised high-risk transition where most information loss originates; surfacing held state is an interaction-design responsibility. | Safety-relevant working state made persistently glanceable to any arriving clinician (untrustworthy channels, modified/suspended alarms/limits, current candidate state); concise handover summary/exchange to the receiving clinician or HIS; structured handover covered in training. | Provide and validate a concise at-a-glance handover view that the arriving clinician can absorb in seconds; verify in summative testing that arriving users correctly identify modified/suspended alarms and suspect channels before resuming care. | High; Safety-critical (Class B) | UT_19, UT_29 |
+| UFMEA_15 | Handover to the receiving hospital | Clinician believes data/findings were shared with the receiving hospital when the exchange silently failed, was partial, or went to the wrong record. | No (or unnoticed) confirmation of successful transfer; partial transfer not flagged; ambiguous patient/record association; connectivity failure (R_03) unsurfaced. | Receiving team acts without, or on incomplete/mismatched, information; second opinion and handover compromised. | A silent or weak feedback signal leaves the user with a false belief the action succeeded (completion/feedback gap). | Handover is a high-risk transition; without explicit positive confirmation the user cannot tell a failed transfer from a successful one. | Explicit success/failure confirmation of the exchange; partial/failed transfer flagged with retry; unambiguous patient-record association; secure standards-based exchange. | Require an unmistakable transfer-confirmation step the user must perceive (success vs failure vs partial) and verify recipient/record before send; validate that users never proceed believing a failed/partial transfer succeeded. | High; Interoperability | UT_20, UT_16 |
+| UFMEA_16 | Commissioning and lifecycle update | Biomedical engineer mis-maps a device channel during commissioning (a parameter routed to the wrong display field) and it goes unnoticed before clinical release. | Unclear commissioning feedback; no enforced verification confirming each channel maps to the correct device/parameter; ambiguous interface status. | A parameter is displayed/alarmed against the wrong channel in clinical use, propagating to wrong clinical decisions for every subsequent patient. | A setup error made once is not caught because the verification interaction does not force per-channel confirmation; the consequence is latent and silent. | A configuration error at commissioning silently affects every patient until detected, so the commissioning interaction must make mis-mapping impossible to miss. | Clear per-channel interface and fault feedback during commissioning; a guided verification/confirmation step that each parameter (Acquired Parameters / Signals table) maps to the correct device before clinical release; unambiguous interface status. | Make the guided per-channel verification mandatory and self-evidencing (engineer confirms each parameter against its source device with a visible cross-check) before the device can be released; verify the workflow blocks release on any unconfirmed channel. | High; Integration | UT_26, UT_27 |
+| UFMEA_17 | ICU bedside continuous monitoring | Clinician reflexively dismisses a genuine clinical alarm as motion artefact (or, conversely, intervenes on an artefactual alarm) without the display affording a quick way to distinguish the two at the bedside. | Alarm presents only the breached value with no signal-quality/waveform context to support an artefact-vs-real judgement; high prevalence of artefact alarms in mobile/agitated patients trains a "dismiss first" habit; verification against the patient is rushed under load. | A true deterioration is waved off as "just artefact" and intervention is omitted, or scarce resuscitation effort is spent on a non-event — both eroding trust in the monitor and the alarm system over time. | Cry-wolf / habituation — repeated artefact alarms condition the clinician to disbelieve the alarm category, so signal-vs-noise discrimination defaults to dismissal exactly when a real alarm arrives. | Motion-artefact alarms are the dominant source of clinical alarm burden in transport and agitated ICU patients; if the interaction gives no fast, trustworthy basis to separate artefact from a real change, clinicians rationally but dangerously default to ignoring the alarm. | Alarm identifies the specific abnormal parameter and urgency and presents alongside the live value/waveform so the clinician can sanity-check against signal quality; UT_09 requires confirming the alarm against the patient before acting/dismissing; sensor-fault vs clinical-alarm differentiation (UFMEA_08) reduces miscategorisation; artefact handling covered in training. | Present a glanceable signal-quality/plausibility cue with each alarm so artefact and true change are quickly separable at the bedside, and apply artefact-rejection/alarm-burden design to cut nuisance alarms; verify in summative testing that users neither dismiss a seeded genuine alarm as artefact nor intervene on a seeded artefact alarm. | High; Safety-critical (Class B) | UT_08, UT_09 |
 
 ### Usability Requirements (USR_*)
 
@@ -501,20 +533,23 @@ Measurable requirements for how the product must perform from a user perspective
 
 | ID | Requirement | Classification | Traces |
 |----|-------------|----------------|--------|
-| USR_01 | MMSS shall enable a representative clinician to correctly read a target vital sign and its current status from the live display within 2 seconds of looking at it (glanceable comprehension), with at least 95% of timed glance trials correct, when validated in summative usability testing in the moving, low-light use environment. | High | UR_01, UR_08, UFMEA_03, UFMEA_10 |
-| USR_02 | MMSS shall present a critical physiological alarm such that at least 95% of representative clinicians notice and correctly identify it within 10 seconds of onset, both audibly and visually, including when their visual attention is on the patient rather than on the display, validated under representative ambient-noise and lighting conditions. | High | UR_07, UR_09, UFMEA_07 |
-| USR_03 | MMSS shall present a sensor-misplacement, disconnection, or unreliable-reading fault such that at least 99% of representative pre-hospital clinicians, as sole caregivers with eyes on the patient, perceive the attention-independent audible fault alarm within 10 seconds of trigger, validated against representative moving-unit ambient noise (audible above the masking noise level). | High | UR_06, UR_16, UR_09, UFMEA_04 |
-| USR_04 | The use error of acting on a misplaced/unreliable-flagged value as if it were a valid vital sign shall occur in no more than 1% of representative sensor-fault trials in summative usability testing, by validating that a flagged value's own numeric presentation is suppressed or visibly invalidated so it cannot be read as a trusted reading. | High | UR_06, UR_16, UFMEA_11 |
-| USR_05 | MMSS shall be ready for monitoring within 10 seconds of switch-on and connection, and at least 95% of representative clinicians shall correctly distinguish the start-up/acquiring state from the live monitoring state before relying on monitoring, validated in usability testing with zero undetected "relied on before acquiring" errors. | High | UR_02, UFMEA_01 |
-| USR_06 | At least 95% of representative clinicians shall, on first viewing a diagnostic candidate, correctly report it as decision support (not a confirmed diagnosis) and correctly locate its basis, confidence/ranking, and known limitations without additional interaction, validated by comprehension testing of the candidate presentation. | High | UR_04, UR_13, UFMEA_05 |
-| USR_07 | The over-reliance use error — selecting the top-ranked candidate as the working diagnosis without consulting its confidence/limitations — shall occur in no more than 5% of representative diagnostic-review trials, validated in summative usability testing of the co-located basis/confidence/limitations presentation. | High | UR_04, UR_13, UFMEA_05 |
-| USR_08 | At least 95% of representative clinicians shall notice and correctly act on the diagnostic-timeout notification (falling back to standard assessment) within 15 seconds of the 2-minute timeout, validated with the salient persistent on-screen notice co-signalled by the independent ALGOS audible cue on a realistically busy display. | High | UR_05, UFMEA_09 |
-| USR_09 | A representative clinician shall reach defined competency in the core monitoring, alarm-response, and diagnostic-interpretation tasks within a single competency-based training session of no more than 60 minutes using the built-in simulation mode, with at least 90% achieving the competency criteria, validated through the training/onboarding evaluation. | High | UR_12, UR_08 |
-| USR_10 | MMSS shall make the simulation training mode persistently and unmistakably distinguishable from live clinical use, such that 100% of representative users correctly identify the current mode in every timed trial and zero mode-confusion errors (treating a non-live screen as live, or vice versa) occur in summative usability testing. | High | UR_12, UFMEA_13 |
-| USR_11 | Displayed vital-sign values, alarm indicators, and diagnostic text shall be legible — correctly read with at least 95% accuracy — by a clinician with normal or corrected-to-normal vision at the intended viewing distance of up to 1 metre, under vehicle motion/vibration, and across the full ambient-lighting range from low light to direct sunlight/glare, validated under IEC 62366-1 across the representative environmental range. | High | UR_08, UFMEA_10 |
-| USR_12 | At least 95% of representative clinicians shall correctly confirm the displayed patient identity before configuring alarms or sharing data, with zero wrong-patient association errors at HIS share in summative usability testing, validated via the persistent identity display and the explicit confirmation step. | Medium | UR_10, UFMEA_06 |
-| USR_13 | At least 95% of representative clinicians shall, at setup, correctly identify any expected-but-not-acquiring sensor channel within 10 seconds, validated by the explicit per-channel state presentation with zero "monitored on an incomplete sensor set unnoticed" errors in usability testing. | High | UR_01, UR_06, UFMEA_02 |
-| USR_14 | When a clinician silences/pauses alarm audio under load, MMSS shall ensure 100% of representative users remain aware the audio is suspended (persistent indicator) and that a new higher-priority alarm always breaks the pause, with zero "silently latched-off critical alarm" errors and the pause auto-restoring within its time limit, validated in summative usability testing. | High | UR_07, UFMEA_08 |
+| USR_01 | In summative usability testing in a representative moving / low-light ambulance rig, at least 95% of trained clinicians shall correctly read each displayed vital-sign parameter (Acquired Parameters / Signals table, Context) — value and unit — within a single 2-second glance, with no misread of a parameter's value or unit. | High; Safety-critical (Class B) | UR_01, UFMEA_01 |
+| USR_02 | In summative testing, at least 95% of trained clinicians shall correctly recognise an abnormal (out-of-range) vital-sign value (any parameter in the Acquired Parameters / Signals table) within 3 seconds of looking at the display, under representative motion, glare, and noise, with a missed-abnormal-value rate of ≤ 2% across the test corpus; abnormal-value salience shall remain effective for colour-vision-deficient users (redundant non-colour coding verified). | High; Safety-critical (Class B) | UR_01, UFMEA_01 |
+| USR_03 | In summative testing, when a vital-sign alarm is raised, at least 99% of trained clinicians shall perceive the alarm within 5 seconds and correctly identify which acquired parameter (Acquired Parameters / Signals table) is abnormal and its urgency, at representative ambient noise levels (validated up to the specified worst-case dB(A)) and at representative viewing distances and angles, including when attending another patient. | High; Safety-critical (Class B) | UR_08, UFMEA_07, UFMEA_17 |
+| USR_04 | In summative testing, at least 95% of trained clinicians shall correctly distinguish a clinical vital-sign alarm from a sensor-fault warning across the full alarm/warning set, with a category-confusion rate of ≤ 2%, sustained under representative alarm-load conditions. | High; Safety-critical / Regulatory | UR_09, UFMEA_08 |
+| USR_05 | In summative testing using seeded plausible-but-incorrect AI candidates, the proportion of trained clinicians who adopt the top-ranked candidate as their working diagnosis without independent appraisal (automation-bias incidence) shall not exceed 10%; at least 90% shall correctly state that the diagnostic output is decision support that does not replace their judgement. | High; Safety-critical / Liability | UR_05, UR_06, UFMEA_04 |
+| USR_06 | In summative testing, at least 90% of trained clinicians shall correctly interpret a candidate's confidence and rank (correctly classifying high- vs low-confidence candidates and not dismissing a seeded clinically critical lower-ranked differential), and shall correctly identify the driving vital-sign parameters shown for that candidate. | High; Safety-critical / Liability | UR_05, UFMEA_05 |
+| USR_07 | In summative testing with a seeded mid-encounter change to the converging candidate list, at least 90% of trained clinicians shall notice the materially changed ranking and re-appraise, rather than anchoring on the earlier candidate (premature-closure incidence ≤ 10%). | High; Safety-critical / Liability | UR_04, UR_05, UFMEA_06 |
+| USR_08 | In summative testing where a diagnostic result fails to converge, 100% of trained clinicians shall recognise the timeout state as "no result" (no user reading it as "still computing") and switch to their own assessment within 10 seconds of the timeout indication. | High; Safety-critical (Class B) | UR_07, UFMEA_10 |
+| USR_09 | In summative testing across all lighting conditions, 100% of trained clinicians shall correctly identify the active operating mode (training vs live) at a glance, and no clinician arriving at a device left in training mode shall begin live monitoring without an unmistakable cue — zero undetected mode errors. | High; Safety-critical (Class B) | UR_13, UFMEA_11 |
+| USR_10 | In summative testing where a sensor is silently disconnected, misplaced, or stalled, at least 95% of trained clinicians shall recognise the affected parameter (Acquired Parameters / Signals table) as untrustworthy and not act on it within 5 seconds, with no clinician acting on a frozen/stale value as if it were a current live reading. | High; Safety-critical (Class B) | UR_10, UFMEA_03, UFMEA_09 |
+| USR_11 | In a representative moving-vehicle rig, at least 95% of trained clinicians shall complete each safety-significant one-handed task (e.g. acknowledge an alarm, read all parameters, navigate to candidate detail) successfully within its target time, with an unintended-activation (slip) rate on safety-significant controls of ≤ 1%; touch-target size and spacing shall meet the specified minimum. | High; Safety-critical / Usability | UR_11, UFMEA_12 |
+| USR_12 | In summative testing of the alarm-suspend function, 100% of trained clinicians shall correctly perceive that alarms are suspended whenever they are, and no test session shall end with the monitor left indefinitely silenced; the suspend interval shall auto-restore within the specified bounded maximum and an escalating reminder shall be perceived before it expires. | High; Safety-critical (Class B) | UR_08, UR_09, UFMEA_13 |
+| USR_13 | At handover, at least 95% of arriving clinicians shall, within 15 seconds and before resuming care, correctly identify from the at-a-glance handover view which channels are flagged untrustworthy, whether alarms or limits are modified or suspended, and the current candidate state. | High; Safety-critical (Class B) | UR_14, UFMEA_14 |
+| USR_14 | In summative testing of HIS data exchange, at least 98% of clinicians shall correctly perceive whether a transfer succeeded, failed, or was partial, and no clinician shall proceed believing a failed or partial transfer succeeded; recipient/patient-record association shall be confirmed before send. | High; Interoperability | UR_14, UFMEA_15 |
+| USR_15 | The guided per-channel commissioning verification shall block release on any unconfirmed channel: in testing, 100% of biomedical engineers shall confirm each acquired parameter (Acquired Parameters / Signals table) against its correct source device before clinical release, and a seeded mis-mapping shall be detected and corrected in 100% of sessions. | High; Integration | UR_16, UFMEA_16 |
+| USR_16 | A clinician trained on MMSS via the simulated training mode shall, within a single defined training session and with no prior MMSS exposure, achieve the per-task success and time targets (USR_01–USR_13) on their first live-equivalent attempt, demonstrating learnability for a trained medical professional. | High; Safety-critical (named risk control) | UR_12, UFMEA_11 |
+| USR_17 | The vital-sign display shall be legible — all parameter values, units, and out-of-range flags correctly read — across the full specified range of ambient illumination (from direct glare to darkness) and at the specified viewing distance, and alarms shall remain perceptible up to the specified worst-case ambient noise level, verified in accessibility/legibility testing. | High; Safety-critical / Usability | UR_11, UFMEA_01, UFMEA_07 |
 
 ## Concept
 
@@ -522,82 +557,211 @@ Measurable requirements for how the product must perform from a user perspective
 
 Wireframes, interaction flows, navigation structures, and visual design principles that translate the user requirements into a tangible concept.
 
-The design concept below is the tangible expression of the usability requirements (USR_*) and the usability-FMEA mitigations (UFMEA_*). It is organised as a single, always-on **main monitoring screen** (the clinician almost never navigates away from it under stress), a small set of forcing **interaction flows** for the few consequential actions, a deliberately shallow **navigation structure**, and a set of **visual-design principles** that make the screen safe to read at a glance in a hostile environment. Every choice cites the requirement and use-error it controls.
+This section translates the user requirements (UR_*), usability requirements (USR_*), and the use errors catalogued in the User DFMEA and UFMEA into a concrete, tangible MMSS interface concept. Because MMSS renders onto an *existing* portable patient-monitor display (Monitor display context element, IF_08) and is operated by a clinician whose hands and attention are mostly on the patient, every layout choice below is driven by one overriding goal: a safety-critical fact must be readable, and a safety-critical action performable, in a single glance and a single one-handed touch, under motion, glare, and noise.
 
-#### Main monitoring screen layout
+#### Design Drivers and Governing Principles
 
-The live screen is divided into three persistent zones — a top-edge **alarm banner**, a left/centre **vital-signs zone**, and a right **diagnostic-candidates zone** — plus a persistent **patient-identity header** and a persistent **mode indicator**. The layout is fixed (no user-arrangeable panels) so the clinician's spatial memory is stable across every patient and shift.
+The whole concept is shaped by a small set of governing principles, each tied to the requirements and use errors it serves:
 
-```text
-+--------------------------------------------------------------------------------+
-| (●LIVE)  PATIENT: J. DOE  M  47y  ID 0042            12:04:31   [≡ menu]        |  <- identity header + mode (USR_10, USR_12)
-+================================================================================+
-|  ⚠ CRITICAL  SpO2 84%  ↓                              [HOLD-to-silence 30s]    |  <- alarm banner, top priority only (USR_02, USR_14)
-+--------------------------------------------------------------------------------+
-|  VITAL SIGNS                              |  DIAGNOSTIC SUPPORT  (decision aid) |
-|                                           |  -- you interpret; not a diagnosis  |  <- non-confirmatory framing (USR_06, USR_07)
-|  +------------+  +------------+           |  +-------------------------------+  |
-|  | HR     ●   |  | SpO2   ●   |           |  | 1  Hypovolaemic shock         |  |
-|  |   98   bpm |  |  84  %  ⚠  |           |  |    conf ▮▮▮▯▯  62%             |  |  <- confidence shown inline,
-|  |   ~live~   |  |  ~live~    |           |  |    basis: HR↑ BP↓ SpO2↓       |  |     co-located basis + limits
-|  +------------+  +------------+           |  |    limits: not validated <2y  |  |     (USR_06, USR_07)
-|  +------------+  +------------+           |  +-------------------------------+  |
-|  | BP     ●   |  | etCO2  ●   |           |  | 2  Sepsis                     |  |
-|  |  82/40 mmHg|  |  38  mmHg  |           |  |    conf ▮▮▯▯▯  41%   basis...  |  |
-|  |   ~live~   |  |  ~live~    |           |  +-------------------------------+  |
-|  +------------+  +------------+           |  | 3  Cardiogenic shock  28% ... |  |
-|  +------------+  +------------+           |  +-------------------------------+  |
-|  | TEMP   ●   |  | EEG    ✕   |           |                                     |
-|  |  36.4  °C  |  | NOT CONNECTED|         |  [ status: candidates @ 12:04:29 ]  |  <- freshness of diagnostic set
-|  |   ~live~   |  |  --  ⚠ setup |         |                                     |
-|  +------------+  +------------+           |                                     |  <- per-channel state (USR_13)
-+--------------------------------------------------------------------------------+
+- **Glanceability over density** — fixed, never-moving placement per parameter so the eye learns where to look; pre-attentive "pop-out" of anything abnormal (UR_01, USR_01, USR_02, UFMEA_01).
+- **Redundant, non-colour-only coding** — every safety-significant state is encoded by at least two of {colour, shape/icon, position, text}, so it survives glare, vibration, and colour-vision deficiency (USR_02, USR_17, accessibility).
+- **Absence is never silence** — a not-yet-acquired, stalled, lost, untrustworthy, or "no diagnosis" state is always shown as an *explicit positive state*, never as a blank, a zero, or a frozen last-good value (UR_07, UR_10, UFMEA_02, UFMEA_09, UFMEA_10).
+- **Clinician-in-control framing** — diagnostic output is styled and labelled as non-authoritative *suggestion*, never as a result that gates care (UR_05, UR_06, UFMEA_04).
+- **Distinct signal categories** — clinical alarm, sensor-fault warning, and timeout each have a unique, locked tone/colour/icon/text signature so they can never be confused (UR_08, UR_09, UFMEA_08).
+- **One-handed, large-target interaction** — every safety-significant control is reachable and actuable one-handed with guarded confirmation against accidental activation (UR_11, USR_11, UFMEA_12).
+- **Persistent mode and system-health truth** — operating mode (training vs live) and monitoring liveness are always-visible and unmistakable (UR_03, UR_13, UFMEA_11, UFMEA_13).
+
+#### Screen Architecture and Navigation
+
+MMSS is built around a single, always-resident **Main Monitoring Screen** that is never fully replaced — overlays and side panels expand *from* it without ever hiding the vital-signs tiles or the persistent status bars. This keeps the patient's true state and the alarm/mode state continuously visible no matter what the clinician is doing, which is what allows the glance-and-go interaction the pre-hospital and ICU environments demand.
+
+```
+NAVIGATION MODEL  (overlays/panels never hide the vital-signs tiles or status bars)
+
+                 ┌──────────────────────────────────────┐
+                 │        MAIN MONITORING SCREEN         │  ← always resident
+                 │  (vital tiles + AI panel + bars)      │
+                 └───┬──────────┬───────────┬────────────┘
+       glance/tap    │          │           │
+                     ▼          ▼           ▼
+            ┌─────────────┐ ┌──────────┐ ┌─────────────────┐
+            │ Candidate    │ │ Alarm    │ │ Handover view   │
+            │ detail       │ │ ack /    │ │ (at-a-glance    │
+            │ (reasoning,  │ │ suspend  │ │ working state)  │
+            │ confidence,  │ │ overlay  │ │ + HIS share     │
+            │ drivers)     │ │          │ │                 │
+            └─────────────┘ └──────────┘ └─────────────────┘
+
+  Engineering / commissioning + training-entry are reached only from a
+  guarded menu; TRAINING mode, once active, is shown by a persistent banner
+  on EVERY screen above (see Training/Live indicator).
 ```
 
-- **Patient-identity header** — persistently prominent, top-left, never scrolls off. Carries name/sex/age/ID so the clinician always knows whose data is on screen; it is the anchor for the identity-confirmation forcing step before alarm-limit setting and HIS share (USR_12, UFMEA_06).
-- **Mode indicator** — a persistent, always-visible state chip top-left: `(●LIVE)` in a calm, unmistakable live treatment, versus a loud, full-screen-bordered `(▲ SIMULATION)` / `(■ STANDBY/HELD)` treatment for any non-live state. It is co-located with identity so the clinician reads "whose, and is it live" in one fixation (USR_05, USR_10, UFMEA_01, UFMEA_13).
-- **Alarm banner** — the top edge, reserved exclusively for the single highest-priority active alarm, rendered with IEC 60601-1-8 priority colour/flash and paired audible signal. Critical and minor conditions are perceptually distinct (colour, flash rate, tone) so the critical signal never blends into minor traffic (USR_02, UFMEA_07). When audio is silenced, a persistent `[HOLD-to-silence 30s]` countdown sits in the banner so the suspended state is never forgotten and a new higher-priority alarm breaks it (USR_14, UFMEA_08).
-- **Vital-signs zone** — fixed grid of one tile per channel. Each tile shows the value, units, a per-channel state dot (`●` acquiring / `✕` not-connected / `⚠` faulted) and a continuous `~live~` freshness heartbeat. A value that stalls past the 1-second cadence visibly degrades and is flagged stale rather than persisting as a trusted number (USR_01, USR_13, UFMEA_02, UFMEA_03). A misplaced/unreliable-flagged value has its **numeric presentation itself suppressed/invalidated** (struck through / replaced), not merely flagged adjacently, so a discredited reading cannot be read as valid (USR_04, UFMEA_11). An expected-but-absent channel renders a distinct non-blank "NOT CONNECTED / setup" tile so a missing sensor is salient, not an empty space (USR_13, UFMEA_02).
-- **Diagnostic-candidates zone** — a ranked list, each row co-locating the candidate label, a confidence bar + percentage, its **basis**, and its **known limitations**, all visible without any extra interaction; ranking is visually subordinate to the confidence/limitations context. The zone header permanently frames the panel as "decision support — you interpret; not a diagnosis", and carries a freshness stamp for the candidate set and the explicit timeout/fallback notice when no candidate arrives in the 2-minute window (USR_06, USR_07, USR_08, UFMEA_05, UFMEA_09).
+All interaction is reversible and shallow: no safety-critical fact is ever more than one tap away, and the clinician can always return to the Main Monitoring Screen with a single large, fixed-position control. There is **no workflow path that requires an AI result before the clinician can act** — the decision to treat is always available directly from the main screen (UR_06, UFMEA_04).
 
-#### Key interaction flows
+#### Main Monitoring Screen Layout
 
-Interactions are deliberately minimal; only consequential actions are gated by a forcing step, everything else is glance-only.
+The screen is divided into three persistent zones: a top **Status Bar** (mode, system health, time, alarm-state summary), a left/centre **Vital-Signs Tile Grid**, and a right **AI Diagnostic-Candidate Panel**. The tile grid enumerates exactly the parameters in the **Acquired Parameters / Signals** table (Context), one tile per parameter, in a fixed clinical-priority order.
 
-- **Acknowledge / silence an alarm** (USR_14, UFMEA_08): clinician presses the banner control → audio enters a **time-limited** silence with a persistent visible countdown in the banner → audio auto-restores at the limit → a new higher-priority alarm immediately overrides and breaks the silence. There is no permanent silent-latch path.
-- **View diagnostic-candidate detail** (USR_06, USR_07, UFMEA_05): the basis, confidence and limitations are already on the face of each row, so the default needs no interaction. Selecting a candidate expands an optional detail (full feature contributions) but never collapses or hides the calibrating basis/confidence/limitations from the default view, so trust cannot be uncalibrated by an interaction the clinician skips under pressure.
-- **Confirm patient identity** (USR_12, UFMEA_06): before configuring alarm limits and before any HIS share, an explicit, unmistakable confirmation step presents the patient identity and requires a positive confirm. A consequential action cannot proceed under an unconfirmed or wrong identity. Flow: `trigger action → identity confirmation dialog (name/ID prominent) → confirm → action proceeds`.
-- **Simulation vs. live mode** (USR_05, USR_10, UFMEA_01, UFMEA_13): entering simulation/standby applies the persistent loud mode banner and visibly alters the vital-sign presentation; **leaving** any non-live mode back to live requires an explicit confirmation. Power-on shows a distinct full-screen start-up/acquiring state that transitions to the live layout only when acquisition is confirmed per channel, so "screen on" is never mistaken for "monitoring on".
-- **HIS share** (USR_12, UFMEA_06, UFMEA_12): `confirm identity → trigger share → progress/result shown in a confined, non-intrusive region that never overlays or suppresses the live vitals/alarm view`, with a clear cue that share status is independent of live monitoring.
-
-#### Navigation structure
-
-The structure is intentionally shallow — at most one level away from the always-on monitoring screen — because navigating away from live vitals under stress is itself a hazard.
-
-```text
-START-UP / ACQUIRING  ──(acquisition confirmed)──▶  MAIN MONITORING SCREEN (default, always-on)
-                                                         │
-                  ┌──────────────────────────────────────┼───────────────────────────────────┐
-                  ▼                  ▼                    ▼                  ▼                  ▼
-          Alarm-limit setup   Candidate detail     Identity confirm    HIS share panel   Mode: SIMULATION / STANDBY
-          (identity-gated)    (overlay, vitals     (forcing dialog)    (confined region)  (persistent loud banner;
-                              + alarms stay live)                                          explicit confirm to leave)
+```
+┌─ STATUS BAR ───────────────────────────────────────────────────────────────┐
+│ ● LIVE   ♥ system OK   12:04:31   [ALARMS: ON]        ⌁ HR alarm ACTIVE ⚠   │
+├──────────────────────────────────────────┬─────────────────────────────────┤
+│ VITAL-SIGNS TILES (fixed placement)      │ AI DIAGNOSTIC CANDIDATES        │
+│                                          │ ─ decision support (not a        │
+│ ┌───────────⚠──────────┐ ┌──────────────┐│   diagnosis) ────────────────┐  │
+│ │ HEART RATE        ▲  │ │ SpO2         ││ │ 1 ▸ Septic shock      72% ▓▓▓│  │
+│ │   148   bpm  OUT-HIGH │ │   97  %      ││ │      drivers: HR▲ Temp▲ RR▲  │  │
+│ │   (red + ▲ + border) │ │   normal     ││ │ 2 ▸ Hypovolaemia      18% ▓  │  │
+│ └──────────────────────┘ └──────────────┘│ │      drivers: BP▼ HR▲        │  │
+│ ┌──────────────────────┐ ┌──────────────┐│ │ 3 ▸ Cardiogenic       …  6%  │  │
+│ │ SYS/DIA BP    mmHg    │ │ RESP RATE    ││ │ ──────────────────────────── │  │
+│ │   88 / 54            │ │   28 /min ▲  ││ │  ⟳ converging…  (provisional)│  │
+│ │   MAP 65            │ │   OUT-HIGH   ││ │  ▸ tap a candidate for detail│  │
+│ └──────────────────────┘ └──────────────┘│ └──────────────────────────────┘  │
+│ ┌──────────────────────┐ ┌──────────────┐│                                 │
+│ │ EtCO2   mmHg         │ │ TEMP   °C    ││  [ I'LL DECIDE ]  ← always-      │
+│ │   31  ▼  OUT-LOW     │ │  39.1 ▲      ││   available; care never gated   │
+│ └──────────────────────┘ └──────────────┘│   on an AI result               │
+│ ┌──────────────────────┐ ┌──────────────┐│                                 │
+│ │ PULSE RATE  bpm      │ │ BIS          ││                                 │
+│ │   146               │ │   —  NO DATA ││  ← explicit no-data state,       │
+│ └──────────────────────┘ │  (sensor?)   ││     never blank/zero            │
+│                          └──────────────┘│                                 │
+└──────────────────────────────────────────┴─────────────────────────────────┘
 ```
 
-The main monitoring screen is the persistent home; every sub-view is a transient overlay or confined region that keeps the alarm banner and vital-signs zone live and visible underneath, so live monitoring and alarming are never suppressed by navigation (USR_02, UFMEA_12).
+Each tile follows one fixed template so the eye always finds the same information in the same place (UFMEA_01):
 
-#### Visual-design principles
+```
+┌─ PARAMETER TILE (anatomy) ──────────────┐
+│ HEART RATE              ⟵ label (fixed)  │
+│  148    bpm            ⟵ value + UNIT    │  unit always shown → USER_DFMEA_01
+│  ▲  OUT-HIGH          ⟵ range flag       │  shape(▲/▼)+word+colour → USR_02
+│ [██████ trust ████]   ⟵ trust/freshness  │  persistent per-channel cue → UFMEA_03
+└─────────────────────────────────────────┘
 
-| Principle | Design rule | Grounded in |
-|-----------|-------------|-------------|
-| Glanceability | Fixed-position zones and tiles, one value per tile, status comprehensible in ≤2 s without interaction; spatial layout never changes between patients. | USR_01, USR_11, UFMEA_03, UFMEA_10 |
-| Legibility in motion and across the full lighting range | High-contrast typography and indicators validated at ≤1 m viewing distance under vehicle vibration and across low-light to direct-sunlight/glare; large numerals; control targets sized for gloved hands. | USR_11, UFMEA_10 |
-| Alarm perceptibility (dual-channel, prioritised) | Critical alarms perceptible both audibly and visually even with eyes on the patient; IEC 60601-1-8 priority-distinct colour/flash/tone; fault tones distinct from physiological tones and audible above moving-unit ambient noise. | USR_02, USR_03, UFMEA_04, UFMEA_07 |
-| Low interaction under stress | Default reading requires zero interaction; consequential actions are few and forcing; silence is time-limited and self-restoring; no deep menus on the critical path. | USR_09, USR_14, UFMEA_08 |
-| Data-freshness honesty | Every value carries a live/stale cue; a stalled value degrades visibly; a flagged value's own presentation is invalidated, never shown as a trusted number; absent channels are salient, non-blank. | USR_01, USR_04, USR_13, UFMEA_02, UFMEA_03, UFMEA_11 |
-| AI-confidence transparency to avoid over-reliance | Basis, confidence and limitations co-presented with every candidate; ranking subordinated to that context; panel permanently framed as non-confirmatory decision support; explicit, persistent timeout/fallback notice. | USR_06, USR_07, USR_08, UFMEA_05, UFMEA_09 |
-| Unambiguous mode and identity | Persistent live/simulation/standby mode chip and persistent patient-identity header; explicit confirmation to leave a non-live mode and to act under an identity; non-live screens visibly distinct from live. | USR_05, USR_10, USR_12, UFMEA_01, UFMEA_06, UFMEA_13 |
-| Learnability | Consistent, stable layout and the built-in simulation mode enable defined competency within a single ≤60-minute training session. | USR_09 |
+  STATE RENDERINGS for the same tile (absence is never silence):
+   • LIVE & normal   :  value, unit, calm neutral background
+   • OUT-OF-RANGE    :  value + ▲/▼ + "OUT-HIGH/LOW" + red border + colour (USR_02)
+   • ACQUIRING       :  "··· acquiring", animated, NOT a number (UFMEA_02)
+   • NO DATA / LOST  :  "— NO DATA", hatched fill, never a stale number (UFMEA_09)
+   • UNTRUSTWORTHY   :  value greyed + struck + "SENSOR?" + fault icon (UFMEA_03)
+```
+
+Key tile behaviours and the errors they defeat:
+
+- Every value carries its **unit** inline (USER_DFMEA_01), refreshes at least once per second, and shows an **out-of-range flag using colour + an up/down arrow + the words OUT-HIGH/OUT-LOW** so abnormality survives glare and colour-blindness (UR_01, USR_01, USR_02, USR_17, UFMEA_01).
+- A **persistent per-channel trust/freshness bar** sits under every value — not just an event warning — so a suspect or stalled channel is continuously visible at a glance, defeating silent trust in misplaced/stale data (UR_10, UFMEA_03, UFMEA_09, USR_10).
+- During start-up and staggered sensor attachment, an unacquired channel renders an explicit, **non-numeric "acquiring" state**, never a plausible normal number, so absence is not read as "normal" (UR_02, UFMEA_02, USR_16).
+
+#### AI Diagnostic-Candidate Panel
+
+The candidate panel is deliberately styled to look like *advice*, not a verdict. It sits to the side of (never on top of) the vitals, carries a permanent "decision support — not a diagnosis" header, and lists ranked candidates each with a confidence band and the **driving vital-sign parameters** drawn from the Acquired Parameters / Signals set, so the clinician can immediately see whether a candidate rests on a parameter they already distrust (UR_05, USR_06).
+
+```
+┌─ AI DIAGNOSTIC CANDIDATES ───────────────────────────────┐
+│  DECISION SUPPORT — informs, does not replace you   ⓘ     │  ← persistent framing (UR_06)
+├──────────────────────────────────────────────────────────┤
+│ 1 ▸ Septic shock        CONFIDENCE  HIGH  72% ▓▓▓▓▓░░     │  banded + worded + % (USR_06)
+│       driving: Heart Rate ▲ · Temp ▲ · Resp Rate ▲        │  ← drivers inline (UFMEA_05)
+│ 2 ▸ Hypovolaemia        CONFIDENCE  LOW   18% ▓░░░░░░     │
+│       driving: Systolic BP ▼ · Heart Rate ▲               │
+│ 3 ▸ Cardiogenic shock   CONFIDENCE  LOW    6% ▓░░░░░░     │
+│ ─────────────────────────────────────────────────────────│
+│ STATE:  ⟳ CONVERGING (provisional — ranking may change)   │  provisional ≠ settled (UFMEA_06)
+│         ✔ SETTLED       or       ⚑ RANKING CHANGED ↑↓     │  change made salient (USR_07)
+│ ▸ tap any candidate → reasoning / confidence / drivers    │  expandable detail (UR_05)
+└──────────────────────────────────────────────────────────┘
+```
+
+Anti-bias and anti-anchoring design choices:
+
+- Candidates use **non-authoritative "suggestion" styling** (lower visual weight than the vitals, no result-like emphasis) to resist automation bias (UR_06, UFMEA_04, USR_05).
+- Confidence is shown as a **banded + worded + numeric** triple (e.g. "HIGH 72%"), never a bare percentage, so it cannot be mis-weighted (UFMEA_05, USR_06).
+- A **provisional/converging list is visibly distinct from a settled one**, and any material re-ranking raises a salient "RANKING CHANGED" cue so a revision is noticed rather than missed — directly countering anchoring and premature closure (USER_DFMEA_18, UFMEA_06, USR_07).
+- Tapping a candidate expands **reasoning + confidence + driving parameters** on demand, absorbable at a glance yet deeper when chosen (UR_05).
+
+#### Alarm Presentation — Clinical vs Sensor-Fault vs Timeout
+
+The three signal categories are given **locked, mutually distinct signatures** across tone, colour, icon, text, and position so they can never be confused, conforming to alarm-safety practice (UR_08, UR_09, UFMEA_08, USR_03, USR_04). Alarms are multi-modal (audible + visual), latch until resolved or acknowledged, and remain perceptible in noise and poor light.
+
+```
+┌─ ALARM / WARNING SIGNATURES (locked, never reused across categories) ───────┐
+│ CLINICAL ALARM  │ ⚠ red, urgent pulsing tone, "⚠ HR 148 OUT-HIGH — URGENT" │
+│  (vital sign)   │   border flash on the offending TILE + status-bar banner  │
+│─────────────────┼──────────────────────────────────────────────────────────│
+│ SENSOR-FAULT    │ 🔧 cyan/amber, distinct two-tone chirp, "SENSOR FAULT —   │
+│  WARNING        │   SpO2 probe — check placement", wrench icon, on the tile  │
+│─────────────────┼──────────────────────────────────────────────────────────│
+│ DIAGNOSIS       │ ⌛ neutral, soft distinct tone, positive banner in the     │
+│  TIMEOUT        │   candidate panel: "NO DIAGNOSIS — proceed on your own    │
+│                 │   assessment" (also raised independently by the AI svc)    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+ALARM ACKNOWLEDGE / SUSPEND OVERLAY (one-handed, guarded)
+┌───────────────────────────────────────────────┐
+│  ⚠ HEART RATE 148 bpm  OUT-HIGH (URGENT)       │
+│  [  ACKNOWLEDGE  ]      ← large, latches off    │
+│  [  SUSPEND 2 min ]     ← time-limited only;    │
+│        auto-restores; escalating reminder       │
+│  ✕ cannot indefinitely silence (UFMEA_13)       │
+└───────────────────────────────────────────────┘
+```
+
+- The alarm always **names the specific parameter and its urgency** and flashes the offending tile, so the clinician knows what and how urgent at a glance, perceptible in noise and at distance (UR_08, USR_03).
+- Sensor-fault warnings are perceptually and textually **distinct from clinical alarms** ("SENSOR FAULT — check placement", wrench icon, different tone), so a fault is never treated as deterioration or vice versa (UR_09, UR_10, UFMEA_08, USR_04). An accompanying **signal-quality/plausibility cue** on the alarming tile lets the clinician quickly separate genuine change from motion artefact (UFMEA_17).
+- Alarm **suspend is time-limited with auto-restore and an escalating reminder**, and an unmistakable "ALARMS SUSPENDED" banner persists whenever alarms are off — never an indefinite, forgotten silence (UFMEA_13, USR_12).
+
+#### Diagnosis-Timeout Indication
+
+When the external diagnostic capability cannot converge in time, the candidate panel shows a **positive "NO DIAGNOSIS — proceed on your own assessment" state**, delivered on a path independent of the failed diagnostic flow and reinforced by the AI service's own audible notification. The area is **never left blank** (a blank reads as "still computing"), so the clinician stops waiting and falls back on their own judgement (UR_07, UFMEA_10, USR_08).
+
+#### Training / Live Mode Indicator
+
+Operating mode is the single most safety-critical piece of state on the screen and is therefore made impossible to miss: a **full-width, persistent, non-dismissible banner** on every screen, with a distinct colour and pattern, plus a watermark across all simulated data. The system **fails safe to LIVE** on restart or when a user returns to the device, and entering/leaving training requires explicit confirmation (UR_13, UR_12, UFMEA_11, USR_09).
+
+```
+┌════════════════════════════════════════════════════════════════════════════┐
+║  ▓▓ TRAINING MODE — SIMULATED DATA — NOT A REAL PATIENT ▓▓   (cannot dismiss)║
+└════════════════════════════════════════════════════════════════════════════┘
+   • distinct colour + diagonal-hatch pattern (survives poor light, USR_09)
+   • watermark "SIMULATED" tiled across the vitals + candidate areas
+   • LIVE mode: no banner, normal chrome → the two states are unmistakable
+   • restart / new user → defaults to LIVE (fail-safe); entering TRAINING needs
+     explicit confirm; leaving TRAINING needs explicit confirm
+```
+
+#### Interaction Flow — One-Handed, Glanceable
+
+The interaction model is designed so the dominant loop — *glance → read → (optionally) acknowledge → return* — is achievable one-handed under motion. Controls for safety-significant actions are **large, well-spaced touch targets** with confirmation/guarding so a slip cannot silence an alarm or change a limit unintentionally (UR_11, USR_11, UFMEA_12). The primary clinical loop:
+
+```
+power on ──► [readiness ≤10s, per-channel acquiring state] ──► MAIN SCREEN
+   │                                                              │
+   │  glance ◄───────────────────────────────────────────────────┤
+   │    ├─ all vitals + units + range flags read in one glance    │ (UR_01/USR_01)
+   │    ├─ trust bar shows any suspect/stale channel              │ (UFMEA_03/09)
+   │    └─ candidate panel = side advice, not a gate              │ (UR_06)
+   │                                                              │
+   │  ALARM? ─► offending tile flashes + named banner + tone ─►   │
+   │            one big tap: ACKNOWLEDGE (latches) or SUSPEND 2m  │ (USR_03/12)
+   │                                                              │
+   │  need detail? ─► one tap → candidate reasoning/drivers ─► back│ (UR_05)
+   │                                                              │
+   │  hand over? ─► one tap → at-a-glance handover view + HIS share│ (UR_14/USR_13)
+   └──────────────────────────────────────────────────────────────┘
+```
+
+A dedicated **handover view** surfaces the safety-relevant working state — which channels are flagged untrustworthy, whether alarms/limits are modified or suspended, and the current candidate state — absorbable in seconds by an arriving clinician, and offers a confirmed, success/failure-explicit HIS share so nothing falls through the gap at shift change or transfer (UR_14, UFMEA_14, UFMEA_15, USR_13, USR_14). For commissioning, a **guided per-channel verification** flow forces the biomedical engineer to confirm each acquired parameter against its correct source device and blocks clinical release on any unconfirmed channel (UR_16, UFMEA_16, USR_15).
+
+#### Visual Design Principles
+
+- **Legibility first.** Large numerals, high contrast, and a luminance/contrast scheme validated across the full ambient range from direct glare to darkness at the specified viewing distance; alarms perceptible up to the worst-case ambient noise (USR_17, UFMEA_01, UFMEA_07).
+- **Colour with redundancy, never colour alone.** Red = clinical alarm/abnormal, amber/cyan = sensor fault, neutral = normal/timeout — but every such state is *also* carried by shape, icon, position, and text, so it remains correct for colour-vision-deficient users (USR_02, USR_04, accessibility).
+- **Information hierarchy by clinical priority.** Vital signs and alarms dominate the visual field; AI candidates are deliberately secondary; chrome and navigation are quietest of all — so the eye is drawn first to what can harm the patient soonest (UR_01, UR_06, UFMEA_04).
+- **Stability of layout.** Parameters never move; the same fact is always in the same place, so the clinician's learned glance pattern holds across patients and shifts (UFMEA_01).
+- **Positive state always.** No safety-relevant fact is ever conveyed by absence — acquiring, no-data, untrustworthy, suspended-alarm, training-mode, and no-diagnosis are all explicit, named states (UR_07, UR_10, UR_13, UFMEA_02, UFMEA_09, UFMEA_10, UFMEA_11, UFMEA_13).
 
 ### Actors
 
@@ -605,91 +769,36 @@ Individuals, groups, or systems that perform roles or tasks within the system or
 
 | Actor | Description |
 |-------|-------------|
-| Pre-hospital clinician (Paramedic / EMS field clinician) | Human primary actor. Trained, licensed emergency medical professional operating MMSS in ambulances and mobile units, frequently as the sole caregiver while the vehicle is moving. Powers up and connects the patient, reads vital signs at a glance, relies on hands-free audible fault alerting, and uses early diagnostic support en route. |
-| Emergency physician | Human primary actor. Licensed physician in the emergency room / resuscitation bay who monitors deteriorating patients, reviews and calibrates trust in ranked diagnostic candidates, handles diagnostic timeouts, and shares patient and diagnostic data to the receiving HIS at handover. |
-| ICU / ER nurse | Human primary actor. The most frequent and sustained MMSS user. Sets up the full sensor set, confirms patient identity and alarm limits, manages prioritised alarms over long shifts, and responds first to vital-sign, connection, and sensor-misplacement alarms. |
-| Clinical educator / simulation trainer | Human primary actor. Clinical or nurse educator who activates and runs the built-in simulation training mode to deliver and assess competency-based onboarding without a live patient, in a mode unmistakably distinct from live clinical use. |
-| Biomedical / clinical engineer | Human secondary/supporting actor. Hospital or EMS technical staff who deploy, configure, and commission MMSS onto the existing portable-monitor and six-device fleet, integrate the HIS interface, and support information-security and maintenance obligations. |
-| Measurement devices (ECG, Pulse Oximeter, BP Monitor, Thermal Probe, Capnometer, EEG) | System actors. The six fixed, non-invasive devices that supply vital-signs data and device-reported connection-loss, misplacement, and unreliable-reading status flags to MMSS through their published ICDs (IF_01–IF_06), and that independently generate device-side audible alarms backing the MMSS connection/misplacement alarm. |
-| Open Evidence AI engine (ALGOS) | System actor. The externally sourced, commercially validated off-the-shelf AI diagnostic engine. Receives conditioned data from MMSS over IF_08, returns structured ranked diagnostic candidates with basis, confidence, and limitations, owns the 2-minute convergence budget, and emits an independent audible notification on timeout. |
-| Hospital Information System (HIS) | System actor. The receiving hospital's information system that exchanges patient and diagnostic data with MMSS over a standard interoperability protocol (HL7/FHIR) via IF_09 for continuity of care and a second opinion. |
-| Monitor Display | System actor. The existing portable monitor's display hardware on which MMSS renders raw vital signs, ranked diagnostic candidates, and prioritised visual/audible alarms through IF_07. |
-| Host CPU / RTOS platform | System actor. The compact embedded real-time platform that provides scheduling, timing, memory, and I/O services (IF_10) on which MMSS executes and meets its latency budgets, and that MMSS activates on power-on. |
+| Pre-hospital Clinician | Human actor. Paramedic or pre-hospital emergency clinician who connects the patient and operates MMSS at the scene and in a moving ambulance, typically alone or in a small crew with no physician on hand. Primary user driver of MMSS: powers it on and reads the at-a-glance vital-signs display, relies on its ranked diagnostic candidates and timeout signalling in place of expert backup, responds to its alarms and sensor-fault warnings one-handed under time pressure, and triggers sharing of patient data with the receiving hospital ahead of arrival. The actor for whom the mobile/pre-hospital usability and safety case is demonstrated. |
+| Emergency Physician | Human actor. Qualified emergency/critical-care physician who uses MMSS in the emergency room and on incoming patients and holds final diagnostic and treatment authority. Reads MMSS vital signs and alarms, critically appraises the AI diagnostic candidates with their reasoning and confidence as adjunctive decision support rather than deferring to them, acts on the no-diagnosis timeout signal, and uses MMSS data exchange with the hospital information system for second opinion and handover. The actor against whom MMSS must reinforce decision-support framing and resist automation bias. |
+| Critical-Care Nurse | Human actor. Registered ICU/ER nurse providing continuous bedside monitoring; the user most often watching MMSS over extended shifts. Sets up the sensors, responds first to MMSS alarms, distinguishes clinically significant alarms from sensor-fault warnings, tracks trends on the continuous display while attending to other patients, and escalates diagnostic and treatment decisions to a physician. The actor for whom MMSS sustained-use alarm-safety and sensor-fault interactions must be demonstrated. |
+| Clinical Trainer / Super-User | Human actor. Senior clinician (educator, clinical specialist, or super-user) designated as the local expert who trains colleagues on MMSS and champions its safe use. Primary user of the risk-free simulated training mode: runs realistic scenarios, demonstrates and explains AI candidate reasoning and confidence and correct interpretation, and ensures trainees never confuse simulated data with a real patient. Because training mode is the named risk control for the clinician-misinterpretation hazard, this actor is central to mitigating use error across the deployed fleet. |
+| Biomedical / Clinical Engineer | Human actor. Clinical-engineering technician who installs, configures, integrates, verifies, and maintains MMSS on the host platform across the fleet — not a clinical user during patient care. Connects MMSS to the measurement devices and the hospital information system through their defined interface contracts, validates correct acquisition, alarming, and data exchange, applies controlled software updates, and supports troubleshooting and serviceability over the service life. |
+| Measurement Devices (ECG monitor, Pulse oximeter, BP monitor, Thermal probe, Capnometer, EEG monitor) | System actor. The six existing, externally-supplied measurement devices that acquire the patient's physiological signals and supply the vital-sign parameters listed in the Acquired Parameters / Signals table to MMSS over their published acquisition interfaces (IF_02–IF_07). Each device also raises its own independent connection/fault alarms. They are the upstream data sources MMSS conditions, displays, alarms on, and forwards for diagnosis; not designed in this project. |
+| Monitor Display | System actor. The existing connected display of the portable patient monitor on which MMSS renders vital signs, alarms, and ranked diagnostic candidates over the published display interface (IF_08). The output endpoint through which MMSS presents all clinical information to the human actors; not designed in this project. |
+| External Diagnostic AI Capability | System actor. The commercially validated, off-the-shelf diagnostic AI service (Open Evidence class) external to MMSS. Receives conditioned patient data from MMSS over the diagnostic AI interface (IF_09) and returns structured, ranked diagnostic candidates with reasoning and confidence within the validated scope of its own intended use; raises its own independent audible time-out notification on convergence failure. The decision-support engine MMSS integrates and frames for the clinician; not designed in this project. |
+| Hospital Information System (HIS) | System actor. The external clinical information system with which MMSS optionally exchanges patient data and diagnostic findings over HL7/FHIR-class interoperability (IF_10) for second opinion and handover. The downstream clinical system MMSS interoperates with on clinician request; not designed in this project. |
+| Host CPU Platform | System actor. The existing compact embedded CPU platform with real-time OS capabilities on which MMSS executes, accessed over the host platform/OS interface (IF_01). Provides the runtime, timing services, and resources MMSS depends on to acquire, process, and present data within its performance budgets; not designed in this project. |
 
 ### Use Cases (UC_*)
 
-```dot
-digraph use_cases {
-  rankdir=LR;
-  fontname="Helvetica";
-  node [fontname="Helvetica", fontsize=10];
-  edge [fontname="Helvetica", fontsize=9, color="#555555", arrowhead=none];
-
-  // Human actors (left)
-  node [shape=box, style=rounded];
-  Para  [label="Pre-hospital\nclinician"];
-  Phys  [label="Emergency\nphysician"];
-  Nurse [label="ICU / ER\nnurse"];
-  Edu   [label="Clinical educator /\nsimulation trainer"];
-  Bio   [label="Biomedical /\nclinical engineer"];
-
-  // System actors (right)
-  Dev   [label="Measurement\ndevices"];
-  Algos [label="Open Evidence\nAI engine (ALGOS)"];
-  His   [label="Hospital Information\nSystem (HIS)"];
-  Disp  [label="Monitor Display"];
-  Host  [label="Host CPU /\nRTOS platform"];
-
-  // System boundary: MMSS use cases
-  subgraph cluster_mmss {
-    label="MMSS";
-    style="rounded,filled";
-    fillcolor="#eef3fb";
-    color="#2b5fa6";
-    node [shape=ellipse, style="filled", fillcolor="#ffffff", color="#2b5fa6"];
-
-    UC01 [label="UC_01 Activate\nsystem"];
-    UC02 [label="UC_02 Acquire &\ndisplay vital signs"];
-    UC03 [label="UC_03 Generate & display\nranked diagnostics"];
-    UC04 [label="UC_04 Raise vital-sign\nalarm"];
-    UC05 [label="UC_05 Detect sensor\nmisplacement / disconnect"];
-    UC06 [label="UC_06 Communicate\ndiagnostic timeout"];
-    UC07 [label="UC_07 Share data\nwith HIS"];
-    UC08 [label="UC_08 Confirm\npatient identity"];
-    UC09 [label="UC_09 Manage / silence\nalarm audio"];
-    UC10 [label="UC_10 Run simulation\ntraining mode"];
-    UC11 [label="UC_11 Deploy &\ncommission MMSS"];
-  }
-
-  // Human associations
-  Para  -> UC01; Para -> UC02; Para -> UC03; Para -> UC05;
-  Nurse -> UC02; Nurse -> UC04; Nurse -> UC05; Nurse -> UC08; Nurse -> UC09;
-  Phys  -> UC03; Phys -> UC06; Phys -> UC07; Phys -> UC08;
-  Edu   -> UC10;
-  Bio   -> UC11;
-
-  // System-actor associations
-  UC01 -> Host;
-  UC02 -> Dev;  UC05 -> Dev;
-  UC02 -> Disp; UC03 -> Disp; UC04 -> Disp; UC06 -> Disp;
-  UC03 -> Algos; UC06 -> Algos;
-  UC07 -> His;
-}
-```
+_To be added_
 
 | ID | Title | Actor | Goal | Satisfies | Classification | Precondition | Main Success Scenario | Alternative Scenarios | Exception Scenarios | Post Condition | Traces |
 |----|-------|-------|------|-----------|----------------|--------------|-----------------------|-----------------------|---------------------|----------------|--------|
-| UC_01 | Activate the monitoring system | Pre-hospital clinician (primary); Host CPU / RTOS platform | Bring MMSS to a state ready for monitoring within 10 s of switch-on so an unstable patient can be monitored without losing critical time. | UR_02 | High | The monitor hardware is powered and MMSS is installed on the host RTOS platform. | 1. Clinician switches the monitor on. 2. MMSS starts on the host RTOS platform and shows a distinct full-screen start-up/acquiring state. 3. MMSS initialises within 10 s. 4. MMSS presents an unambiguous "ready/acquiring" indication. 5. Clinician confirms readiness and begins relying on monitoring. | Sensors not yet connected: MMSS stays in the start-up/acquiring state per channel and transitions to the live layout only as acquisition is confirmed. | Initialisation exceeds 10 s or fails: MMSS keeps the distinct non-live start-up state (never the live layout) so the clinician cannot mistake "screen on" for "monitoring on". | MMSS is live and acquiring, with monitoring/acquisition state unambiguously indicated. | UT_01, UR_02 |
-| UC_02 | Acquire and display vital signs | Pre-hospital clinician / ICU / ER nurse (primary); Measurement devices, Monitor Display (system) | Continuously acquire vital signs from the six connected devices and display them, fresh, within 1 s of acquisition on a 1 s update, for safe bedside decisions on current data. | UR_01 | High | MMSS is ready; one or more of the six non-invasive devices are connected through their published ICDs. | 1. Devices stream readings (≥0.1 Hz) over IF_01–IF_06. 2. DAC polls each device; AC consolidates a time-stamped vital-signs stream. 3. DPROC renders each value with units and a live-freshness cue on the fixed tile grid. 4. Display updates every second, each value shown within 1 s of acquisition. | Subset of devices connected: only connected channels show live values; expected-but-absent channels render a distinct non-blank "not-connected/setup" tile. | A value stalls past the 1 s cadence: MMSS visibly degrades/flags it as stale rather than persisting it as a trusted current number. | Current vital signs are continuously displayed with their freshness state, and per-channel connection state is unambiguous. | UT_02, UT_03, UT_06, UT_07, UR_01, UR_14 |
-| UC_03 | Generate and display ranked diagnostic candidates | Emergency physician / Pre-hospital clinician (primary); Open Evidence AI engine, Monitor Display (system) | Present early, ranked diagnostic candidates with basis, confidence, and limitations within 1 s of receipt so a working diagnosis is reached faster while clinical judgement stays the clinician's own. | UR_03, UR_04 | High | MMSS is acquiring vital signs; the DEC connection to the Open Evidence engine (IF_08) is available. | 1. DPREC conditions the acquired data (≤800 ms) and DEC dispatches the asynchronous diagnostic request to ALGOS. 2. ALGOS returns structured ranked candidates with basis, confidence, and limitations. 3. DPROC renders each candidate within 1 s of receipt, co-locating basis/confidence/limitations and framing the panel as non-confirmatory decision support. 4. Clinician reads the candidates, calibrates trust, and applies independent judgement. | Updated candidate set arrives: MMSS refreshes the ranked list and updates the candidate-set freshness stamp. | Engine returns an error or malformed output: MMSS does not render an unparseable candidate as a diagnosis and surfaces the diagnostic-support state as unavailable rather than showing misleading output. | Ranked diagnostic candidates with their basis, confidence, and limitations are displayed as decision support; the clinician retains clinical responsibility. | UT_05, UT_11, UT_12, UR_03, UR_04, UR_13 |
-| UC_04 | Raise a vital-sign alarm | ICU / ER nurse (primary); Monitor Display (system) | Raise a prioritised, perceptible alarm for an abnormal patient condition within 1 s of detection so genuinely critical conditions are noticed and acted on without alarm fatigue. | UR_07, UR_09 | High | MMSS is acquiring vital signs; patient-appropriate alarm limits are configured. | 1. AC/DPROC detect a vital sign breaching its configured limit. 2. DPROC raises an IEC 60601-1-8-conformant, priority-distinct alarm (audible + visual) in the top-edge alarm banner within 1 s of detection. 3. Clinician perceives the alarm — even with attention on the patient — identifies the patient and condition, and intervenes. | Multiple concurrent alarms: the highest-priority alarm occupies the banner; minor/transient events are de-prioritised or suppressed so the critical signal stands out. | Audio is currently silenced: a new higher-priority alarm overrides and breaks the silence; no critical alarm is silently lost. | The critical condition is signalled audibly and visually and the clinician has responded; no critical alarm is silently lost. | UT_08, UT_09, UT_10, UR_07, UR_09 |
-| UC_05 | Detect and alarm sensor misplacement / disconnection | ICU / ER nurse / Pre-hospital clinician (primary); Measurement devices (system) | Unambiguously alarm on sensor misplacement, disconnection, or unreliable readings so no decision is made on incorrect or missing data — including hands-free for a sole caregiver. | UR_06, UR_16 | High | MMSS is acquiring from one or more devices that report connection-loss, misplacement, and unreliable-reading status flags through their ICDs. | 1. A sensor disconnects, is misplaced, or returns unreliable data. 2. MMSS raises a connection alarm after 5 s of inactivity and surfaces device-reported misplacement/unreliable flags as prioritised, perceptible audible-and-visual alarms within 1 s of trigger, backed by the device's independent audible alarm. 3. The flagged value's own numeric presentation is suppressed/invalidated so it cannot be read as a valid vital sign. 4. Clinician withholds any decision on flagged data, corrects the sensor; MMSS clears the alarm and resumes trustworthy display. | Sole pre-hospital caregiver, eyes on patient: the attention-independent audible fault alarm (audible above ambient noise) ensures detection without inspecting the display. | Device does not emit a misplacement/unreliable flag (boundary): MMSS can present only what the device reports; connection loss is still caught by the 5 s inactivity rule and the independent device audible alarm. | The fault is unambiguously signalled, no decision is made on flagged data, and trustworthy display resumes once corrected. | UT_04, UT_14, UT_15, UT_16, UR_06, UR_16, UR_09 |
-| UC_06 | Communicate a diagnostic timeout | Emergency physician (primary); Open Evidence AI engine, Monitor Display (system) | Notify the clinician explicitly when no diagnostic candidate is produced within the 2-minute window so they fall back to standard assessment without an unnoticed treatment delay. | UR_05 | High | MMSS has dispatched a diagnostic request and is awaiting candidates from the Open Evidence engine. | 1. No candidate is returned within the 2-minute ALGOS window. 2. MMSS shows a salient, persistent, acknowledge-to-clear on-screen timeout notification in the diagnostic region, directing fallback to standard assessment. 3. The independent ALGOS audible timeout signal co-signals the timeout. 4. Clinician notices the cue and falls back to standard clinical assessment. | A late candidate arrives after the notice: MMSS resumes normal candidate display once the timeout is acknowledged. | On-screen notice not perceived: the independent ALGOS audible signal provides the backstop so the timeout is not silently lost. | The clinician is aware diagnostic support is unavailable and has fallen back to standard assessment without an unnoticed delay. | UT_13, UR_05 |
-| UC_07 | Share patient and diagnostic data with the HIS | Emergency physician (primary); Hospital Information System (system) | Share relevant patient data and ranked diagnostic candidates with the receiving HIS over HL7/FHIR within 1 s, securely and under the correct identity, without interrupting live monitoring. | UR_10, UR_11 | Medium | The HIS interface (IF_09) is configured; the correct patient identity has been confirmed (UC_08); patient and diagnostic data are available. | 1. Clinician triggers the share after confirming patient identity. 2. DPROC transmits patient data and ranked candidates to the HIS over the standard HL7/FHIR protocol within 1 s, protected in transit. 3. Share progress/result is shown in a confined, non-intrusive region. 4. Live acquisition and alarming continue unaffected. | HIS slow: the share completes asynchronously in its confined region while live monitoring stays fully responsive. | HIS unavailable or share fails: the failure is shown in the confined region and never overlays or degrades the live vitals/alarm path, because the share path is isolated from acquisition/alarming. | Patient and diagnostic data are delivered to the HIS under the correct identity; live monitoring was never interrupted. | UT_17, UT_18, UT_19, UR_10, UR_11, UR_15 |
-| UC_08 | Confirm patient identity before a consequential action | ICU / ER nurse / Emergency physician (primary) | Make the monitored patient's identity unambiguous and require explicit confirmation before alarm-limit configuration or HIS sharing, so data and alarms cannot be associated with the wrong patient. | UR_10 | Medium | MMSS is monitoring a patient; a consequential action (alarm-limit setup or HIS share) is about to be performed in a multi-patient setting. | 1. The patient-identity header is persistently prominent on the live screen. 2. On triggering alarm-limit setup or an HIS share, MMSS presents an explicit identity-confirmation step with name/ID prominent. 3. Clinician positively confirms the correct identity. 4. The action proceeds under the confirmed identity. | Wrong patient on screen: clinician cancels at the confirmation step; the consequential action does not proceed. | Identity not confirmed: MMSS blocks the consequential action so it cannot proceed under an unconfirmed or wrong identity. | The consequential action proceeds only under a positively confirmed correct patient identity. | UT_17, UT_20, UR_10, UR_07 |
-| UC_09 | Manage and silence alarm audio under load | ICU / ER nurse (primary) | Allow a clinician to silence/pause alarm audio safely under load without ever silently latching off a subsequent critical alarm. | UR_07 | High | A vital-sign or fault alarm is active or MMSS is monitoring with alarms armed. | 1. Clinician presses the banner silence control. 2. Audio enters a time-limited silence with a persistent, prominent "audio paused" indicator and countdown in the banner. 3. Audio auto-restores at the time limit. | A new higher-priority alarm arrives during silence: it immediately overrides and breaks the silence. | Clinician forgets the suspended state: the persistent indicator and auto-restore prevent a silently latched-off critical alarm. | Alarm audio is restored within its time limit; no critical alarm has been silently latched off. | UT_09, UR_07 |
-| UC_10 | Run the simulation training mode | Clinical educator / simulation trainer (primary) | Deliver and assess competency-based onboarding in a built-in simulation mode that is unmistakably distinct from live clinical use, with no risk to a real patient. | UR_12 | High | MMSS is installed; no live patient is to be monitored on this unit during training, or the live/non-live boundary is strictly enforced. | 1. Educator activates simulation training mode. 2. MMSS applies a persistent, loud, full-screen mode banner and visibly alters the vital-sign presentation so the mode is unmistakable. 3. Educator delivers realistic hands-on practice and assesses competency against defined criteria. 4. Educator leaves the mode via an explicit confirmation step. | Trainee competency not yet met: the session repeats core monitoring, alarm-response, and diagnostic-interpretation tasks until criteria are met. | User attempts to treat a real patient in simulation, or read a non-live screen as live: the persistent, unmistakable mode distinction and explicit confirm-to-leave prevent mode confusion. | A clinician has reached defined competency, and simulation mode was never mistaken for live clinical use. | UT_01, UR_12 |
-| UC_11 | Deploy and commission MMSS | Biomedical / clinical engineer (primary); Measurement devices, Hospital Information System (system) | Deploy MMSS onto the existing portable-monitor and six-device fleet through published ICDs, integrate the HIS interface, and meet information-security obligations, without replacing compatible hardware. | UR_14, UR_15 | High | The existing portable monitor, the six fixed devices, and the host RTOS platform are available; HIS interface details (HL7/FHIR ICD) are defined. | 1. Engineer installs and configures MMSS on the host platform. 2. Engineer commissions each of the six device interfaces (IF_01–IF_06) against their published ICDs. 3. Engineer configures the HIS interface (IF_09) over HL7/FHIR and validates data protection in storage and transit. 4. Engineer verifies acquisition, display, alarming, diagnostics, and HIS exchange, then hands the unit to clinical use. | Subset of devices in the fleet: only the present compatible devices are commissioned; no proprietary lock-in or hardware replacement is required. | HIS ICD not yet frozen / security review pending: HIS sharing is left disabled or isolated until the ICD is defined and the security/privacy review passes. | MMSS is commissioned on the existing fleet, interoperates with the HIS, and meets information-security and data-protection obligations. | UT_02, UT_06, UR_14, UR_15 |
+| UC_01 | Activate and reach clinical readiness | Pre-hospital Clinician | Bring MMSS from power-off to a usable monitoring state at the point of care without waiting through start-up. | UR_02 | High; Availability | MMSS installed and commissioned on the host platform; host platform powered. | 1. Clinician switches on the host platform. 2. MMSS starts on the Host CPU Platform. 3. MMSS reaches clinical readiness within 10 s. 4. MMSS shows an explicit "ready" indication and a per-channel acquisition state (live / acquiring / no-data). 5. Clinician confirms readiness and begins use. | None — readiness is reported as soon as the system is operable. | E1. Readiness not reached within 10 s → MMSS keeps showing an explicit "still starting" state and never presents an unacquired channel as a plausible normal value; clinician waits or escalates rather than trusting blank channels. | MMSS is ready; each channel's acquisition state is explicitly indicated. | UT_01, UR_02 |
+| UC_02 | Commission and configure device channels | Biomedical / Clinical Engineer | Connect MMSS to each measurement device and the HIS through their published interfaces and verify correct mapping before clinical release. | UR_16 | High; Integration | MMSS installed on the host platform; measurement devices and HIS available; published interface contracts known. | 1. Engineer connects MMSS to each of the six measurement-device types and to the HIS strictly through their published interface contracts (IF_02–IF_07, IF_10). 2. MMSS gives clear per-channel interface and fault feedback. 3. Engineer completes a guided verification step confirming each acquired parameter (Acquired Parameters / Signals table) maps to the correct device and display field. 4. Engineer confirms acquisition, alarming, and data exchange behave correctly. 5. Engineer releases the device for clinical use. | A1. A device type is not present at commissioning → engineer configures the available channels and the unconfigured channel is shown as not-configured, not as a normal value. | E1. A channel maps to the wrong device/parameter in the verification step → MMSS surfaces the mismatch via per-channel feedback; engineer corrects the configuration and re-verifies before release; device is not released until verification passes. | Channels verified and correctly mapped; device released for clinical use. | UT_26, UT_27, UR_16 |
+| UC_03 | Acquire and display vital signs at a glance | Pre-hospital Clinician | Read the patient's true current condition correctly at a glance, one-handed, in adverse conditions. | UR_01, UR_11 | High; Safety-critical (Class B) | MMSS ready; sensors being attached or attached. | 1. Clinician attaches sensors in clinical priority order — SpO₂ and ECG first for oxygenation and rhythm, then NIBP, capnometer, thermal probe, EEG as the situation allows; MMSS marks a channel live only once valid acquisition is confirmed. 2. MMSS presents, within 1 s of acquisition, every acquired vital-sign parameter (Acquired Parameters / Signals table) with its unit. 3. Display refreshes at least once per second and stays glanceable and legible in movement and poor light. 4. Abnormal values are flagged unmistakably out-of-range. 5. Clinician reads each value one-handed and cross-checks against the patient's clinical appearance before relying on it. | A1. A sensor not yet connected or still acquiring → MMSS flags that channel as not-connected / acquiring rather than showing a plausible normal value. A2. Clinician must begin stabilising on a partial sensor set (full set not yet attachable while working alone) → MMSS lets the clinician read and act on the confirmed live channels while clearly showing which clinically-relevant channels are still absent, so a missing parameter is recognised as not-yet-measured rather than overlooked. | E1. A channel becomes unreliable → handled by UC_06 (sensor-fault detection). E2. A first-priority channel (SpO₂ or ECG) cannot be acquired at all → that channel stays in an explicit no-data state and the clinician proceeds on the remaining channels and clinical assessment, never on an assumed value. | Clinician has a correct, current at-a-glance picture of the acquired vital signs, with any absent channel explicitly indicated. | UT_02, UT_03, UR_01, UR_11 |
+| UC_04 | Maintain continuous bedside monitoring | Critical-Care Nurse | Keep monitoring reliably live across an extended shift while attending to other patients. | UR_03 | High; Availability | MMSS ready and acquiring at the bedside. | 1. MMSS remains reliably available throughout the shift. 2. MMSS continuously presents the patient's acquired vital signs (Acquired Parameters / Signals table). 3. MMSS shows a visible system-health / heartbeat indication so the nurse can trust monitoring is live while away. 4. Nurse periodically glances and relies on continuous surveillance. | None for normal operation. | E1. Display freeze, restart, or availability gap → MMSS raises an explicit, perceptible alert on the interruption and never presents a frozen screen as if live; device-side independent alarms act as a safeguard. | Monitoring is continuously live and its health is visibly indicated. | UT_06, UR_03 |
+| UC_05 | Raise abnormal-condition alarm | Critical-Care Nurse | Be alerted immediately and unmistakably when a vital sign becomes abnormal so the patient can be treated before deteriorating. | UR_08, UR_09 | High; Safety-critical (Class B) | MMSS acquiring; alarm limits configured; alarms enabled. | 1. A vital-sign parameter crosses an abnormal threshold. 2. Within 1 s MMSS raises an immediate, unmistakable, distinguishable alarm identifying which parameter is abnormal and its urgency. 3. The alarm is perceptible in noisy/mobile conditions and latches until the condition resolves or is acknowledged. 4. Nurse recognises it as a genuine clinical alarm (not a sensor fault) from tone/colour/icon/text. 5. Nurse returns to the bedside, reads the flagged parameter and current candidates, confirms against the patient that the alarm reflects a true clinical change rather than motion artefact, intervenes, and acknowledges. | A1. Alarms deliberately suspended during active treatment/resuscitation to cut distraction → suspension is time-limited and auto-restores, an escalating reminder fires as the window expires, and a persistent conspicuous "alarms suspended" reminder prevents the patient being left silently unmonitored after the team disperses. A2. Nurse is away from the bedside attending another patient when the alarm fires → the latching, multi-modal alarm remains perceptible at distance and active until reached and acknowledged. | E1. Alarm confused with a sensor-fault warning → distinct multi-modal encoding per alarm-safety practice keeps clinical alarm and technical fault distinguishable. E2. Nurse is inclined to dismiss the alarm as motion artefact (cry-wolf habituation) → the alarm presents the live value/waveform and a signal-quality/plausibility cue alongside it so a genuine change is quickly separable from artefact before any dismissal. | Abnormal condition signalled, correctly judged real, treated, and the alarm acknowledged or resolved; any suspension is restored. | UT_07, UT_08, UT_09, UR_08, UR_09 |
+| UC_06 | Detect and signal sensor disconnection, misplacement, or fault | Critical-Care Nurse | Be kept from acting on false or stale data when a sensor disconnects, is misplaced, or becomes unreliable. | UR_10, UR_09 | High; Safety-critical (Class B) | MMSS acquiring from one or more measurement devices. | 1. A measurement device (Acquired Parameters / Signals table) becomes disconnected, misplaced, or unreliable. 2. Within 1 s MMSS detects the condition from device-side fault signalling and input inactivity. 3. MMSS raises a sensor-fault warning distinguishable from a clinical alarm. 4. MMSS visibly marks the affected parameter untrustworthy and replaces the value with an explicit no-data/untrustworthy state. 5. Clinician identifies the affected channel, re-seats/repositions the sensor; MMSS returns the channel to a live, trusted state once valid acquisition resumes. | A1. Multiple channels affected (e.g. several leads jostled at once during a bumpy transfer) → each affected parameter is independently flagged untrustworthy. A2. Sensor faults intermittently — readings flicker valid/invalid → MMSS marks the channel untrustworthy on each loss rather than alternating between a trusted value and a fault, so a flickering channel is not intermittently believed. | E1. Sensor cannot be restored → channel remains in the explicit no-data state; clinician proceeds aware the parameter is unavailable rather than trusting a stale value. E2. A sensor-fault warning coincides with a genuine clinical alarm on another channel → both are surfaced and remain distinguishable so neither masks the other. | Affected channel is marked untrustworthy and, if re-seated, restored to trusted live state. | UT_10, UT_11, UT_12, UR_10, UR_09 |
+| UC_07 | Obtain and present AI diagnostic candidates | Emergency Physician | Reach a working diagnosis faster using ranked decision support presented alongside the raw vital signs. | UR_04, UR_05 | High; Differentiator | MMSS acquiring stable vital signs; External Diagnostic AI Capability reachable over IF_09. | 1. MMSS forwards conditioned patient data to the External Diagnostic AI Capability. 2. The capability returns ranked diagnostic candidates with confidence and supporting reasoning. 3. Within 1 s of receipt MMSS presents the ranked candidates alongside the raw vital signs. 4. Each candidate shows its confidence and the driving vital-sign parameters, absorbable at a glance with expandable detail on demand. 5. The list converges as evidence accumulates, with still-converging lists visibly distinguished from settled results. | A1. List materially revises as it converges → changed ranking is made salient so a revision is noticed rather than missed (anchoring mitigation). | E1. No candidates can be produced within the expected time → handled by UC_09 (diagnosis timeout). E2. Diagnostic AI unreachable over IF_09 → MMSS signals the diagnostic path as unavailable rather than leaving the area silently blank. | Ranked candidates with confidence and reasoning are presented for clinician appraisal. | UT_04, UT_13, UR_04, UR_05 |
+| UC_08 | Appraise candidates and retain clinical authority | Emergency Physician | Judge whether candidates fit the patient and form a working diagnosis while keeping final authority. | UR_06, UR_05 | High; Safety-critical / Liability | Ranked diagnostic candidates presented (UC_07). | 1. MMSS frames and labels the output unambiguously as decision support that informs rather than replaces the clinician. 2. Physician appraises each candidate against the patient, recognising when one rests on a parameter they distrust, and keeps the differential open. 3. Physician forms a working diagnosis. 4. Physician acts ahead of or against a suggestion as judgement dictates; MMSS never gates treatment on a candidate. | A1. Clinician's assessment diverges from, or directly contradicts, the top candidate → clinician acts on their own judgement ahead of or against the suggestion; MMSS imposes no workflow dependency, confirmation, or override step that could delay care. A2. Clinician chooses not to use the candidates at all → care proceeds entirely on the clinician's own assessment with no degradation of vital-signs monitoring or alarming. | E1. Confidence/ranking misread (over- or under-trust) → interpretive framing of confidence, visible driving parameters, and training-mode coaching mitigate automation bias. E2. Clinician anchors on an early candidate and the converging list later revises → the materially changed ranking is made salient so the revision is noticed and premature closure is resisted. | A clinician-owned working diagnosis is formed; final authority remains with the clinician. | UT_05, UT_14, UT_15, UR_06, UR_05 |
+| UC_09 | Handle diagnosis timeout | Pre-hospital Clinician | Be told clearly when no diagnosis can be produced in time, so as to fall back on own assessment without waiting. | UR_07, UR_06 | High; Safety-critical (Class B) | Diagnostic request in progress; convergence not achieved within the expected time. | 1. No diagnostic result is produced within the expected convergence time. 2. MMSS presents a positive, perceptible timeout indication delivered independently of the failed diagnostic path — never a silently blank candidate area. 3. The external capability's own independent audible notification reinforces the timeout. 4. MMSS shows an explicit "no diagnosis available — proceed on your own assessment" message. 5. Clinician stops waiting and proceeds on their own clinical judgement while continuing to monitor vital signs. | A1. Candidates arrive late after the timeout was shown and the clinician has already begun acting on their own assessment → the late list is presented as a fresh, clearly provisional suggestion to be appraised per UC_07/UC_08, without overriding or interrupting the treatment already in progress. | E1. Independent timeout path itself fails → vital-signs monitoring and alarming continue unaffected; clinician proceeds on own assessment. | Clinician is positively informed of the timeout and proceeds on own assessment; monitoring continues. | UT_17, UT_18, UR_07, UR_06 |
+| UC_10 | Share patient data and findings with the HIS | Emergency Physician | Share vital-sign data and diagnostic findings with the receiving hospital securely for second opinion and handover. | UR_14, UR_15 | High; Interoperability | MMSS holding patient data/findings; HIS reachable over IF_10; recipient determinable. | 1. Clinician confirms the receiving recipient before exchange. 2. MMSS exchanges the patient's vital-sign data and diagnostic findings with the HIS over the recognised interoperability standard, delivering candidates within 1 s of availability. 3. MMSS handles the personal health data in conformance with data-protection law throughout. 4. MMSS gives explicit confirmation of a successful, complete transfer to the correct patient record. | A1. Partial transfer → MMSS flags the partial/failed transfer and offers retry rather than reporting success. | E1. HIS unreachable or transfer fails → MMSS reports the failure explicitly so the clinician does not assume data is in hand; handover proceeds verbally. E2. Recipient not confirmed → exchange does not proceed, protecting confidentiality. | Data and findings transferred and confirmed to the correct record, or failure explicitly reported. | UT_16, UT_20, UT_21, UR_14, UR_15 |
+| UC_11 | Surface working state and confirm continuity at handover | Critical-Care Nurse | Hand over the patient so the arriving clinician inherits the full working state and monitoring never lapses. | UR_03, UR_09, UR_10, UR_08 | High; Safety-critical (Class B) | Patient being transferred between clinicians/facilities; MMSS active. | 1. At handover MMSS makes the safety-relevant working state glanceable to the arriving clinician — which channels are flagged untrustworthy, whether alarms or limits are modified or suspended, and the current diagnostic candidate state. 2. The arriving clinician reviews the surfaced state. 3. Before disconnection the receiving clinician transfers the patient onto the receiving monitoring and confirms acquisition and alarming are live there. 4. MMSS keeps presenting vital signs and active alarm state until handover is complete. | A1. Receiving monitoring not yet ready → MMSS continues monitoring and alarming until the receiving system is confirmed live. | E1. Modified/suspended alarm state or a channel flagged untrustworthy not noticed by the arriving clinician → all such working state is persistently surfaced on screen so it cannot fall through the gap between clinicians. E2. Crew disconnects before the receiving monitoring is confirmed live → MMSS gives no positive confirmation of continuity, so the gap is visible and the patient is not left unmonitored on the assumption that handover completed. | Working state inherited and continuous monitoring confirmed without a gap. | UT_19, UT_29, UR_03, UR_09, UR_10, UR_08 |
+| UC_12 | Operate training mode | Clinical Trainer / Super-User | Build clinician competence risk-free, including AI interpretation and bias avoidance, without any chance of confusing simulation with a live patient. | UR_12, UR_13 | High; Safety-critical (Class B) | MMSS available for training; no live patient connected for the session. | 1. Trainer enters simulated training mode with explicit confirmation. 2. MMSS displays a persistent, unmistakable, always-visible mode indicator and watermarks all simulated data. 3. Trainer runs realistic scenarios in which simulated vital signs, alarms, sensor faults, and AI candidates behave as in live use. 4. Trainer demonstrates AI candidate reasoning and confidence and correct interpretation, coaching against automation bias, anchoring, and premature closure. 5. Trainer exits training mode with explicit confirmation; MMSS enforces fail-safe separation and defaults to live operation on return/restart. | A1. Session paused/resumed → mode indicator and watermarking remain persistent throughout. | E1. Device left in training mode by a previous user → fail-safe default to live on restart and the persistent indicator prevent a clinician unknowingly treating a live patient in training mode. | Competence built; device returned to live operation with fail-safe separation enforced. | UT_22, UT_23, UT_24, UT_25, UR_12, UR_13 |
+| UC_13 | Apply a controlled software update | Biomedical / Clinical Engineer | Keep the fleet current and serviceable by updating devices safely without disrupting clinical use. | UR_17 | High; Lifecycle / Maintainability | Device commissioned; update package available; standards-conformant lifecycle workflow in place. | 1. Engineer initiates a software update through the controlled, standards-conformant lifecycle workflow. 2. The workflow prevents updating a device in active clinical use. 3. The update is applied. 4. MMSS verifies correct operation before the device is returned to service. 5. Engineer returns the verified device to service. | A1. Device is in clinical use → update is blocked/deferred until the device is out of clinical use. | E1. Post-update verification fails → the device is not returned to service until correct operation is confirmed; engineer remediates or rolls back. | Device updated, verified, and returned to service in a known-good state. | UT_28, UR_17 |
 
 ### Design Decisions (DD_*)
 
@@ -697,17 +806,19 @@ Choices made during design, with the considered alternatives and the rationale f
 
 | ID | Decision | Alternatives | Rationale | Traces |
 |----|----------|--------------|-----------|--------|
-| DD_01 | Use the commercially validated, off-the-shelf **Open Evidence AI engine** as a black-box SOUP component for the diagnostic function, integrated only through MMSS's DEC connector against the engine's published structured-output interface; MMSS develops no diagnostic model of its own. | (a) Develop a custom in-house diagnostic model — rejected: prohibited by project constraint for v1.0 and carries the full cost, schedule, and validation/clearance liability of qualifying a bespoke model. (b) Build a thin in-house heuristic/rules layer as a fallback model — rejected: would be a second, unvalidated diagnostic source raising rather than transferring clearance risk and blurring the safety argument. | An off-the-shelf, already-validated component transfers diagnostic validation and regulatory-clearance risk to a cleared third party and is the mandated constraint; treating it as a black box behind a single connector boundary keeps MMSS's own scope to integration, not model development, so the design depends only on a stable, versioned API and structured candidate fields. | UC_03, BR_01 |
-| DD_02 | Decompose the diagnostic pipeline into the five fixed software items (AC, DAC, DEC, DPREC, DPROC) and split the MMSS ≤1 s display-latency budget across them as **DPREC ≤800 ms (pre-processing) and DPROC ≤200 ms (post-processing/render)**, treating the DEC round-trip to the external engine (≤800 ms) as a separate asynchronous path explicitly excluded from the display budget. | (a) Fold the DEC external round-trip into the synchronous display path under one combined latency budget — rejected: variable network/engine latency would silently break a budget MMSS is held to and is outside MMSS control. (b) Commit MMSS to the 2-minute convergence target — rejected: convergence is an ALGOS budget MMSS cannot guarantee; committing to it creates an unfulfillable contractual obligation. | A per-item budget MMSS can schedule and verify on the RTOS host is the only budget MMSS can stand behind; isolating the external round-trip as asynchronous keeps the display path deterministic and bounds the manufacturer's latency commitment to what it owns. | UC_03, BR_06 |
-| DD_03 | Place the **safety-critical alarming and diagnostic-timeout controls on systems independent of MMSS** — connection-loss and sensor-misplacement audible alarms generated by the measurement devices, and the 2-minute diagnostic-timeout audible signal generated by the ALGOS engine — so that no single MMSS software failure can, by itself, result in unmitigated serious harm (the IEC 62304 §4.3 segregation that reduces the class from C to B). | (a) Implement all safety alarming and timeout signalling inside MMSS — rejected: leaves the device Class C, concentrates residual risk on a single software item, and makes the safety file undefendable on a Class B basis. (b) Duplicate the controls in MMSS in addition to the external systems but treat MMSS's copy as primary — rejected: the safety argument would then again depend on correct MMSS operation, defeating the segregation. | Routing the safety-critical signals onto systems that are not dependent on correct MMSS operation breaks every sequence of events leading to serious harm, yielding defensible Class B residual risk; MMSS still presents the alarms but is not the sole barrier. | UC_05, UC_06, BR_03 |
-| DD_04 | Fix a **single HIS interoperability protocol (HL7 or FHIR) at design freeze** and require the HIS interface ICD (IF_09) to be defined and frozen before the HIS connector is designed; v1.0 supports exactly one protocol, not both. | (a) Support both HL7 and FHIR at v1.0 — rejected: doubles connector design/verification effort and open-ended per-customer integration cost the business case cannot absorb while the ICD is still TBD. (b) Design the connector now against an assumed/provisional ICD — rejected: an undefined ICD is not implementable as a verifiable connector and risks rework when the real ICD lands. | A single, standard, frozen-ICD protocol removes the buyer's lock-in/bespoke-integration objection while bounding the manufacturer's integration commitment; deferring connector design until the ICD is frozen prevents building against a moving target — the one genuinely undefined external interface. | UC_07, BR_11 |
-| DD_05 | Abstract device acquisition behind a **uniform DAC driver/polling layer — one driver and polling path per interface — over the six fixed measurement-device interfaces (IF_01–IF_06)**, with AC consolidating the polled readings into a single time-stamped vital-signs stream and surfacing each device's connection-loss, misplacement, and unreliable-reading status flags. | (a) Hard-code device-specific acquisition logic throughout AC/DPREC/DPROC — rejected: couples the whole pipeline to per-device quirks, hurts maintainability, and makes per-interface verification and ICD changes costly. (b) A single generic driver assuming identical device behaviour — rejected: the six ICDs differ in data, rates, and status semantics, so a one-size driver cannot faithfully present each device's flags. | A per-interface driver behind a common acquisition contract isolates each fixed ICD's specifics, makes the six interfaces independently verifiable, and ensures alarm/misplacement presentation reflects exactly what each device actually reports — the boundary the safety claim depends on. | UC_02, UC_05, BR_04 |
-| DD_06 | Provide a **built-in simulation training mode** within MMSS that is persistently and unmistakably distinct from live clinical use (distinct full-screen treatment, persistent mode banner, visibly altered vital-sign presentation, explicit confirm-to-leave). | (a) Deliver classroom/external-simulator training only with no in-product mode — rejected: leaves foreseeable use error (R_05) under-mitigated and raises the buyer's rollout burden. (b) A training mode that reuses the live layout unchanged — rejected: creates a high-consequence mode-confusion hazard (treating a real patient in simulation or dismissing real alarms as simulated). | An in-product, hands-on simulation mode is the register-named mitigation for the Critical over-reliance/use-error hazard and lowers onboarding burden; an unmistakable, always-visible mode distinction is what keeps the training/live boundary from itself becoming a hazard. | UC_10, BR_10 |
-| DD_07 | Adopt an **IEC 60601-1-8-conformant prioritised alarm scheme** in which DPROC ranks alarms by clinical priority, presents perceptually distinct critical-vs-minor audible and visual signals, de-prioritises/suppresses transient minor events, and lets a new higher-priority alarm override any active audio silence. | (a) Flat, single-priority alarming — rejected: trains alarm fatigue by making minor and critical alarms indistinguishable, the documented high-frequency real-world error. (b) Priority recorded only as a logged level without distinct perceptual signals — rejected: a priority the user cannot perceive at a glance/by ear does not change behaviour under load. | A perceptually differentiated, standard-conformant scheme keeps genuinely critical conditions salient against minor ones, mitigating alarm fatigue, and is a hard regulatory (IEC 60601-1-8) gate; override-on-silence prevents a critical alarm being silently latched off. | UC_04, UC_09, BR_03 |
-| DD_08 | **Isolate the non-safety HIS data-sharing path from the acquisition and alarm path** as an independent, asynchronous function, so HIS slowness or unavailability can never block, delay, or degrade live acquisition, display, or alarming, and confine the share UI to a non-intrusive region. | (a) Run the HIS share synchronously on the monitoring thread/path — rejected: a slow or failed share would stall or degrade safety-critical monitoring and alarming. (b) Share on a shared resource that monitoring also depends on — rejected: couples a non-safety function to the safety path, undermining the C→B segregation and the isolation claim. | Keeping the non-safety, ICD-gated HIS function fully isolated guarantees that monitoring and alarming continue uninterrupted regardless of HIS state, preserving the safety argument and matching the function's Medium priority relative to the safety-critical paths. | UC_07, BR_05, BR_11 |
-| DD_09 | Render diagnostic candidates as **transparent, non-confirmatory decision support** — DPROC co-locates each candidate's basis, confidence/ranking, and known limitations (visible without extra interaction), subordinates raw ranking to that calibrating context, and frames the panel as support the clinician must interpret, never as a confirmed or device-made diagnosis. | (a) Show only the top-ranked candidate label/rank prominently with basis/confidence/limitations collapsed behind an interaction — rejected: manufactures false certainty and drives the Critical over-reliance hazard (R_05). (b) Suppress confidence/limitations entirely — rejected: removes the means to calibrate trust and is the manufacturer's chief liability shield against foreseeable misinterpretation. | Co-presenting basis/confidence/limitations is the primary control against automation bias and is load-bearing for the defensible-residual-risk and clinical-evidence arguments; it can only render what the off-the-shelf engine emits, so the connector contract must guarantee those fields. | UC_03, BR_10, BR_01 |
-| DD_10 | Run MMSS as a **deterministic, timer-/poll-driven pipeline on the host RTOS platform** (IF_10), using the RTOS scheduling and timing services to meet the per-item latency, ≥0.1 Hz input-rate, 1 s UI-update, and <10 s activation budgets, rather than an event-driven best-effort design. | (a) Best-effort event-driven scheduling on a general-purpose OS abstraction — rejected: cannot guarantee the bounded latency and update cadence the safety-relevant display requires. (b) Run diagnostics and acquisition on a single blocking loop — rejected: a slow diagnostic/external call would block acquisition and alarming, violating both timing and the safety-path isolation. | A deterministic schedule on the real-time host is what makes the per-item budgets (DD_02) and the acquisition/alarm guarantees verifiable and repeatable; separating the synchronous display/alarm path from the asynchronous diagnostic/HIS paths preserves timing under load. | UC_01, UC_02, BR_06, BR_05 |
-| DD_11 | **Qualify the Open Evidence component as SOUP under IEC 62304 and pin the DEC API/structured-output contract to a specific, version-controlled interface revision**, gating any supplier model/interface change through MMSS change control under the binding supplier agreement. | (a) Integrate against the engine's "latest" interface without version pinning — rejected: a silent model or interface change could break DEC parsing or invalidate the diagnostic claim with no change-control trigger. (b) Treat the engine as ordinary supporting software outside SOUP qualification — rejected: it is a safety-related third-party component; unqualified use breaks IEC 62304 traceability. | Pinning and SOUP-qualifying the interface keeps responsibility and traceability unbroken where MMSS relies on a component it did not develop, and ensures any supplier change is detected and re-verified rather than silently propagated — the basis of bounded third-party liability. | UC_03, BR_07, BR_01 |
+| DD_01 | Use the commercially validated off-the-shelf diagnostic AI capability (Open Evidence class) as an external component reached through its supplier-defined API, rather than developing a proprietary diagnostic model in v1.0. | (a) Develop a custom/proprietary in-house diagnostic model; (b) Train and validate a model on the manufacturer's own clinical data; (c) Defer diagnostic support to a later release. | An already-validated capability removes proprietary-model validation, clinical-evidence generation, and the associated liability from the v1.0 critical path and shortens time to market — the programme's principal de-risking lever. The constraint mandates an off-the-shelf validated model for the first release; MMSS consumes it as a black-box service over IF_09 within the validated scope of its own intended use. | UC_07, BR_03 |
+| DD_02 | Govern the off-the-shelf diagnostic dependency through contractual supplier safeguards (validation-evidence flow-down, change/field-issue notification, version and model management, supply continuity, fixed lifetime licensing) rather than relying on the supplier relationship informally. | (a) Best-effort/informal supplier relationship; (b) Internal re-validation of each supplier change with no flow-down clauses; (c) Multi-supplier abstraction layer in v1.0. | Off-the-shelf reliance does not transfer product liability away from the legal manufacturer; the de-risking, cost, and market-continuity benefits hold only if the dependency is contractually secured. The diagnostic-AI ICD is supplier-defined, so MMSS must treat the supplier contract as part of the safety and continuity case. | UC_07, BR_09 |
+| DD_03 | Adopt an independent-safeguard architecture so that no single MMSS failure in the two highest-criticality functions (alarming and diagnosis) can alone lead to death or serious injury, reducing the software safety classification from Class C to Class B. | (a) Develop the whole system to full Class C rigour with no external-safeguard reliance; (b) Internal software-only redundancy within MMSS for alarming and diagnosis; (c) Accept Class C and absorb the higher lifecycle/re-validation cost. | The worst-case contribution of alarming and diagnosis is mitigated by safeguards segregated from and demonstrably independent of MMSS — device-side fault/connection alarms and the external capability's audible time-out — combined with the clinician retaining authority over non-autonomous output. This bounds lifecycle and re-validation cost, but holds only while common-cause-free independence is verified and contractually underwritten. | UC_05, UC_06, UC_09, BR_02, BR_04 |
+| DD_04 | Rely on the measurement devices' own independent device-side detection and audible connection/fault alarms for sensor disconnection, misplacement, and unreliable readings; MMSS detects the same conditions from device-side fault signalling plus input inactivity and re-presents them as a distinct visual sensor-fault warning, but is not the sole annunciator. | (a) MMSS as the sole detector/annunciator of sensor faults; (b) MMSS independently re-deriving sensor health from raw signal analysis; (c) Add MMSS audible re-annunciation of device faults. | The devices are fixed, out-of-scope elements that already raise their own independent alarms; making the device the independent safeguard is what keeps the sensor-fault path out of MMSS's single-failure worst case and supports the Class C→B reduction. MMSS's role is to mark the affected channel untrustworthy and warn the clinician distinctly, not to be the only line of defence. | UC_06, BR_02, BR_04 |
+| DD_05 | Connect to each of the six mandated measurement-device types (ECG, pulse oximeter, BP monitor, thermal probe, capnometer, EEG) strictly through their published interface contracts (IF_02–IF_07), acquiring the enumerated parameter set without modifying any external device. | (a) Custom/proprietary per-device integration negotiated outside published contracts; (b) A single generic acquisition path assuming uniform device behaviour; (c) Require device firmware changes to ease integration. | The scope is software-only and devices are fixed; integrating strictly through published, defined ICDs protects the buyer's installed base, avoids rip-and-replace, and keeps the external elements unmodified. Supporting the full mandated set through their contracts is a constraint and a commercial precondition for fleet-wide deployment. | UC_02, UC_03, BR_10 |
+| DD_06 | Present vital signs, alarms, sensor-fault warnings, and ranked diagnostic candidates on the existing connected monitor display (via IF_08) using a glanceable, one-handed, timer-driven presentation that refreshes at least once per second and is legible under movement, poor light, and noise. | (a) Require a new/dedicated display surface; (b) Event-driven-only screen updates with no fixed refresh; (c) Dense, detail-first layout optimised for fixed-bedside reading. | The display is a fixed, out-of-scope element accessed through a published interface; MMSS renders to it rather than introducing new hardware. A glanceable, fixed-cadence presentation meets the boundary-observable sub-second timeliness and the adverse-condition usability the clinician relies on in mobile and pre-hospital use. | UC_03, UC_04, BR_18, BR_16 |
+| DD_07 | Implement HIS interoperability against a recognised healthcare interoperability-standard class (HL7/FHIR class) over IF_10, committing to the standard class now and fixing the specific protocol and interface contract before the exchange function is completed, rather than building a bespoke per-site integration. | (a) Bespoke point-to-point integration per hospital/EMS site; (b) Commit to a single specific protocol immediately before ICDs are agreed; (c) Defer HIS exchange entirely. | Standards-based exchange enables second opinion and smooth handover, protects prior investment, and spares the buyer bespoke integration cost — a commercial precondition. The exact protocol and ICD are TBD per the constraints, so the decision commits to the standard class and to settling the contract before completion rather than prematurely fixing a protocol. | UC_10, BR_10 |
+| DD_08 | Handle diagnosis time-out as a positive, perceptible MMSS indication delivered independently of the failed diagnostic path (never a silently blank candidate area), reinforced by the external capability's own independent audible notification on its 2-minute convergence budget; MMSS does not own or commit to the convergence time. | (a) MMSS owns and enforces a 2-minute convergence budget; (b) Leave the candidate area blank on time-out; (c) Rely solely on the external capability's audible notification with no MMSS-side indication. | The 2-minute convergence budget is the external diagnostic AI capability's budget, not the system's budget; absorbing it would mis-place the timeliness commitment. A positive, path-independent MMSS time-out indication plus the external audible notification provides the independent safeguard so the clinician falls back on their own assessment rather than waiting on a blank screen — supporting the Class B argument for the diagnosis function. | UC_09, BR_18, BR_05 |
+| DD_09 | Frame and label diagnostic output unambiguously as non-autonomous, adjunctive decision support that informs but never replaces the clinician, surfacing each candidate's confidence and supporting reasoning and imposing no workflow gate, confirmation, or override that could delay treatment. | (a) Present candidates as authoritative diagnoses; (b) Require explicit accept/override of a candidate before proceeding; (c) Suppress reasoning/confidence to simplify the display. | Clinician-in-control is the central liability firewall keeping ultimate responsibility with a qualified professional and keeps the device defensible as decision support rather than an autonomous diagnostic agent; exposing reasoning and confidence mitigates automation bias, and imposing no gate ensures MMSS never delays care. | UC_08, BR_05 |
+| DD_10 | Provide a simulated training mode within MMSS with fail-safe separation from live operation — explicit entry/exit confirmation, a persistent always-visible mode indicator, watermarked simulated data, and a default to live operation on restart/return. | (a) Separate external training simulator/build; (b) Training mode without a persistent live/training indicator; (c) No dedicated training mode (train on live devices only). | The training mode is the named risk control for the critical clinician-misinterpretation hazard and forms part of the safety case; building it into MMSS with fail-safe separation prevents simulated data ever being mistaken for a live patient and a clinician unknowingly treating a live patient in training mode — itself a Class B safety concern. | UC_12, BR_12 |
+| DD_11 | Acquire, process, display, and exchange personal health data in conformance with applicable data-protection and privacy law (GDPR/HIPAA class) and secure interoperability practice throughout the data flow, including recipient confirmation and explicit transfer-outcome reporting at the HIS boundary. | (a) Treat data protection as a deployment/site responsibility only; (b) Apply security only at the HIS exchange, not across the internal data flow; (c) Transfer without recipient confirmation or outcome reporting. | Data-protection non-conformance carries standalone regulatory and financial liability independent of clinical safety; protecting confidentiality, integrity, and patient rights wherever personal health data is handled, and confirming the recipient and transfer outcome, is required at the system boundary and underpins lawful market access. | UC_10, BR_14 |
+| DD_12 | Make MMSS report clinical readiness and per-channel acquisition state explicitly — reaching readiness within 10 seconds of switch-on and never presenting an unacquired or untrustworthy channel as a plausible normal value — as the boundary-observable availability and integrity behaviour of the system. | (a) Present a single global "ready" state without per-channel acquisition status; (b) Show default/placeholder values on channels not yet acquiring; (c) No explicit readiness indication. | Rapid, demonstrable readiness and high availability are baseline clinical value and a buyer precondition for point-of-care use; making every channel's acquisition state explicit prevents the clinician acting on assumed data, which is a safety property at the system boundary independent of internal item design. | UC_01, BR_16 |
+| DD_13 | Apply software updates only through a controlled, standards-conformant lifecycle workflow that blocks or defers updating a device in active clinical use and verifies correct operation before returning the device to service, rather than ad-hoc field updates. | (a) Ad-hoc/manual field updates with no lifecycle gate; (b) Forced updates regardless of clinical-use state; (c) No in-field update capability (full re-commissioning per change). | A controlled lifecycle is a precondition of lawful market access and is what allows the device to be safely patched over its service life without re-incurring full re-validation each change; gating updates on clinical-use state and post-update verification keeps the deployed fleet safe, current, and serviceable. | UC_13, BR_01 |
 
 ---
 
@@ -719,58 +830,24 @@ Choices made during design, with the considered alternatives and the rationale f
 
 The points where the system connects to context elements, sub-systems, or other systems — connection type, data/signals exchanged, and protocols/standards.
 
-As a software-only product, MMSS is a black box bounded entirely by its external interfaces: its observable behaviour is the data and signals that cross IF_01–IF_10 between MMSS and the surrounding (fixed, out-of-scope) context elements. The interfaces group into four classes:
+At the development level MMSS is treated as a single black box bounded by ten external interfaces, the same set established in the Context (IF_01–IF_10). Every connection below is an outward boundary of the system as a whole; nothing is allocated to an internal element. MMSS executes on a fixed host platform, acquires the enumerated parameter set from six fixed measurement-device types over their published device contracts, renders to a fixed display, consumes a fixed external diagnostic-AI service, and optionally exchanges with an external hospital information system. All external elements are existing, out-of-scope, and reached only through published interface contracts — MMSS reads, conditions, presents, and exchanges across these boundaries but never modifies the elements behind them.
 
-- **Device acquisition (IF_01–IF_06) — digital, inbound.** Six independent acquisition interfaces from the fixed non-invasive measurement devices (ECG, pulse oximeter, BP monitor, thermal probe, capnometer, EEG) into MMSS:DAC. Each carries device-specific vital-signs data plus the device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags, read by polling at ≥0.1 Hz over each device's published, frozen ICD. Connection-loss and misplacement audible alarms are generated independently by the devices themselves (the C→B segregation control); MMSS only reads and presents the flags.
-- **Display and alarm output (IF_07) — digital/logical, outbound.** MMSS:DPROC renders raw vital signs, ranked diagnostic candidates (with basis/confidence/limitations), and prioritised audible+visual clinical and fault alarms to the existing Monitor Display over the host display ICD, conforming to IEC 60601-1-8.
-- **Diagnostic engine (IF_08) — digital, bidirectional, asynchronous.** MMSS:DEC sends conditioned input to, and receives structured ranked diagnostic candidates from, the external Open Evidence AI engine (ALGOS) over the engine's published, version-pinned structured-output API (SOUP). The round-trip (≤800 ms) is asynchronous and explicitly excluded from the MMSS display-latency budget; the 2-minute convergence budget and an independent audible timeout signal are owned by ALGOS.
-- **HIS data exchange (IF_09) — digital, outbound, non-safety.** MMSS:DPROC exports patient and diagnostic data to the Hospital Information System over a single open interoperability protocol (HL7 *or* FHIR), secured in transit. The protocol and ICD are TBD/frozen before connector design, and this path is isolated from the acquisition/alarm path so HIS unavailability cannot degrade monitoring.
-- **Host platform / RTOS services (IF_10) — runtime/logical.** MMSS executes on the fixed embedded Host CPU / RTOS platform, consuming its scheduling, timing, memory, and I/O services (AC entry point) to meet the deterministic latency, input-rate, UI-update, and activation budgets.
+The data carried on each boundary is the parameter/signal set enumerated in the Context **Acquired Parameters / Signals** table; the rows below do not re-enumerate it but reference it, so that table remains the single source of truth for each parameter, unit/range, and originating interface.
 
-```dot
-digraph blackbox {
-  rankdir=LR;
-  node [shape=box, style=rounded, fontname="Helvetica", fontsize=10];
-  edge [fontname="Helvetica", fontsize=9];
+| Interface | Direction (at MMSS boundary) | Connection type | Data / signals exchanged | Protocol / standard |
+|-----------|------------------------------|-----------------|--------------------------|---------------------|
+| IF_01 — Host platform / OS | Bidirectional (MMSS ↔ host) | Software runtime / OS service binding (digital, logical) | Process scheduling, timing/clock services, memory and compute resources, lifecycle and update control, system-health/readiness state | Host platform / RTOS ICD (vendor-defined, existing) |
+| IF_02 — ECG acquisition | Inbound (device → MMSS) | Digital device link, polled | Heart Rate plus device-side connection/fault signalling (see Acquired Parameters / Signals) | Published ECG device ICD (existing) |
+| IF_03 — Pulse oximeter acquisition | Inbound (device → MMSS) | Digital device link, polled | SpO2, Pulse Rate plus device-side connection/fault signalling | Published pulse-oximeter device ICD (existing) |
+| IF_04 — BP monitor acquisition | Inbound (device → MMSS) | Digital device link, polled | Systolic BP, Diastolic BP, MAP plus device-side connection/fault signalling | Published BP-monitor device ICD (existing) |
+| IF_05 — Thermal probe acquisition | Inbound (device → MMSS) | Digital device link, polled | Temperature plus device-side connection/fault signalling | Published thermal-probe device ICD (existing) |
+| IF_06 — Capnometer acquisition | Inbound (device → MMSS) | Digital device link, polled | Respiratory Rate, EtCO2 plus device-side connection/fault signalling | Published capnometer device ICD (existing) |
+| IF_07 — EEG acquisition | Inbound (device → MMSS) | Digital device link, polled | BIS plus device-side connection/fault signalling | Published EEG device ICD (existing) |
+| IF_08 — Display | Outbound (MMSS → display) | Digital display / rendering link | Rendered vital-signs tiles, alarm and sensor-fault indications, ranked diagnostic candidates with confidence/reasoning, mode and system-health indicators | Published display ICD (existing) |
+| IF_09 — Diagnostic AI | Bidirectional (MMSS ↔ AI service) | Software service API (digital, logical) | Outbound: conditioned patient parameter set for analysis. Inbound: ranked diagnostic candidates with confidence and supporting reasoning; independent convergence-time-out notification | Supplier-defined diagnostic-AI library API ICD (Open Evidence class) |
+| IF_10 — Hospital information system (HIS) | Bidirectional (MMSS ↔ HIS) | Network messaging / interoperability link, secured | Outbound: patient data and diagnostic findings for second opinion / handover; recipient and transfer-outcome confirmation. Inbound: acknowledgement | HL7/FHIR-class interoperability ICD — protocol TBD, secured per data-protection law |
 
-  // The black box
-  MMSS [label="MMSS\n(Mobile Monitoring Software Solution)\n— black box —",
-        shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#2b5fa6", width=2.6, height=1.6];
-
-  // Context elements
-  node [style="rounded,filled", fillcolor="#f5f5f5", color="#555555"];
-  ECG     [label="ECG Monitor"];
-  SPO2    [label="Pulse Oximeter"];
-  NIBP    [label="BP Monitor"];
-  TEMP    [label="Thermal Probe"];
-  CAP     [label="Capnometer"];
-  EEG     [label="EEG Monitor"];
-  DISPLAY [label="Monitor Display"];
-  ALGOS   [label="Open Evidence\nAI Engine (ALGOS)"];
-  HIS     [label="Hospital Information\nSystem (HIS)"];
-  HOST    [label="Host CPU /\nRTOS Platform"];
-
-  // Inbound device acquisition (IF_01–IF_06): vitals + status flags
-  ECG  -> MMSS [label="IF_01 vitals + status flags"];
-  SPO2 -> MMSS [label="IF_02 vitals + status flags"];
-  NIBP -> MMSS [label="IF_03 vitals + status flags"];
-  TEMP -> MMSS [label="IF_04 vitals + status flags"];
-  CAP  -> MMSS [label="IF_05 vitals + status flags"];
-  EEG  -> MMSS [label="IF_06 vitals + status flags"];
-
-  // Outbound display & alarms (IF_07)
-  MMSS -> DISPLAY [label="IF_07 vitals / candidates / alarms"];
-
-  // Bidirectional diagnostic engine (IF_08, async)
-  MMSS -> ALGOS [label="IF_08 diagnostic request / candidates (async)", dir=both];
-
-  // Outbound HIS exchange (IF_09, non-safety, isolated)
-  MMSS -> HIS [label="IF_09 patient + diagnostic data (HL7/FHIR, TBD)", style=dashed];
-
-  // Host platform services (IF_10)
-  HOST -> MMSS [label="IF_10 RTOS scheduling / timing / I/O", style=bold, color="#2b5fa6"];
-}
-```
+_To be added_
 
 ### Requirements
 
@@ -780,29 +857,20 @@ The full set of requirements the system must satisfy, derived from the user requ
 
 | ID | Description | Rationale | Classification | Traces |
 |----|-------------|-----------|----------------|--------|
-| RQ_IF_01 | MMSS:DAC shall acquire ECG vital-signs data from the ECG Monitor by polling over the device's published ECG acquisition ICD at a rate of at least 0.1 Hz. | Continuous, low-latency acquisition from the fixed ECG device is the basis for safe bedside decisions; the ≥0.1 Hz rate is the mandated minimum input rate. | High | IF_01 |
-| RQ_IF_02 | MMSS:DAC shall read and make available the ECG Monitor's device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags exactly as defined in the ECG acquisition ICD, without altering their semantics. | Misplacement/connection detection is a device-side safety control; MMSS may only present what the device reports, and the C→B segregation depends on these flags being conveyed faithfully. | High (safety-related) | IF_01 |
-| RQ_IF_03 | MMSS:DAC shall acquire pulse-oximetry (SpO2/pulse) vital-signs data from the Pulse Oximeter by polling over the device's published acquisition ICD at a rate of at least 0.1 Hz. | Continuous acquisition of oxygen-saturation/pulse data from the fixed device, at the mandated minimum input rate, underpins safe monitoring. | High | IF_02 |
-| RQ_IF_04 | MMSS:DAC shall read and make available the Pulse Oximeter's device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags exactly as defined in its acquisition ICD, without altering their semantics. | The misplacement/connection safety presentation depends on faithfully conveying the device-side flags that back the C→B segregation. | High (safety-related) | IF_02 |
-| RQ_IF_05 | MMSS:DAC shall acquire blood-pressure vital-signs data from the BP Monitor by polling over the device's published acquisition ICD at a rate of at least 0.1 Hz. | Continuous acquisition of blood-pressure data from the fixed device at the mandated minimum input rate is required for safe monitoring. | High | IF_03 |
-| RQ_IF_06 | MMSS:DAC shall read and make available the BP Monitor's device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags exactly as defined in its acquisition ICD, without altering their semantics. | The safety alarm presentation can only reflect what the fixed BP device reports; conveying the flags unchanged preserves the device-side safety control. | High (safety-related) | IF_03 |
-| RQ_IF_07 | MMSS:DAC shall acquire body-temperature vital-signs data from the Thermal Probe by polling over the device's published acquisition ICD at a rate of at least 0.1 Hz. | Continuous acquisition of temperature data from the fixed device at the mandated minimum input rate is required for safe monitoring. | High | IF_04 |
-| RQ_IF_08 | MMSS:DAC shall read and make available the Thermal Probe's device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags exactly as defined in its acquisition ICD, without altering their semantics. | Faithful conveyance of the device-side flags is required for the misplacement/connection safety presentation backing the C→B segregation. | High (safety-related) | IF_04 |
-| RQ_IF_09 | MMSS:DAC shall acquire capnography (end-tidal CO2) vital-signs data from the Capnometer by polling over the device's published acquisition ICD at a rate of at least 0.1 Hz. | Continuous acquisition of respiratory CO2 data from the fixed device at the mandated minimum input rate is required for safe monitoring. | High | IF_05 |
-| RQ_IF_10 | MMSS:DAC shall read and make available the Capnometer's device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags exactly as defined in its acquisition ICD, without altering their semantics. | The safety alarm presentation can only reflect what the fixed capnometer reports; conveying the flags unchanged preserves the device-side safety control. | High (safety-related) | IF_05 |
-| RQ_IF_11 | MMSS:DAC shall acquire EEG (brain-activity) vital-signs data from the EEG Monitor by polling over the device's published acquisition ICD at a rate of at least 0.1 Hz. | Continuous acquisition of neurological data from the fixed device at the mandated minimum input rate is required for safe monitoring. | High | IF_06 |
-| RQ_IF_12 | MMSS:DAC shall read and make available the EEG Monitor's device-reported connection-loss, sensor-misplacement, and unreliable-reading status flags exactly as defined in its acquisition ICD, without altering their semantics. | Faithful conveyance of the device-side flags is required for the misplacement/connection safety presentation backing the C→B segregation. | High (safety-related) | IF_06 |
-| RQ_IF_13 | MMSS:DAC shall, for each of the six device acquisition interfaces (IF_01–IF_06), raise a connection-loss indication to AC when no valid reading has been received over that interface for 5 seconds. | The 5 s inactivity threshold is the mandated connection-alarm trigger; detecting it per interface is the basis of the connection alarm displayed within 1 s. | High (safety-related) | IF_01, IF_02, IF_03, IF_04, IF_05, IF_06 |
-| RQ_IF_14 | MMSS:DPROC shall output to the Monitor Display, over the host display ICD, the raw vital signs, ranked diagnostic candidates (with basis, confidence/ranking, and known limitations), and prioritised audible-and-visual clinical and fault alarms conforming to IEC 60601-1-8. | The display interface is the sole presentation channel; alarm conformance to IEC 60601-1-8 is a hard regulatory gate and the data carried must support transparent, non-confirmatory decision support. | High (safety-related) | IF_07 |
-| RQ_IF_15 | MMSS:DPROC shall refresh the Monitor Display output on a 1-second timer and shall present vital-signs values within 1 second of their acquisition, conveying the data-freshness state of each value over IF_07. | The 1 s UI-update interval and <1 s display latency are mandated budgets; freshness conveyance prevents acting on stale data over the display interface. | High | IF_07 |
-| RQ_IF_16 | MMSS:DEC shall exchange diagnostic requests and structured ranked diagnostic candidates with the Open Evidence AI engine over the engine's published structured-output API, pinned to a specific, version-controlled interface revision. | Version-pinning the SOUP interface keeps traceability unbroken and ensures any supplier model/interface change is detected through change control rather than silently breaking parsing. | High (safety-related, SOUP) | IF_08 |
-| RQ_IF_17 | MMSS:DEC shall perform the diagnostic-engine exchange (IF_08) as an asynchronous round-trip with a budget of 800 ms, and this round-trip shall be excluded from the MMSS ≤1 s display-latency budget. | The external round-trip is outside MMSS control; isolating it asynchronously keeps the display path deterministic and bounds the manufacturer's latency commitment to what MMSS owns. | High | IF_08 |
-| RQ_IF_18 | MMSS:DEC shall, when no structured diagnostic response has been received from the Open Evidence AI engine by 120 s as measured by MMSS from patient connection (T0), signal the timeout condition to DPROC for on-screen notification. | A non-arriving candidate must be detected so the clinician is notified and falls back to standard assessment; MMSS times the single 120 s window from patient connection (T0), distinct from the engine-side ALGOS 2-minute convergence budget (the engine's own timer), and the on-screen notice is backed by the independent ALGOS audible timeout signal. | High (safety-related) | IF_08 |
-| RQ_IF_19 | MMSS:DEC shall parse only the structured diagnostic-candidate fields — including basis, confidence/ranking, and known limitations — defined in the pinned Open Evidence interface revision, and shall flag any malformed or missing field as an engine error rather than presenting it as a valid candidate. | Transparent decision support can only render fields the engine emits; treating malformed output as an error prevents presenting an uncalibrated or incomplete candidate as trustworthy. | High (safety-related) | IF_08 |
-| RQ_IF_20 | MMSS:DPROC shall transmit patient and diagnostic data to the Hospital Information System over a single recognised interoperability protocol (HL7 or FHIR) fixed at design freeze, in conformance with the frozen HIS interface ICD, within 1 second of the share being triggered. | A single open standard removes vendor lock-in/bespoke-integration cost; the <1 s target is the mandated HIS delivery budget and the ICD must be frozen before connector design. | Medium | IF_09 |
-| RQ_IF_21 | MMSS:DPROC shall secure all patient and diagnostic data exchanged over the HIS interface in transit (encryption), and the HIS exchange shall be isolated from the acquisition and alarm path such that HIS slowness or unavailability cannot block, delay, or degrade live acquisition, display, or alarming. | Exporting patient data engages cybersecurity/data-protection obligations; isolating the non-safety HIS path preserves the C→B segregation so monitoring continues regardless of HIS state. | High (security; isolation safety-related) | IF_09 |
-| RQ_IF_22 | MMSS (AC) shall use only the published Host CPU / RTOS platform scheduling, timing, memory, and I/O services exposed over the host RTOS interface to execute its deterministic, timer-/poll-driven pipeline. | Confining MMSS to the published host services keeps the software-only scope boundary intact and is the means by which the deterministic timing guarantees are realised on the fixed platform. | High | IF_10 |
-| RQ_IF_23 | MMSS shall, using the Host CPU / RTOS platform services, reach a ready/acquiring state within 10 seconds of being switched on and connected. | The <10 s system-activation budget is mandated so an unstable patient can be monitored without losing critical time; it is achievable only via the host RTOS timing services. | High | IF_10 |
+| RQ_IF_01 | The system shall execute on the host CPU platform and interact with it solely through the host platform/OS interface as defined in the host platform/RTOS ICD, requiring no modification to the host platform or its operating system. | The host platform is a fixed, out-of-scope element; the software-only scope requires MMSS to bind only to the published runtime, timing, and resource services exposed at IF_01. | Integration | IF_01 |
+| RQ_IF_02 | The system shall acquire Heart Rate from the ECG monitor over the ECG acquisition interface strictly in accordance with the published ECG device ICD, without modifying the device. | The ECG monitor is a fixed device accessed only through its published contract; correct acquisition of the enumerated parameter on its defined interface is the precondition for displaying and analysing it. | Integration; Safety-related (Class B) | IF_02 |
+| RQ_IF_03 | The system shall acquire SpO2 and Pulse Rate from the pulse oximeter over the pulse oximeter acquisition interface strictly in accordance with the published pulse-oximeter device ICD, without modifying the device. | The pulse oximeter is a fixed device accessed only through its published contract; the enumerated parameters must be acquired exactly as the interface defines them. | Integration; Safety-related (Class B) | IF_03 |
+| RQ_IF_04 | The system shall acquire Systolic BP, Diastolic BP, and MAP from the blood pressure monitor over the BP monitor acquisition interface strictly in accordance with the published BP-monitor device ICD, without modifying the device. | The BP monitor is a fixed device accessed only through its published contract; all three enumerated pressure parameters must be acquired as defined. | Integration; Safety-related (Class B) | IF_04 |
+| RQ_IF_05 | The system shall acquire Temperature from the thermal probe over the thermal probe acquisition interface strictly in accordance with the published thermal-probe device ICD, without modifying the device. | The thermal probe is a fixed device accessed only through its published contract; the enumerated parameter must be acquired as defined. | Integration | IF_05 |
+| RQ_IF_06 | The system shall acquire Respiratory Rate and EtCO2 from the capnometer over the capnometer acquisition interface strictly in accordance with the published capnometer device ICD, without modifying the device. | The capnometer is a fixed device accessed only through its published contract; both enumerated respiratory parameters must be acquired as defined. | Integration; Safety-related (Class B) | IF_06 |
+| RQ_IF_07 | The system shall acquire BIS from the EEG monitor over the EEG acquisition interface strictly in accordance with the published EEG device ICD, without modifying the device. | The EEG monitor is a fixed device accessed only through its published contract; the enumerated parameter must be acquired as defined. | Integration | IF_07 |
+| RQ_IF_08 | The system shall, on each device acquisition interface (IF_02–IF_07), receive and make available the device's own connection and fault signalling as defined in that device's published ICD, without suppressing or overriding the device's independent alarms. | The Class C→B safety mitigation relies on the measurement devices remaining the independent safeguard for sensor disconnection, misplacement, and unreliable readings; MMSS must consume their fault signalling at the boundary without weakening that independent annunciation. | Safety-critical (Class B) | IF_02, IF_03, IF_04, IF_05, IF_06, IF_07 |
+| RQ_IF_09 | The system shall render all clinical output — vital-signs tiles, alarm and sensor-fault indications, ranked diagnostic candidates with confidence and reasoning, and mode and system-health indicators — to the monitor display over the display interface in accordance with the published display ICD, without requiring any display surface other than the existing connected monitor. | The display is a fixed, out-of-scope element reached only through its published contract; presenting all boundary-observable output on the existing display is a software-only scope and installed-base-compatibility requirement. | Integration; Safety-related (Class B) | IF_08 |
+| RQ_IF_10 | The system shall submit the conditioned patient parameter set to the external diagnostic AI capability and receive ranked diagnostic candidates with their confidence and supporting reasoning over the diagnostic AI interface, conforming to the supplier-defined diagnostic-AI library API ICD and consuming the service as a black box within its validated intended-use scope. | The diagnostic AI is a commercially validated off-the-shelf component reached only through its supplier-defined API; MMSS must exchange exactly the data the ICD defines and not exceed the supplier's validated scope. | Integration; Safety-related (Class B) | IF_09 |
+| RQ_IF_11 | The system shall receive the external diagnostic AI capability's independent convergence-time-out notification over the diagnostic AI interface and shall not depend on the candidate-result path to detect or signal a diagnosis time-out. | The two-path timeout safeguard requires MMSS to obtain the supplier's independent time-out signal at the boundary so its own time-out indication does not share a common failure with the candidate-result path. | Safety-critical (Class B) | IF_09 |
+| RQ_IF_12 | The system shall exchange patient data and diagnostic findings with the hospital information system over the HIS interface using a recognised HL7/FHIR-class healthcare interoperability standard, fixed in the defined HIS interoperability ICD before development of the exchange function is completed, and shall obtain, from the protocol-defined acknowledgement returned by the receiving system, both recipient identity and transfer-outcome (success/failure) confirmation at this boundary. | Standards-based, contracted interoperability enables second opinion and handover without bespoke per-site integration; the protocol is TBD so the requirement commits to the standard class and to settling the ICD before development completes. Transfer-outcome confirmation is only obtainable from the standard's own acknowledgement message, so the requirement is bound to that acknowledgement to be implementable and testable. | Integration | IF_10 |
+| RQ_IF_13 | The system shall protect the confidentiality and integrity of personal health data exchanged over the HIS interface in conformance with applicable data-protection and privacy law (GDPR/HIPAA class) and secure interoperability practice. | Personal health data crossing the HIS boundary is subject to data-protection law carrying standalone regulatory and financial liability; the exchange interface must be secured at the system boundary. | Security; Regulatory | IF_10 |
+| RQ_IF_14 | The system shall apply software updates and report system readiness only through the host platform/OS interface in accordance with the host platform/RTOS ICD, such that no update is applied to a device in active clinical use and readiness state is exposed to the host as defined. | A controlled, lifecycle-conformant update and readiness mechanism at the host boundary keeps the deployed fleet safely patchable without disrupting clinical use, consistent with the host as the runtime and lifecycle-control element. | Lifecycle; Safety-related (Class B) | IF_01 |
 
 #### Functional Requirements (RQ_FN_*)
 
@@ -810,33 +878,32 @@ What the system must do — its functions, features, and behaviors. Each traces 
 
 | ID | Description | Rationale | Classification | Traces |
 |----|-------------|-----------|----------------|--------|
-| RQ_FN_01 | On being switched on and connected, MMSS shall initialise and transition to a ready/acquiring state within 10 seconds. | A clinician must be able to begin monitoring an unstable patient without losing critical time; <10 s system activation is the mandated readiness budget. | High | UC_01, UR_02 |
-| RQ_FN_02 | MMSS shall present an unambiguous indication of its current monitoring/acquisition state, distinct from the live monitoring layout, until acquisition is confirmed. | Prevents the clinician mistaking "screen on" for "monitoring on" and relying on monitoring before it is actually acquiring. | High | UC_01, UR_02 |
-| RQ_FN_03 | MMSS shall continuously acquire vital-signs data from each of the six connected non-invasive measurement devices (ECG, pulse oximeter, BP monitor, thermal probe, capnometer, EEG). | Continuous acquisition from the fixed six-device fleet is the basis for safe bedside decisions on current data. | High | UC_02, UR_01 |
-| RQ_FN_04 | MMSS shall display each acquired vital-signs value, with its units, on the monitor display within 1 second of its acquisition. | Vital signs shown without perceptible delay enable rapid, safe treatment decisions; <1 s display is the mandated budget. | High | UC_02, UR_01 |
-| RQ_FN_05 | MMSS shall refresh the displayed vital signs on a 1-second update interval and convey the data-freshness state of each value, flagging any value that has not refreshed within the expected cadence as stale. | A 1 s update is mandated; conveying freshness prevents the clinician acting on stale data mistaken for current. | High | UC_02, UR_01 |
-| RQ_FN_06 | MMSS shall present each expected-but-not-acquiring device channel with a distinct, non-blank "not-connected" state rather than an empty or placeholder value. | A missing channel must be salient at setup so a patient is not monitored on an incomplete sensor set unnoticed. | High | UC_02, UR_01 |
-| RQ_FN_07 | MMSS shall dispatch a diagnostic request, derived from the acquired and pre-processed vital-signs data, to the Open Evidence AI engine. | Requesting diagnostic candidates from the validated AI engine is what turns the passive monitor into a decision-support tool. | High | UC_03, UR_03 |
-| RQ_FN_08 | MMSS shall receive the structured ranked diagnostic candidates returned by the Open Evidence AI engine. | Receiving the engine's structured output is the precondition for presenting diagnostic support to the clinician. | High | UC_03, UR_03 |
-| RQ_FN_09 | MMSS shall display the received ranked diagnostic candidates alongside the raw vital signs within 1 second of receiving them from the AI engine. | Early diagnostic support helps the clinician reach a working diagnosis faster; <1 s display after receipt is the mandated budget. | High | UC_03, UR_03 |
-| RQ_FN_10 | MMSS shall present, co-located with each diagnostic candidate and visible without additional interaction, the candidate's basis, confidence/ranking, and known limitations. | Transparent presentation lets the clinician calibrate trust to the evidence and avoid over-relying on automation. | High | UC_03, UR_04 |
-| RQ_FN_11 | MMSS shall frame the diagnostic-candidate presentation as decision support that the clinician must interpret, and shall not present it as a confirmed or device-made diagnosis. | The device must never appear to make, confirm, or override a diagnosis, so the clinician retains clinical responsibility. | High | UC_03, UR_13 |
-| RQ_FN_12 | MMSS shall raise a prioritised, perceptible audible-and-visual alarm conforming to IEC 60601-1-8 within 1 second of detecting a vital sign breaching its configured alarm limit. | Critical conditions must be noticed and acted on within the mandated <1 s alarm-display budget under an applicable alarm standard. | High (safety-related) | UC_04, UR_07, UR_09 |
-| RQ_FN_13 | MMSS shall present alarms with perceptually distinct critical-versus-minor signals and shall de-prioritise or suppress transient minor events so the highest-priority active alarm is the one presented in the alarm banner. | Distinguishing critical from minor conditions lets the clinician respond decisively without being desensitised by alarm fatigue. | High (safety-related) | UC_04, UR_07 |
-| RQ_FN_14 | MMSS shall raise a connection-loss alarm when no valid reading has been received from a device for 5 seconds, displayed within 1 second of the trigger. | Undetected connection failure risks missed vital signs; the 5 s inactivity threshold and <1 s display are the mandated triggers. | High (safety-related) | UC_05, UR_06, UR_16 |
-| RQ_FN_15 | MMSS shall surface each device-reported sensor-misplacement and unreliable-reading flag as a prioritised, perceptible audible-and-visual alarm within 1 second of the flag being reported. | Unambiguous alerting on misplaced or unreliable sensors prevents the clinician acting on incorrect data; the alarm is backed by the device's independent audible alarm. | High (safety-related) | UC_05, UR_06, UR_16 |
-| RQ_FN_16 | MMSS shall suppress or visibly invalidate the numeric presentation of any value flagged as misplaced or unreliable so it cannot be read as a valid vital sign. | A discredited reading shown as a normal number invites confident wrong action; its own presentation must be invalidated. | High (safety-related) | UC_05, UR_06 |
-| RQ_FN_17 | MMSS shall provide an attention-independent audible fault alarm for sensor misplacement, disconnection, and unreliable readings that does not depend on the clinician looking at the display. | A sole pre-hospital caregiver with eyes on the patient must detect a fault without inspecting the display. | High (safety-related) | UC_05, UR_16 |
-| RQ_FN_18 | MMSS shall display an explicit, persistent, acknowledge-to-clear on-screen timeout notification, backed by the independent ALGOS audible signal, when no diagnostic candidate has been received by 120 s after patient connection (T0), the 120 s window being measured by MMSS from T0 against the engine-side ALGOS 2-minute convergence budget. | The clinician must be told promptly when diagnostic support cannot be produced in time so they fall back to standard assessment without an unnoticed delay; MMSS times the 120 s window from patient connection (T0) while ALGOS convergence is the engine-side budget, and the on-screen notice is backed by the independent ALGOS audible signal so it is not missed. | High (safety-related) | UC_06, UR_05 |
-| RQ_FN_19 | MMSS shall not present a malformed or incomplete diagnostic response from the AI engine as a valid candidate, and shall instead indicate that diagnostic support is unavailable. | Treating unparseable or incomplete output as a candidate would present an uncalibrated suggestion as trustworthy. | High (safety-related) | UC_03, UR_04 |
-| RQ_FN_20 | MMSS shall transmit patient and diagnostic data to the Hospital Information System over the single HL7-or-FHIR protocol fixed at design freeze, within 1 second of the share being triggered. | Sharing relevant data with the receiving hospital preserves continuity of care and a timely second opinion; <1 s is the mandated HIS delivery budget. A single protocol is fixed at design freeze (RQ_CS_05) rather than runtime-selectable, so the connector is built and verified against one frozen ICD. | Medium | UC_07, UR_10 |
-| RQ_FN_21 | MMSS shall keep the HIS data-sharing function isolated from the acquisition and alarm path so that HIS slowness or unavailability cannot block, delay, or degrade live acquisition, display, or alarming. | Isolating the non-safety share path preserves the C→B segregation so live monitoring continues regardless of HIS state. | High (isolation safety-related) | UC_07, UR_11 |
-| RQ_FN_22 | MMSS shall display the currently monitored patient's identity persistently and unambiguously on the live monitoring screen. | The clinician must always know whose data is on screen to prevent wrong-patient association in a multi-patient setting. | High | UC_08, UR_10 |
-| RQ_FN_23 | MMSS shall require explicit confirmation of the correct patient identity before alarm-limit configuration or HIS data sharing proceeds. | A consequential action must not proceed under an unconfirmed or wrong identity, preventing data or alarms being associated with the wrong patient. | High | UC_08, UR_10 |
-| RQ_FN_24 | MMSS shall, on a request to silence alarm audio, enter a time-limited silence that automatically restores audio at the time limit and display a persistent indication that audio is suspended while it is active. | Silencing is a necessary workflow; a silence that silently persists removes the safety signal, so it must be time-limited and visibly indicated. | High (safety-related) | UC_09, UR_07 |
-| RQ_FN_25 | MMSS shall override an active alarm-audio silence and sound a new alarm whenever a higher-priority alarm occurs during the silence. | A critical alarm must never be silently latched off behind a previously silenced lower-priority alarm. | High (safety-related) | UC_09, UR_07 |
-| RQ_FN_26 | MMSS shall provide a simulation training mode that delivers competency-based onboarding without monitoring a live patient. | Realistic hands-on practice lets clinicians become competent and stay confident, the named mitigation for the foreseeable use-error hazard. | High | UC_10, UR_12 |
-| RQ_FN_27 | MMSS shall make the simulation training mode persistently and unmistakably distinguishable from live clinical use, and shall require explicit confirmation to leave the simulation mode. | Mode confusion — treating a real patient in simulation or dismissing real alarms as simulated — is a high-consequence use-error hazard that must be prevented. | High (safety-related) | UC_10, UR_12 |
+| RQ_FN_01 | The system shall transition from switch-on to a clinically ready monitoring state within 10 seconds and present an explicit "ready" indication when that state is reached. | Rapid, demonstrable readiness is the baseline availability the clinician relies on to start caring for the patient at the point of care without waiting through start-up. | High; Availability | UC_01, UR_02 |
+| RQ_FN_02 | The system shall, for every channel in the Acquired Parameters / Signals table, present a per-channel acquisition state of live, acquiring, or no-data, and shall never render an unacquired channel as a measured value. | An unacquired channel shown as a plausible number is read as "normal" rather than "not yet measured", so explicit per-channel state prevents the clinician acting on assumed data. | High; Safety-critical (Class B) | UC_01, UC_03, UR_01 |
+| RQ_FN_03 | The system shall acquire every vital-sign parameter enumerated in the Acquired Parameters / Signals table from its source measurement device and present each value with its unit on the monitor display, marking a channel as live only once valid acquisition is confirmed. | At-a-glance presentation of the patient's true vital signs is the core clinical value of the device; a value must carry its unit and appear only when genuinely acquired so the clinician reads the patient's real condition without conversion or doubt. | High; Safety-critical (Class B) | UC_03, UR_01 |
+| RQ_FN_04 | The system shall refresh the displayed vital-sign values at least once per second for every live channel. | A fixed sub-second refresh cadence keeps the at-a-glance picture current so the clinician never relies on a stale reading. | High; Safety-critical (Class B) | UC_03, UC_04, UR_01 |
+| RQ_FN_05 | The system shall present each acquired vital-sign value with an unmistakable, distinguishable out-of-range indication whenever the value crosses its configured abnormal threshold. | Abnormal values must be visually unmistakable at a glance so deterioration is recognised before it is missed in adverse, attention-split conditions. | High; Safety-critical (Class B) | UC_03, UC_05, UR_01 |
+| RQ_FN_06 | The system shall continuously present the acquired vital signs throughout sustained operation and display a perceptible system-health indication that monitoring is live. | A visible health indication lets the clinician trust continuous surveillance while attending to other patients and prevents a silent gap being mistaken for live monitoring. | High; Availability | UC_04, UR_03 |
+| RQ_FN_07 | The system shall continuously emit, against an independent timing reference, a liveness indication that advances only while monitoring is actually running, such that any interruption, freeze, or restart of monitoring becomes perceptible at the boundary — the liveness indication stalling or the system restarting — and shall raise an explicit, perceptible alert on that condition; a frozen or stalled display shall never be presentable as if it were live. | A process that has itself frozen cannot self-detect the freeze, so detection must rest on an independent, advancing liveness reference whose stall is observable at the boundary; a silent availability gap on an unattended critical patient otherwise gives a false sense of safety. | High; Availability | UC_04, UR_03 |
+| RQ_FN_08 | The system shall raise, within 1 second of detecting an abnormal vital-sign condition, an immediate alarm that identifies which parameter (per the Acquired Parameters / Signals table) is abnormal and its urgency level. | Timely, parameter-specific alarming is the safety function that lets the clinician intervene before the patient deteriorates. | High; Safety-critical (Class B) | UC_05, UR_08 |
+| RQ_FN_09 | The system shall present abnormal-condition alarms multi-modally (audible and visual) such that they are perceptible in noisy and mobile conditions and shall keep each alarm latched until the condition resolves or the clinician acknowledges it. | A latching, conspicuous alarm cannot self-clear unnoticed and stays perceptible at distance, so a clinically significant condition is never missed while the clinician is away. | High; Safety-critical (Class B) | UC_05, UR_08 |
+| RQ_FN_10 | The system shall make abnormal-condition clinical alarms distinguishable from sensor-fault warnings by distinct audible tone, colour, icon, and text, conforming to recognised alarm-safety practice. | A clinical alarm mistaken for a technical fault (or vice versa) leads directly to wrong or omitted action; distinct multi-modal encoding keeps the two unambiguous over sustained use. | High; Safety-critical / Regulatory | UC_05, UC_06, UR_09 |
+| RQ_FN_11 | The system shall permit alarms to be suspended only for a bounded interval after which they automatically restore, shall display a persistent conspicuous indication for the whole period alarms are suspended, and shall raise an escalating reminder as the suspension window expires. | Deliberate alarm suspension during resuscitation is legitimate, but a forgotten or indefinite silence is a critical alarm-safety hazard; time-limited suspension with a persistent reminder prevents the patient being left silently unmonitored. | High; Safety-critical (Class B) | UC_05, UR_09 |
+| RQ_FN_12 | The system shall detect, within 1 second, a measurement-device disconnection, misplacement, or unreliable-reading condition for any device in the Acquired Parameters / Signals table whenever (a) the device asserts the corresponding fault or quality flag defined in its published ICD, or (b) valid input from that channel is absent for the configured short inactivity window; the system relies on the device's own fault and signal-quality signalling for clinical-reliability judgements and shall not infer reliability beyond what the device interface reports together with input inactivity. | Sensor-fault propagation is a critical hazard; prompt detection from device-side fault/quality signalling and input inactivity is the precondition for warning the clinician before false data is trusted. The MMSS is software-only and cannot independently judge clinical signal reliability, so detection of "unreliable readings" must be bounded to what the device interface reports plus inactivity, keeping the requirement implementable and keeping the device the independent safeguard. | High; Safety-critical (Class B) | UC_06, UR_10 |
+| RQ_FN_13 | The system shall, on detecting a sensor disconnection, misplacement, or fault, raise a sensor-fault warning distinguishable from a clinical alarm, visibly mark the affected parameter as untrustworthy, and replace its displayed value with an explicit no-data/untrustworthy state instead of a stale or implausible value. | A stale value shown as live positively misleads; marking the channel untrustworthy and removing the value keeps the clinician from acting on false or out-of-date data. | High; Safety-critical (Class B) | UC_06, UR_10 |
+| RQ_FN_14 | The system shall return an affected channel to a live, trusted state once valid acquisition resumes, and shall mark the channel untrustworthy on each loss of valid acquisition for an intermittently faulting channel rather than alternating between trusted and fault states. | Restoring trust on re-acquisition supports re-seating the sensor, while marking a flickering channel untrustworthy on every loss prevents it being intermittently believed. | High; Safety-critical (Class B) | UC_06, UR_10 |
+| RQ_FN_15 | The system shall submit the conditioned patient parameter set to the external diagnostic AI capability and, given a complete ranked-candidate response received at the diagnostic-AI interface, present those candidates alongside the raw vital signs within 1 second of the response being fully received at that boundary. | Prompt presentation of ranked candidates beside the vital signs is the decision-support differentiator that helps the clinician reach a working diagnosis faster, including when no colleague is available; tying the budget to the complete response arriving at the boundary makes it measurable and excludes the external capability's own compute time, which the system cannot control. | High; Differentiator | UC_07, UR_04 |
+| RQ_FN_16 | The system shall present each diagnostic candidate with its confidence and its supporting reasoning — including the driving vital-sign parameters — absorbable at a glance, with fuller detail available on demand. | Confidence, reasoning, and driving parameters let the clinician judge whether a candidate fits the patient and recognise when it rests on a parameter they distrust, keeping clinical judgement in control. | High; Safety-critical / Liability | UC_07, UR_05 |
+| RQ_FN_17 | The system shall visibly distinguish a still-converging (provisional) candidate list from a settled one and make a materially changed ranking salient so a revision is noticed rather than missed. | Distinguishing provisional from settled results and signalling revisions mitigates anchoring and premature closure on an early candidate. | High; Safety-critical / Liability | UC_07, UC_08, UR_04 |
+| RQ_FN_18 | The system shall frame and label the diagnostic output unambiguously as decision support that informs rather than replaces the clinician, and shall impose no workflow gate, confirmation, or override on a candidate that could prevent or delay the clinician acting on their own judgement. | Clinician-in-control is the central liability firewall; non-gating, clearly-framed decision support keeps final authority with the clinician and never delays care. | High; Safety-critical / Liability | UC_08, UR_06 |
+| RQ_FN_19 | The system shall, when no diagnostic result is produced within the expected convergence time, present a positive perceptible time-out indication delivered independently of the diagnostic candidate-result path and an explicit "no diagnosis available — proceed on your own assessment" message, and shall not leave the candidate area silently blank. | A blank area is read as "still computing"; a positive, path-independent time-out indication tells the clinician to fall back on their own assessment rather than wait indefinitely. | High; Safety-critical (Class B) | UC_09, UR_07 |
+| RQ_FN_20 | The system shall exchange the patient's vital-sign data and diagnostic findings with the hospital information system over the recognised interoperability standard on clinician request, delivering diagnostic candidates within 1 second of their availability, and shall require the receiving recipient to be confirmed before the exchange proceeds. | Standards-based, recipient-confirmed exchange enables a second opinion and smooth, secure handover while protecting confidentiality. | High; Interoperability | UC_10, UR_14 |
+| RQ_FN_21 | The system shall give explicit confirmation of a successful, complete transfer to the correct patient record and shall explicitly flag any partial or failed transfer with the option to retry, rather than reporting success. | Handover is a high-risk transition; explicit transfer-outcome reporting prevents both ends falsely believing information is in hand. | High; Interoperability | UC_10, UR_14 |
+| RQ_FN_22 | The system shall persistently surface the safety-relevant working state to any clinician at the device — which channels are flagged untrustworthy, whether alarms or limits are modified or suspended, and the current diagnostic candidate state — and shall continue presenting vital signs and active alarm state until handover to receiving monitoring is confirmed complete. | Critical working state held silently falls through the gap between clinicians; surfacing it and sustaining monitoring until continuity is confirmed prevents a lapse at handover. | High; Safety-critical (Class B) | UC_11, UR_03, UR_09, UR_10 |
+| RQ_FN_23 | The system shall provide a simulated training mode in which simulated vital signs, alarms, sensor faults, and diagnostic candidates behave as in live operation, allowing risk-free practice including AI candidate interpretation and bias avoidance. | A realistic risk-free training mode is the named risk control for the critical clinician-misinterpretation hazard and lets clinicians build competence before live use. | High; Safety-critical (named risk control) | UC_12, UR_12 |
+| RQ_FN_24 | The system shall enforce fail-safe separation between training and live operation: requiring explicit confirmation to enter and exit training mode, displaying a persistent, always-visible mode indicator and watermarking all simulated data, and defaulting to live operation on restart or return to the device. | Simulated data mistaken for a real patient, or a live patient unknowingly monitored in training mode, is itself a critical hazard; fail-safe separation and a persistent indicator prevent it. | High; Safety-critical (Class B) | UC_12, UR_13 |
+| RQ_FN_25 | The system shall connect to each of the six measurement-device types and to the hospital information system strictly through their published interface contracts and shall provide clear per-channel interface and fault feedback and a guided verification step confirming each acquired parameter maps to the correct device and display field before the device is released for clinical use. | Verified, contract-only commissioning lets the engineer integrate the fleet without modifying external elements and prevents a mis-mapped channel propagating to wrong clinical decisions. | High; Integration | UC_02, UR_16 |
+| RQ_FN_26 | The system shall apply software updates only through the controlled lifecycle workflow, preventing or deferring any update to a device in active clinical use and verifying correct operation before the device is returned to service. | A controlled, use-aware update workflow keeps the deployed fleet safely patchable over its service life without disrupting monitoring or returning a device in an unverified state. | High; Lifecycle / Maintainability | UC_13, UR_17 |
 
 #### Performance Requirements (RQ_PR_*)
 
@@ -844,19 +911,19 @@ Quantitative requirements on how well the system performs its functions: respons
 
 | ID | Description | Rationale | Classification | Traces |
 |----|-------------|-----------|----------------|--------|
-| RQ_PR_01 | MMSS shall complete activation — from power-on/connection to a ready/acquiring state — in ≤ 10 s, measured from power-on to the ready-state indication. | Meets the System Activation budget (< 10 s) so a clinician loses no critical time before monitoring an unstable patient. | High | RQ_FN_01 |
-| RQ_PR_02 | MMSS shall display each acquired vital-signs value on the monitor within ≤ 1 s of its acquisition, measured from device-reading receipt to on-screen rendering. | Meets the Vital Signs Display budget (< 1 s after acquisition) so treatment decisions rest on data shown without perceptible delay. | High | RQ_FN_04 |
-| RQ_PR_03 | MMSS shall refresh the displayed vital signs on a fixed timer-based interval of 1 s (± 100 ms). | Meets the mandated UI Update Interval (1 s, timer-based) for a stable, predictable refresh cadence and freshness detection. | High | RQ_FN_05 |
-| RQ_PR_04 | MMSS shall accept and process vital-signs input at a sustained rate of ≥ 0.1 Hz per device channel for all six device types without sample loss. | Meets the Vital Signs Input Rate target (≥ 0.1 Hz) so the minimum acquisition cadence for the six-device fleet is guaranteed. | High | RQ_FN_03 |
-| RQ_PR_05 | MMSS shall display received ranked diagnostic candidates within ≤ 1 s of receiving them from the Open Evidence AI engine, measured from response receipt to on-screen rendering. | Meets the Diagnose Candidates Display budget (< 1 s after receipt from AI); this is an MMSS presentation budget, distinct from the ALGOS 2-min convergence budget. | High | RQ_FN_09 |
-| RQ_PR_06 | The MMSS pre-processing stage (DPREC) shall complete in ≤ 800 ms per diagnostic request, measured from acquired-data hand-off to dispatch-ready. | Meets the DPREC latency budget (≤ 800 ms), one component of the MMSS 1-second display-latency budget (DPREC ≤ 800 ms + DPROC ≤ 200 ms). | High | RQ_FN_07 |
-| RQ_PR_07 | The MMSS diagnostic-output processing stage (DPROC) shall complete in ≤ 200 ms per AI response, measured from response receipt to render-ready. | Meets the DPROC latency budget (≤ 200 ms), the second component of the MMSS 1-second display-latency budget (DPREC ≤ 800 ms + DPROC ≤ 200 ms). | High | RQ_FN_09 |
-| RQ_PR_08 | The MMSS diagnostic engine connector (DEC) shall complete its asynchronous per-request round-trip to the Open Evidence AI engine within ≤ 800 ms, and this round-trip shall be excluded from the ≤ 1 s display-latency budget (which is met by DPREC ≤ 800 ms + DPROC ≤ 200 ms alone). | Meets the DEC latency budget (≤ 800 ms). The DEC budget covers the external-engine round-trip, which is asynchronous and explicitly outside the synchronous 1 s display path (RQ_IF_17, RQ_CS_04); folding it into the display path would break a budget MMSS cannot control. | High | RQ_FN_07, RQ_FN_08 |
-| RQ_PR_09 | MMSS shall present a prioritised audible-and-visual vital-sign alarm within ≤ 1 s of detecting a value breaching its configured alarm limit. | Meets the Vital Sign Alarm Display budget (< 1 s after detection) so critical conditions are alerted within the mandated safety latency. | High (safety-related) | RQ_FN_12 |
-| RQ_PR_10 | MMSS shall trigger a connection-loss condition for a device channel when no valid reading has been received from that channel for 5 s, evaluated on each acquisition cycle, such that the condition is raised on the first acquisition cycle at or after the 5 s inactivity threshold is reached. | Meets the Connection Alarm Trigger threshold (5 s of inactivity). Detection is bounded by the acquisition cycle rather than instantaneous: "exactly 5 s" is not realisable on a polling pipeline, so the trigger is specified as the first cycle on or after 5 s of inactivity, which keeps detection prompt while avoiding spurious triggering. | High (safety-related) | RQ_FN_14 |
-| RQ_PR_11 | MMSS shall display a connection-loss or sensor-misplacement alarm within ≤ 1 s of its trigger condition being met. | Meets the Connection / Misplacement Alarm Display budget (< 1 s after trigger) so sensor faults are surfaced within the mandated safety latency. | High (safety-related) | RQ_FN_14, RQ_FN_15 |
-| RQ_PR_12 | MMSS shall present the diagnostic-convergence timeout notification when no candidate is received within 120 s as measured by MMSS from patient connection (T0). | MMSS times and notifies against a single 120 s window anchored at patient connection (T0); the engine-side ALGOS 2-minute convergence budget is the engine's own timer and is not conflated with the MMSS-measured timeout window. | High (safety-related) | RQ_FN_18 |
-| RQ_PR_13 | MMSS shall transmit patient and diagnostic data to the Hospital Information System within ≤ 1 s of the share being triggered, measured to hand-off at the HIS interface. | Meets the Diagnose Candidates → HIS budget (< 1 s) so a timely second opinion is supported without delaying continuity of care. | Medium | RQ_FN_20 |
+| RQ_PR_01 | The system shall reach a clinically ready monitoring state, with the explicit "ready" indication shown, within 10 seconds of switch-on, measured from power-on to ready indication. | The clinician relies on the device being usable at the point of care within seconds; a bounded, measurable activation time is the baseline availability the start-up behaviour must guarantee. | High; Availability | RQ_FN_01 |
+| RQ_PR_02 | The system shall present each acquired vital-sign value on the monitor display within 1 second of its acquisition from the source measurement device, measured at the system boundary from value receipt to display update, for every channel in the Acquired Parameters / Signals table. | Sub-second acquisition-to-display latency at the boundary is the at-a-glance clinical value the clinician sees; it is the end-to-end figure the user observes, independent of any internal processing budget. | High; Safety-critical (Class B) | RQ_FN_03 |
+| RQ_PR_03 | The system shall update every live vital-sign channel on the display on a timer-based cadence of once per second (refresh interval ≤ 1 second). | A fixed 1-second refresh cadence keeps the displayed picture current so the clinician never relies on a stale reading; the cadence must be quantified and verifiable. | High; Safety-critical (Class B) | RQ_FN_04 |
+| RQ_PR_04 | The system shall accept and process vital-sign input from each source measurement device at a sustained rate of at least 0.1 Hz (one update per 10 seconds or faster) per channel without loss of the most recent value. | The minimum input acquisition rate sets the floor at which the displayed and analysed data stays representative of the patient's current condition; below it the picture is no longer real-time. | High; Performance | RQ_FN_03, RQ_FN_04 |
+| RQ_PR_05 | The system shall raise an abnormal-condition alarm within 1 second of detecting that a vital-sign value has crossed its configured abnormal threshold, measured from detection to alarm presentation. | Timely alarming is the safety function that lets the clinician intervene before deterioration; the 1-second detection-to-alarm budget is the boundary-observable figure that bounds the delay the patient is exposed to. | High; Safety-critical (Class B) | RQ_FN_08 |
+| RQ_PR_06 | The system shall trigger a connection (sensor-inactivity) alarm when input from a measurement-device channel has been absent for a continuous 5 seconds of inactivity. | A defined 5-second inactivity window is the quantified threshold at which a lost connection is treated as a fault, balancing prompt detection against transient-gap false alarms. | High; Safety-critical (Class B) | RQ_FN_12 |
+| RQ_PR_07 | The system shall detect a sensor disconnection, misplacement, or unreliable-reading fault within 1 second of the device's fault signalling at the interface, and present the corresponding sensor-fault warning within 1 second of detection. | Sensor-fault propagation is a critical hazard; bounding both detection and presentation to within 1 second limits how long false or missing data can be trusted before the clinician is warned. | High; Safety-critical (Class B) | RQ_FN_12, RQ_FN_13 |
+| RQ_PR_08 | The system shall present the ranked diagnostic candidates returned by the external diagnostic AI capability alongside the raw vital signs within 1 second of their receipt at the system boundary. | Prompt presentation of received candidates is the decision-support figure the clinician observes; the budget is measured from receipt at the boundary, since time-to-converge belongs to the external capability, not to the system. | High; Differentiator | RQ_FN_15 |
+| RQ_PR_09 | The system shall deliver the patient's vital-sign data and diagnostic findings to the hospital information system within 1 second of the clinician's confirmed exchange request (and within 1 second of candidate availability for diagnostic candidates), measured at the outbound system boundary. | Sub-second outbound delivery keeps second-opinion and handover exchange responsive; the budget is the boundary-observable transfer latency the user experiences, excluding downstream HIS processing. | High; Interoperability | RQ_FN_20 |
+| RQ_PR_10 | The system shall present the diagnostic time-out indication when no diagnostic result has been received within the external capability's expected convergence time-out of 2 minutes, treating the 2-minute window as an observed external deadline rather than a system computation budget. | The 2-minute convergence is the external diagnostic AI capability's budget; the system's quantified obligation is to observe that deadline and signal the time-out so the clinician falls back on their own assessment without waiting indefinitely. | High; Safety-critical (Class B) | RQ_FN_19 |
+| RQ_PR_11 | The system shall concurrently acquire, process, refresh, and display all parameters enumerated in the Acquired Parameters / Signals table from all six measurement-device types simultaneously, meeting every per-channel latency and refresh budget under full concurrent load. | Critical patients are monitored on multiple devices at once; the system must sustain its timing budgets at full channel capacity, not only for a single channel, or the at-a-glance picture degrades under realistic load. | High; Capacity | RQ_FN_03, RQ_FN_04, RQ_FN_08 |
+| RQ_PR_12 | The system shall sustain continuous, uninterrupted monitoring over a defined continuous soak period of at least 24 hours without degradation of its acquisition, display-refresh, or alarm latency budgets — every such budget shall continue to be met at the end of the period as at the start — and without cumulative resource exhaustion (e.g. memory growth, handle/thread leakage) that would breach those budgets. | An unavailable or degrading monitor at the point of care is an operational and clinical risk; a quantified ≥24-hour soak period gives a measurable, testable basis for "sustained" operation and surfaces the resource-leak failure modes that erode timing budgets over long runs. | High; Availability / Reliability | RQ_FN_06 |
+| RQ_PR_13 | The system shall raise the perceptible interruption alert within 1 second of an interruption, freeze, or restart of monitoring becoming observable — that is, within 1 second of the independent liveness indication stalling for longer than its configured liveness interval, or of the system returning to service after a restart. | A silent availability gap gives a false sense of safety; bounding the alert to within 1 second of the liveness stall (the only boundary-observable evidence of a freeze, since a frozen process cannot time its own stall) ensures the clinician learns of a lapse promptly while keeping the budget measurable. | High; Availability | RQ_FN_07 |
 
 #### Non-Functional Requirements (RQ_NF_*)
 
@@ -864,20 +931,21 @@ How the system should behave rather than what it does: reliability, maintainabil
 
 | ID | Description | Rationale | Classification | Traces |
 |----|-------------|-----------|----------------|--------|
-| RQ_NF_01 | The MMSS software shall be developed, documented, and maintained across its full lifecycle in conformity with ANSI/AAMI IEC 62304 applied at the software safety classification established for the system (initial Class C, mitigated to Class B), with the IEC 62304 process activities and deliverables for that class produced and retained. | Lifecycle rigour must match the patient harm a software failure could cause; a non-conformant lifecycle file blocks market access and cannot be remediated retrospectively. | Compliance | BR_02, RE_01 |
-| RQ_NF_02 | The MMSS software shall be subject to a documented risk-management process conforming to ISO 14971, evidencing for each identified hazard that residual risk — including the independent external risk controls relied upon to reduce the software class from C to B — is reduced to an acceptable level, with the C→B segregation re-evaluated whenever a change affects those controls. | The class-mitigation claim is only defensible if the independence and effectiveness of the external alarm and diagnostic-timeout controls are evidenced, not asserted; this bounds the manufacturer's product-liability exposure. | Compliance | BR_03, RE_02 |
-| RQ_NF_03 | The MMSS user interface and interaction design shall be developed under a usability-engineering process conforming to IEC 62366-1, with a use-specification, identified use-related hazards, and summative usability evaluation demonstrating safe use by the intended users in the intended environments and control of reasonably foreseeable use error, including misinterpretation of diagnostic candidates. | Usability engineering is a recognised conformity route and the regulator-expected control against use-error harm; without it the human-machine interaction is itself an unmitigated source of patient harm. | Compliance | BR_10, RE_03 |
-| RQ_NF_04 | The MMSS alarm system shall conform to IEC 60601-1-8, implementing the defined alarm-priority categories, audible and visual alarm-signal characteristics, alarm-fault detection, and alarm-state behaviour required by that standard for the implemented alarm conditions. | Conformance to the applicable alarm-system standard is a mandatory presumption-of-conformity route ensuring critical conditions and equipment faults are communicated unambiguously and cannot be silently lost. | Compliance (safety-related) | BR_03, RE_06 |
-| RQ_NF_05 | MMSS shall protect the confidentiality and integrity of patient and diagnostic data in storage and in transit through access control and cryptographic protection, and shall protect its safety-relevant clinical function against unauthorised access or compromise, in line with a documented secure-development and cybersecurity-risk-management process. | Confidentiality, integrity, and availability of safety-relevant data and continued safe operation are mandatory regulatory and procurement gates for a connected, data-exporting medical device. | Security | BR_14, RE_07 |
-| RQ_NF_06 | MMSS shall process patient and diagnostic personal data in accordance with applicable data-protection obligations, restricting access to authorised users, recording an audit trail of access to and disclosure of patient data, and supporting the buyer's internal information-security and privacy review with the necessary evidence. | Patient-privacy compliance is a hard procurement and regulatory gate; an auditable access trail and supporting documentation are prerequisites for passing data-protection review. | Privacy | BR_14, RE_07 |
-| RQ_NF_07 | MMSS shall sustain continuous, uninterrupted acquisition, display, and alarming for the full duration of a monitoring session under its specified host platform and load, such that no single failure of a non-safety function (including HIS data sharing or diagnostic processing) degrades or interrupts the acquisition and alarm path. | Reliable, uninterrupted monitoring and alarming is the baseline clinical-safety expectation and is structurally required to preserve the C→B segregation that the safety classification depends on. | Reliability (safety-related) | BR_03, BR_04, RE_06 |
-| RQ_NF_08 | MMSS shall recover to a safe, well-defined monitoring state after a recoverable fault or restart, without presenting stale, ambiguous, or wrong-patient data as current, and shall make any loss of monitoring continuity explicit to the clinician. | A connected critical-care device must fail safe; silently resuming on stale or mis-associated data would invite confident wrong action and is a foreseeable hazardous situation. | Reliability (safety-related) | BR_03, RE_02 |
-| RQ_NF_09 | MMSS shall be maintainable such that defect corrections and security patches can be developed, verified under the IEC 62304 change-control process, released, and deployed to fielded installations within the contractually committed response and resolution targets, without compromising the established safety classification. | Dependable, contractually committed maintenance and security patching is a primary procurement criterion and a standing safety obligation; unpatched safety-critical software directly threatens continued safe operation. | Maintainability | BR_09, RE_10 |
-| RQ_NF_10 | The Open Evidence AI engine and any other third-party or off-the-shelf software used in MMSS shall be managed as SOUP under IEC 62304, each item identified, version-pinned, qualified with evidence of its validation and ongoing maintenance, and subject to change control on any update, with unbroken traceability maintained throughout the deployed life. | The diagnostic value proposition rests on a third-party component; unbroken SOUP qualification, version control, and traceability are mandatory so a silent component change cannot break MMSS function or invalidate its diagnostic claim. | Compliance | BR_07, RE_05 |
-| RQ_NF_11 | MMSS shall be accompanied by labelling and instructions for use that state the intended use, the intended user profile and use environments, the device's limitations and warnings, and the meaning, basis, confidence, and known limitations of the automated diagnostic output, together with the explicit statement that the diagnostic output is decision support and not a confirmed diagnosis. | Labelling and IFU that convey limitations and the decision-support nature of the output are a mandatory regulatory requirement and a primary control against clinician over-reliance. | Compliance (labelling) | BR_10, RE_09 |
-| RQ_NF_12 | MMSS shall provide competency-based training provisions — including the built-in simulation training mode — and the manufacturer shall maintain records demonstrating that intended users are trained to operate the device safely and to correctly interpret automated diagnostic output before clinical use. | Competency-based training is the register-named mitigation for the critical-severity use-error hazard and is how the manufacturer discharges its safe-use duty and limits over-reliance liability. | Compliance (training) | BR_10, RE_09 |
-| RQ_NF_13 | The manufacturer shall operate a post-market surveillance and vigilance capability for MMSS that monitors field performance, handles complaints, reports serious incidents to the competent authorities within the applicable reporting timeframes, and triggers corrective and field-safety actions, including for issues arising from the SOUP AI component. | Post-market surveillance and vigilance reporting are standing regulatory obligations after market access; under-resourcing them is itself a liability and audit-finding risk. | Compliance | BR_09, RE_10 |
-| RQ_NF_14 | Every MMSS design decision, risk control, verification result, and traceability link shall be created and retained under a compliant quality management system and design-control process such that the technical file / design dossier is complete, current, and auditable on demand throughout the product lifecycle. | An incomplete or unauditable design file is direct regulatory and post-market liability exposure for the party that signs the declaration of conformity; submission readiness depends on it. | Compliance | BR_02, RE_01 |
+| RQ_NF_01 | The system shall achieve a demonstrated availability of at least 99.9% of operating time during continuous critical-care operation, where unavailability is any interval in which vital-signs presentation is lost, and shall make every such loss explicitly perceptible to the clinician rather than silent; planned restart-recovery within the RQ_NF_02 bound counts toward unavailability and shall be annunciated. | An unavailable monitor at the point of care is an operational and clinical risk; a single quantified availability target, measured over the defined representative operating period, is verifiable, whereas pairing it with an unqualified "no loss exceeding 1 second" clause conflicted with the bounded restart recovery in RQ_NF_02. The decisive safety property — that no loss is silent — is stated explicitly instead. | Reliability / Availability; Safety-related (Class B) | BR_16, RE_02 |
+| RQ_NF_02 | The system shall be restorable to a clinically ready monitoring state within 10 seconds following an unexpected software restart, without loss of acquisition configuration, and shall make any restart explicitly perceptible to the clinician. | Rapid, transparent recovery prevents a silent monitoring gap on an unattended critical patient and bounds the clinical exposure of a fault to a known, short interval. | Reliability / Availability; Safety-critical (Class B) | BR_16, RE_02 |
+| RQ_NF_03 | The system shall be maintainable such that a change confined to one software concern can be released through the controlled software lifecycle without requiring full re-verification of unchanged, segregated parts, with the verified scope of each change documented and traceable. | Change-scoped re-verification keeps update and re-validation cost bounded over the service life and is a precondition of safely updating a deployed safety-critical fleet without re-incurring full re-validation each change. | Maintainability; Lifecycle (IEC 62304) | BR_01, BR_15, RE_01 |
+| RQ_NF_04 | The system shall enforce access control, authenticated operation, and end-to-end protection of the confidentiality and integrity of personal health data at rest and in transit, in conformance with applicable data-protection and privacy law (e.g. GDPR / HIPAA class) and secure-interoperability practice, and shall maintain a tamper-evident audit record of access to and exchange of personal health data. | Personal health data handled or exchanged by the device is subject to data-protection law carrying standalone regulatory and financial liability independent of clinical safety; confidentiality, integrity, and auditability must be assured throughout the data flow. | Security / Privacy; Regulatory | BR_14, RE_07 |
+| RQ_NF_05 | The system shall be developed, maintained, and changed under a documented IEC 62304 software lifecycle, applying the activities and deliverables required for its assigned software safety classification with planning, configuration management, problem resolution, and change control applied from project start. | A documented, classification-appropriate IEC 62304 lifecycle is mandated by applicable medical-device software law and is the rigour authorities require before granting market access; it is verifiable against the standard's process deliverables. | Compliance; Lifecycle (IEC 62304) | BR_01, RE_01 |
+| RQ_NF_06 | The system shall be supported by a complete ISO 14971 risk-management process across the lifecycle that explicitly addresses AI mis-diagnosis, false or missed alarms, sensor-fault propagation, and use error, reducing each hazard to an acceptable, documented residual level through verified risk controls, with a maintained risk-management file demonstrating a favourable benefit-risk balance. | A complete ISO 14971 process with documented residual risk and a favourable benefit-risk conclusion is required for approval and is the manufacturer's principal defence of a safety-critical diagnostic device; the risk-management file is the auditable evidence. | Compliance; Risk Management (ISO 14971); Safety-critical | BR_04, RE_02 |
+| RQ_NF_07 | The system shall be developed under a documented IEC 62366 usability-engineering process that identifies use-related hazards and demonstrates, through formative and summative evaluation in the intended use environments, that foreseeable use errors associated with safety-critical interactions are mitigated to an acceptable level. | A usability-engineering process with summative validation evidence is required to confirm the device can be operated safely by its intended users and is a precondition of the safety case for use-related hazards such as clinician misinterpretation. | Compliance; Usability Engineering (IEC 62366); Safety-critical | BR_04, BR_12, RE_03 |
+| RQ_NF_08 | The system's alarm system shall conform to the applicable requirements of IEC 60601-1-8 for the generation, prioritisation, annunciation, and distinguishability of clinical alarm conditions and technical (sensor-fault) conditions, including audible and visual alarm characteristics appropriate to assigned priority. | Conformance to the recognised alarm-safety standard is the presumption of conformity authorities expect for alarm behaviour and ensures clinically significant conditions and technical faults are signalled correctly, distinguishably, and without unsafe alarm fatigue or missed-alarm risk. | Compliance; Alarm Safety (IEC 60601-1-8); Safety-critical | BR_04, RE_06 |
+| RQ_NF_09 | The system shall be accompanied by labelling and instructions for use, appropriate to its safety class, that state its intended use, indications, user profile, use environment, capabilities, limitations and contraindications — including the adjunctive, non-autonomous nature of the diagnostic output and the validated intended-use boundaries of the off-the-shelf AI capability — and the warnings and information for safety required for safe operation. | Compliant labelling and information-for-safety are mandatory obligations for the device's safety class and ensure intended users understand the device's capabilities, limitations, and safe operation, including that diagnostic output must not be the sole basis for a clinical decision. | Compliance; Labeling / Information-for-Safety; Regulatory | BR_12, RE_09, RE_05 |
+| RQ_NF_10 | The system shall provide a realistic, risk-free simulated training mode, with fail-safe and persistently indicated separation from live clinical operation, and the manufacturer shall provide user-training provisions appropriate to the device's safety class such that intended users can build competence before live use. | The training mode is the named risk control for the critical clinician-misinterpretation hazard and forms part of the safety case; mandatory training-provision obligations for the safety class must be met to support safe fleet operation. | Compliance; Training; Safety-critical (Class B) | BR_12, RE_09 |
+| RQ_NF_11 | The system shall support post-market surveillance, vigilance, and incident reporting by recording, with end-to-end traceability, the events, conditions, configuration, and software version associated with a field occurrence, such that a field event can be traced back to the responsible design element and reported within mandated timelines. | Post-market surveillance and mandated incident-reporting timelines are direct legal obligations of the legal manufacturer with enforcement and recall exposure; field-to-design traceability is what lets emerging safety signals be detected, reported, and corrected through field safety actions. | Compliance; Post-Market Surveillance / Traceability; Regulatory | BR_13, RE_10 |
+| RQ_NF_12 | The system shall ensure that the risk-control safeguards relied upon to reduce its software safety classification — the device-side independent connection/fault alarms and the external diagnostic capability's independent convergence-time-out notification — are obtained and acted upon through paths segregated from, and free of common-cause failure with, the functions they protect, such that no single system failure can simultaneously defeat a safety-critical function and its safeguard. | The reduction of the classification from Class C to Class B is admissible only while the safeguards are demonstrably independent and common-cause-free; verifiable segregation at the system boundary is what sustains the mitigated classification and the benefit-risk argument supporting market access. | Compliance; Safety Architecture (Class C→B); Safety-critical | BR_02, RE_02 |
+| RQ_NF_13 | The system shall submit to the off-the-shelf diagnostic AI capability only inputs (parameter set, patient population, and operating conditions) that fall within that capability's supplier-declared validated intended-use scope, and shall, whenever the data it is about to submit or the returned output's supplier-provided scope/applicability flags fall outside that declared scope, withhold or accompany the diagnostic output with an explicit out-of-scope indication rather than presenting, relying on, or exchanging it as in-scope. | Reliance on an off-the-shelf AI does not transfer liability from the manufacturer; using it outside its validated intended use invalidates the clinical-performance evidence. The MMSS consumes the AI as a black box, so it can only enforce scope on what it controls — the inputs it submits — and on any scope/applicability flags the supplier returns; binding the requirement to those boundary-observable signals makes it implementable. | Compliance; Clinical Validation (SOUP/OTS); Safety-critical | BR_17, BR_03, RE_04 |
+| RQ_NF_14 | The system shall, for every diagnostic candidate it presents, accompany it with the supporting reasoning and confidence supplied by the diagnostic AI capability and an unambiguous, persistent indication that the output is adjunctive decision support that does not replace the clinician's judgement. | Presenting reasoning, confidence, and decision-support framing is the central liability control that keeps responsibility with the clinician, mitigates automation bias, and keeps the device defensible as decision support rather than an autonomous diagnostic agent. | Compliance; Information-for-Safety; Safety-critical (Liability) | BR_05, RE_05 |
+| RQ_NF_15 | The manufacturer shall operate a certified quality management system (e.g. ISO 13485 class) and maintain a complete, current, audit-ready technical file or design dossier covering design control, quality, risk management, and clinical validation evidence for the system throughout its lifecycle. | A certified QMS and a current, audit-ready technical file are the basis on which a notified body and competent authority assess conformity and the manufacturer defends its declaration of conformity and lawful market placement. | Compliance; Quality Management (ISO 13485); Regulatory | BR_06, BR_07, RE_08 |
 
 #### Constraint Requirements (RQ_CS_*)
 
@@ -885,14 +953,16 @@ External constraints the system must respect: regulatory rules, applicable stand
 
 | ID | Description | Rationale | Classification | Traces |
 |----|-------------|-----------|----------------|--------|
-| RQ_CS_01 | The first release (v1.0) of MMSS shall use the commercially available, validated Open Evidence AI model as a mandated off-the-shelf component, integrated only through the DEC connector against the model's published structured-output interface; no custom or in-house diagnostic model shall be developed for v1.0. | An explicit project constraint that transfers diagnostic validation and regulatory-clearance risk to a cleared third-party component; developing a bespoke model is out of bounds for v1.0. | Imposed technology choice | RE_05, BR_01 |
-| RQ_CS_02 | MMSS shall be classified, developed, and certified under ANSI/AAMI IEC 62304 with the software safety class established as Class C and mitigated to Class B, and shall not be placed on the market unless this classification and the supporting lifecycle file are demonstrably satisfied. | A mandated regulatory constraint: lifecycle process and documentation rigour are fixed by the assigned safety class, and conformity is a precondition for lawful clinical use. | Regulatory rule | RE_01, BR_02 |
-| RQ_CS_03 | MMSS shall support data acquisition from exactly the six mandated non-invasive device types — ECG monitor, pulse oximeter, blood-pressure monitor, thermal probe, capnometer, and EEG monitor — through their published, defined-and-frozen interface control documents, including the device-reported connection-loss, misplacement, and unreliable-reading status flags. | An explicit project and competitive-parity constraint fixing the device-fleet integration boundary; the dependent alarm and misplacement safety claims hold only against ICDs confirming the devices emit those flags. | Imposed technology choice | RE_06, BR_04 |
-| RQ_CS_04 | MMSS shall be bound only by its own display-latency budget of ≤ 1 s (decomposed as DPREC ≤ 800 ms and DPROC ≤ 200 ms) and shall not commit to the 2-minute diagnosis-convergence target, which is owned by the external ALGOS/Open Evidence engine; the DEC round-trip to the external engine shall be excluded from the MMSS display budget. | A mandated project constraint that draws the design's contractual budget boundary, preventing an unfulfillable convergence commitment and bounding the manufacturer's liability to what MMSS controls. | Imposed design constraint | RE_04, BR_06 |
-| RQ_CS_05 | MMSS HIS interoperability shall be delivered over a recognised open interoperability standard (HL7 or FHIR), with a single protocol fixed at design freeze and the interface ICD defined and frozen before the HIS connector design is committed; patient and diagnostic data shall be secured in transit. | A recognised interoperability standard with a defined interface specification is the regulator-expected route to ensure data is transferred without loss, corruption, or misinterpretation across the system boundary, while avoiding open-ended per-customer integration. | Applicable standard | RE_08, BR_11 |
-| RQ_CS_06 | The Open Evidence component shall be governed by a binding supplier agreement covering validation evidence, published-interface stability, change/version notification, update provision, and end-of-support commitments, with the agreed API/structured-output contract version pinned for the certified release. | A regulator and SOUP-qualification requirement: responsibility and traceability must remain unbroken where the manufacturer relies on a component it did not develop, and an uncontrolled supplier change cannot be allowed to invalidate the diagnostic claim without change control. | Regulatory rule | RE_05, BR_07 |
-| RQ_CS_07 | MMSS shall be designed to operate on the existing fixed host platform — a compact embedded CPU running a real-time operating system — accessing all hardware (host CPU, the six measurement devices, and the monitor display) exclusively through their published interface control documents, with no hardware design, selection, or modification in scope. | The assumed RTOS host and software-only scope are fixed external conditions; the per-item timing budgets are only verifiable on this platform, and the integration boundary is constrained to published ICDs. | Imposed technology choice | RE_01, BR_05 |
-| RQ_CS_08 | The MMSS HIS data-sharing path shall be architecturally isolated from the acquisition, display, and alarm path, so that unavailability or slowness of the external information system cannot block, delay, or degrade live monitoring or alarming. | The data-sharing path is non-safety-critical; isolating it is a constraint that preserves the C→B segregation on which the software safety classification depends. | Regulatory rule (segregation) | RE_07, BR_11 |
+| RQ_CS_01 | The system shall be classified and developed in accordance with ANSI/AAMI/IEC 62304, with an initial software safety classification of Class C reduced to a mitigated Class B by independent external risk-control safeguards, and shall meet the lifecycle obligations of the mitigated classification while the independence of those safeguards remains demonstrated. | The imposed software-lifecycle standard and the mandated Class C-to-B mitigation define the development rigour and the conditions under which the lower class is admissible; this is a binding external constraint on how the system may lawfully be engineered and placed on the market. | Constraint; Lifecycle / Safety Classification (IEC 62304) | RE_01, RE_02, BR_02 |
+| RQ_CS_02 | The system shall, for its first release, incorporate a commercially available, validated, off-the-shelf diagnostic AI capability (Open Evidence) as its diagnostic engine, and shall not incorporate a custom or proprietary in-house diagnostic model. | The first release is constrained by mandate to a validated off-the-shelf model to remove proprietary-model validation from the critical path and bound the manufacturer's validation and liability burden; this is an imposed technology constraint, not a design option. | Constraint; Imposed Technology (OTS/SOUP) | RE_04, BR_03 |
+| RQ_CS_03 | The system shall acquire from, and operate with, all six mandated measurement-device types — ECG monitor, pulse oximeter, blood-pressure monitor, thermal probe, capnometer, and EEG monitor — through their published interface contracts, without modifying those devices. | Support for the full mandated device set across the existing installed base is an imposed scope constraint; the software-only scope requires the system to reach these fixed external elements only through their published contracts. | Constraint; Scope / Interoperability | RE_06, BR_10 |
+| RQ_CS_04 | The system shall exchange patient data and diagnostic findings with hospital and EMS information systems over a recognised healthcare interoperability standard of the HL7/FHIR class, with the specific protocol to be confirmed and fixed in a defined interface control document before development of the exchange function completes. | Standards-based interoperability is required for second opinion and handover and to avoid bespoke integration cost; the exact protocol is not yet fixed, so the constraint binds the standard class and the requirement to settle the ICD before completion. | Constraint; Imposed Standard (HL7/FHIR class) | RE_07, BR_10 |
+| RQ_CS_05 | The system shall conform to the applicable medical-device regulation of each target market (e.g. EU MDR / national device regulation) as a software medical device, and shall be placed on the market only under a valid declaration of conformity / clearance supported by the technical file. | Lawful market access is conditioned on conformity to the applicable medical-device regulation in each jurisdiction; this is a binding legal constraint that gates release independently of clinical merit. | Constraint; Regulatory (Medical Device Regulation) | RE_08, BR_06 |
+| RQ_CS_06 | The system shall acquire, process, display, and exchange personal health data only in conformance with the applicable data-protection and privacy law (e.g. GDPR / HIPAA class) of each target market. | Data-protection law is an externally imposed legal constraint carrying standalone regulatory and financial liability; the system must respect it wherever personal health data is handled, independently of clinical-safety obligations. | Constraint; Regulatory (Data-Protection Law) | RE_07 |
+| RQ_CS_07 | The system's alarm behaviour shall conform to IEC 60601-1-8 and its usability process to IEC 62366, as the recognised standards establishing the presumption of conformity for alarm safety and usability engineering in the target markets. | These harmonised standards are the externally imposed yardsticks against which authorities and notified bodies assess alarm-safety and usability conformity; conforming to them is the recognised route to demonstrate compliance. | Constraint; Applicable Standards (IEC 60601-1-8 / IEC 62366) | RE_06, RE_03 |
+| RQ_CS_08 | The system shall operate within the constraints of its intended use environments — fixed critical-care settings and mobile/pre-hospital settings (ambulance, on-scene) subject to movement, noise, poor light, and vibration — and on the assumed compact embedded host platform with real-time-OS capabilities, accessed solely through that platform's published interface. | The dual fixed/mobile use environment and the fixed, out-of-scope embedded host are imposed operating-environment constraints the system must respect; it must remain safe and usable across these conditions and bind only to the published host interface. | Constraint; Operating Environment | RE_03, BR_16 |
+| RQ_CS_09 | The system shall treat the diagnosis-convergence target (2 minutes) as a budget owned by the external diagnostic AI capability and shall not assume responsibility for that convergence time; the system's own timeliness constraint is bounded to the sub-second presentation budget at its external boundary. | The constraints explicitly assign the convergence time to the external capability and the sub-second presentation budget to the system; the system must not absorb an externally owned budget into its own conformance obligations. | Constraint; Imposed Performance Boundary | RE_04, BR_18 |
+| RQ_CS_10 | The manufacturer shall maintain a certified quality management system (e.g. ISO 13485) under which the system is developed, produced, and supported, as the external quality-system precondition for conformity assessment and lawful market placement. | A certified QMS is an externally imposed precondition for notified-body and authority conformity assessment; the system must be produced within that controlled quality framework to be lawfully marketable. | Constraint; Regulatory (ISO 13485) | RE_08 |
 
 ### Verification (SV_*)
 
@@ -900,596 +970,845 @@ The **BDD feature files** that verify the functional requirements, defined joint
 
 ```gherkin
 @ID:RQ_FN_01
-Feature: System activation to ready/acquiring state
-  As a clinician
-  I want MMSS to be ready to monitor within 10 seconds of switch-on
-  So that I lose no critical time before monitoring an unstable patient
+Feature: Become clinically ready within 10 seconds of switch-on
+    As a Pre-hospital Clinician I want MMSS to become ready for clinical use within 10 seconds of switching on
+    So that I can start caring for the patient at the scene without waiting through a slow start-up
 
-  Rule: On being switched on and connected, MMSS shall initialise and transition to a ready/acquiring state within 10 seconds.
+Rule: The MMSS shall transition from switch-on to a clinically ready monitoring state within 10 seconds and present an explicit "ready" indication when that state is reached.
 
-  Scenario: MMSS reaches ready/acquiring state within the activation budget
-    Given MMSS is switched off on the host CPU/RTOS platform
-    And the six device-interface simulators (ECG, pulse oximeter, BP, thermal, capnometer, EEG) are connected and responding on their ICD endpoints
-    When power-on is asserted and a power-on timestamp T0 is captured from the host RTOS clock
-    And the test harness polls the ready/acquiring state flag every 100 ms
-    Then the ready/acquiring state flag is observed asserted within the budget below, measured T0→ready (RQ_PR_01)
-      | metric                           | threshold |
-      | activation time (power-on→ready) | ≤ 10 s    |
+Scenario: MMSS reaches a clinically ready state within 10 seconds of switch-on
+    Given the simulator is running
+    And the MMSS is hosted on the host-platform stub exposing the host platform/OS interface per the host RTOS ICD
+    And the MMSS is switched off
+    When the MMSS is switched on
+    Then the explicit "ready" indication is shown on the Display Interface within the following time (RQ_PR_01)
+    | event              | maximum time |
+    | switch-on to ready | 10 seconds   |
+    And the MMSS exposes its readiness state to the host-platform stub over the host platform/OS interface, requiring no modification to the host (RQ_IF_01)
 
-  Scenario: Activation exceeding the budget is a failure
-    Given MMSS is switched off on the host CPU/RTOS platform
-    And one device-interface simulator is configured to never respond on its ICD endpoint
-    When power-on is asserted and a power-on timestamp T0 is captured
-    And the ready/acquiring state flag is not observed asserted by 10 s after T0
-    Then the test result is recorded as a failed activation
+Scenario: No monitoring is presented as ready before the ready state is reached
+    Given the simulator is running
+    And the MMSS is switched off
+    When the MMSS is switched on
+    Then the MMSS does not present a clinically ready monitoring state until the "ready" indication is shown
 
-  Scenario: Activation uses only published host RTOS services
-    Given MMSS is built against the published Host CPU/RTOS platform interface only (RQ_IF_22, RQ_CS_07)
-    And the host platform is instrumented to log every scheduling, timing, memory, and I/O service call MMSS makes during activation
-    When power-on is asserted and MMSS runs through to the ready/acquiring state (RQ_IF_23)
-    Then every service call logged appears in the published host RTOS API/runtime contract
-      | check                                                        | expected |
-      | count of calls to interfaces outside the published host ICD  | 0        |
-    And no call to an undocumented or private host service is recorded
+Scenario: MMSS is restorable to a ready state within 10 seconds after an unexpected restart
+    Given the simulator is running
+    And the MMSS is running in a clinically ready state with the acquisition configuration set
+    When the test harness forces an unexpected software restart of the MMSS process
+    Then the MMSS makes the restart explicitly perceptible to the clinician
+    And the explicit "ready" indication is shown again within the following time (RQ_NF_02)
+    | event                | maximum time |
+    | restart to ready     | 10 seconds   |
+    And the acquisition configuration is preserved across the restart
 ```
 
 ```gherkin
 @ID:RQ_FN_02
-Feature: Unambiguous monitoring-state indication
-  As a clinician
-  I want a clear indication of the current monitoring/acquisition state
-  So that I do not mistake "screen on" for "monitoring on"
+Feature: Present a per-channel acquisition state for every channel
+    As a Pre-hospital Clinician I want every monitored channel to show whether it is live, acquiring, or has no data
+    So that I never mistake an unmeasured channel for a normal patient reading
 
-  Rule: MMSS shall present an unambiguous indication of its current monitoring/acquisition state, distinct from the live monitoring layout, until acquisition is confirmed.
+Rule: The MMSS shall, for every channel in the Acquired Parameters / Signals table, present a per-channel acquisition state of live, acquiring, or no-data, and shall never render an unacquired channel as a measured value.
 
-  Scenario: Pre-acquisition state is visually distinct from live monitoring
-    Given MMSS has been switched on
-    And the device simulators are connected but configured to withhold their first valid reading (acquisition not yet confirmed)
-    When the display frame buffer over IF_07 is captured
-    Then the rendered screen shows the not-yet-acquiring state indicator
-    And the live monitoring layout region (vital-signs tiles) is not rendered as active
+Scenario: Unconnected channels show a no-data state, not a value
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    Then each of the following channels shows the acquisition state "no-data" and no measured value on the Display Interface
+    | channel          |
+    | Heart Rate       |
+    | Systolic BP      |
+    | Diastolic BP     |
+    | MAP              |
+    | SpO2             |
+    | Pulse Rate       |
+    | Respiratory Rate |
+    | EtCO2            |
+    | Temperature      |
+    | BIS              |
 
-  Scenario: State indication clears only once acquisition is confirmed
-    Given MMSS is rendering the not-yet-acquiring state indication
-    When every connected device simulator emits its first valid reading and acquisition is confirmed at time Tc
-    Then the rendered screen transitions to the live monitoring layout within 1 second of Tc
-    And the not-yet-acquiring indicator is no longer present in the captured frame
+Scenario: A channel transitions through acquiring to live as its sensor connects
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the ECG Electrodes are connected in the simulator
+    Then the Heart Rate channel shows the acquisition state "acquiring" before valid acquisition is confirmed
+    And the Heart Rate channel shows the acquisition state "live" only once valid acquisition is confirmed
+    And the Heart Rate channel never renders a measured value while in the "acquiring" or "no-data" state
 ```
 
 ```gherkin
 @ID:RQ_FN_03
-Feature: Continuous acquisition from the six-device fleet
-  As a clinician
-  I want MMSS to continuously acquire from all six connected devices
-  So that bedside decisions rest on current data from the full sensor set
+Feature: Acquire and display every vital-sign parameter with its unit
+    As a Pre-hospital Clinician I want every acquired vital sign shown with its unit and only when genuinely measured
+    So that I read the patient's true condition without conversion or doubt
 
-  Rule: MMSS shall continuously acquire vital-signs data from each of the six connected non-invasive measurement devices (ECG, pulse oximeter, BP monitor, thermal probe, capnometer, EEG).
+Rule: The MMSS shall acquire every vital-sign parameter enumerated in the Acquired Parameters / Signals table from its source measurement device and present each value with its unit on the monitor display, marking a channel as live only once valid acquisition is confirmed.
 
-  Scenario Outline: Sustained acquisition at the mandated minimum rate without sample loss
-    Given the <device> simulator is connected via its ICD
-    And MMSS is in the acquiring state
-    When the <device> simulator emits <n_samples> sequentially numbered readings at <rate> over a <duration> run
-    Then MMSS acquires all <n_samples> samples in order with no gap in the sequence numbers (RQ_PR_04)
-    And the measured sustained poll/acquire rate for that channel is ≥ 0.1 Hz
+Scenario: Acquire and display Heart Rate from the ECG monitor
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the ECG Electrodes are connected in the simulator
+    Then the following vital signs are displayed with their unit and marked live on the Display Interface within 1 second of acquisition (RQ_PR_02)
+    | vital sign | unit |
+    | Heart Rate | bpm  |
 
-    Examples:
-      | device         | rate    | duration | n_samples |
-      | ECG monitor    | 0.1 Hz  | 600 s    | 60        |
-      | pulse oximeter | 0.1 Hz  | 600 s    | 60        |
-      | BP monitor     | 0.1 Hz  | 600 s    | 60        |
-      | thermal probe  | 0.1 Hz  | 600 s    | 60        |
-      | capnometer     | 0.1 Hz  | 600 s    | 60        |
-      | EEG monitor    | 0.1 Hz  | 600 s    | 60        |
+Scenario: Acquire and display the blood-pressure parameters from the NIBP cuff
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the NIBP Cuff is connected in the simulator
+    Then the following vital signs are displayed with their unit and marked live on the Display Interface within 1 second of acquisition (RQ_PR_02)
+    | vital sign   | unit |
+    | Systolic BP  | mmHg |
+    | Diastolic BP | mmHg |
+    | MAP          | mmHg |
+
+Scenario: Acquire and display the pulse-oximetry parameters from the SpO₂ probe
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the SpO₂ Probe is connected in the simulator
+    Then the following vital signs are displayed with their unit and marked live on the Display Interface within 1 second of acquisition (RQ_PR_02)
+    | vital sign | unit |
+    | SpO2       | %    |
+    | Pulse Rate | bpm  |
+
+Scenario: Acquire and display the capnometry parameters from the EtCO₂ sampling line
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the EtCO₂ Sampling Line is connected in the simulator
+    Then the following vital signs are displayed with their unit and marked live on the Display Interface within 1 second of acquisition (RQ_PR_02)
+    | vital sign       | unit        |
+    | Respiratory Rate | breaths/min |
+    | EtCO2            | mmHg        |
+
+Scenario: Acquire and display Temperature from the thermal probe
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the Temperature Probe is connected in the simulator
+    Then the following vital signs are displayed with their unit and marked live on the Display Interface within 1 second of acquisition (RQ_PR_02)
+    | vital sign  | unit |
+    | Temperature | °C   |
+
+Scenario: Acquire and display BIS from the EEG monitor
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the EEG Electrodes are connected in the simulator
+    Then the following vital signs are displayed with their unit and marked live on the Display Interface within 1 second of acquisition (RQ_PR_02)
+    | vital sign | unit          |
+    | BIS        | index (0–100) |
+
+Scenario: Acquire and display all parameters when all sensors are connected
+    Given the simulator is running
+    And no sensors are connected in the simulator
+    And the MMSS is running
+    When the ECG Electrodes are connected in the simulator
+    And the NIBP Cuff is connected in the simulator
+    And the SpO₂ Probe is connected in the simulator
+    And the EtCO₂ Sampling Line is connected in the simulator
+    And the Temperature Probe is connected in the simulator
+    And the EEG Electrodes are connected in the simulator
+    Then each of the following vital signs is acquired over its device's published interface contract and rendered to the Display Interface with its unit and marked live within 1 second of acquisition (RQ_PR_02, RQ_PR_11, RQ_IF_09, RQ_CS_03)
+    | vital sign       | unit          |
+    | Heart Rate       | bpm           |
+    | Systolic BP      | mmHg          |
+    | Diastolic BP     | mmHg          |
+    | MAP              | mmHg          |
+    | SpO2             | %             |
+    | Pulse Rate       | bpm           |
+    | Respiratory Rate | breaths/min   |
+    | EtCO2            | mmHg          |
+    | Temperature      | °C            |
+    | BIS              | index (0–100) |
 ```
 
 ```gherkin
 @ID:RQ_FN_04
-Feature: Display acquired vital-signs values with units
-  As a clinician
-  I want each vital sign shown with units within 1 second of acquisition
-  So that I can make rapid, safe treatment decisions
+Feature: Refresh live vital-sign values at least once per second
+    As a Pre-hospital Clinician I want every live vital sign refreshed at least once a second
+    So that I never rely on a stale reading at a glance
 
-  Rule: MMSS shall display each acquired vital-signs value, with its units, on the monitor display within 1 second of its acquisition.
+Rule: The MMSS shall refresh the displayed vital-sign values at least once per second for every live channel.
 
-  Scenario Outline: Acquired value appears on the display within the latency budget
-    Given MMSS is acquiring from the <device> simulator
-    When the simulator emits a reading of <value> <units> and the acquisition-receipt timestamp Ta is captured at IF_07-inbound
-    Then the value <value> with its unit label <units> is rendered on the Monitor Display, and the render-complete timestamp Tr satisfies Tr − Ta ≤ 1 s (RQ_PR_02)
+Scenario: Each live channel updates at least once per second
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running with every channel marked live
+    When the simulator sets each channel to a distinct new value and holds it
+    Then each live channel on the Display Interface updates to the new value within the following refresh interval (RQ_PR_03)
+    | channel          | maximum refresh interval |
+    | Heart Rate       | 1 second                 |
+    | Systolic BP      | 1 second                 |
+    | Diastolic BP     | 1 second                 |
+    | MAP              | 1 second                 |
+    | SpO2             | 1 second                 |
+    | Pulse Rate       | 1 second                 |
+    | Respiratory Rate | 1 second                 |
+    | EtCO2            | 1 second                 |
+    | Temperature      | 1 second                 |
+    | BIS              | 1 second                 |
 
-    Examples:
-      | device         | vital_sign        | units  | value |
-      | ECG monitor    | heart rate        | bpm    | 72    |
-      | pulse oximeter | SpO2              | %      | 97    |
-      | BP monitor     | blood pressure    | mmHg   | 120/80|
-      | thermal probe  | body temperature  | °C     | 37.0  |
-      | capnometer     | end-tidal CO2     | mmHg   | 38    |
-      | EEG monitor    | brain activity    | µV     | 45    |
+Scenario: Refresh cadence is sustained under low input rate
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running with every channel marked live
+    When the simulator delivers input at a sustained rate of 0.1 Hz per channel
+    Then every live channel continues to refresh at least once per second using the most recent value without loss of that value (RQ_PR_04)
 ```
 
 ```gherkin
 @ID:RQ_FN_05
-Feature: Fixed-cadence refresh and data-freshness state
-  As a clinician
-  I want the display to refresh every second and flag stale values
-  So that I never act on stale data mistaken for current
+Feature: Flag out-of-range vital-sign values unmistakably
+    As a Pre-hospital Clinician I want abnormal values to stand out unmistakably at a glance
+    So that deterioration is recognised before it is missed in adverse conditions
 
-  Rule: MMSS shall refresh the displayed vital signs on a 1-second update interval and convey the data-freshness state of each value, flagging any value that has not refreshed within the expected cadence as stale.
+Rule: The MMSS shall present each acquired vital-sign value with an unmistakable, distinguishable out-of-range indication whenever the value crosses its configured abnormal threshold.
 
-  Scenario: Refresh occurs on the 1-second timer
-    Given MMSS is in the live monitoring layout with the device simulators emitting steadily
-    When the display-refresh timestamps are logged over a 60-second observation window
-    Then each successive refresh interval is 1 s within ± 100 ms (i.e. 900–1100 ms) across all logged intervals (RQ_PR_03)
+Scenario Outline: An out-of-range value is flagged distinctly while an in-range value is not
+    Given the simulator is running
+    And the <sensor> is connected in the simulator
+    And the MMSS is running with the <channel> channel marked live
+    And the <channel> channel is configured with the abnormal threshold <threshold>
+    When the simulator drives the <channel> value to the in-range value <normal value>
+    Then the <channel> tile shows no out-of-range indication
+    When the simulator drives the <channel> value to the out-of-range value <abnormal value>
+    Then the <channel> tile shows an unmistakable, distinguishable out-of-range indication
+    And the out-of-range indication is visually distinct from the in-range presentation
 
-  Scenario: A value that misses its cadence is flagged stale
-    Given the ECG simulator has been emitting heart-rate readings and the value is displayed as current
-    When the simulator stops emitting and no fresh reading for that value arrives within 2 refresh cycles (≤ 1.1 s expected cadence plus one cycle)
-    Then the value is rendered with a stale freshness state (e.g. greyed/flagged)
-    And it is no longer rendered in the current/valid style
+    Examples:
+    | sensor            | channel     | threshold       | normal value | abnormal value |
+    | SpO₂ Probe        | SpO2        | low < 90 %      | 98 %         | 82 %           |
+    | ECG Electrodes    | Heart Rate  | high > 150 bpm  | 78 bpm       | 175 bpm        |
+    | Temperature Probe | Temperature | high > 38.5 °C  | 37.0 °C      | 39.8 °C        |
+    | NIBP Cuff         | Systolic BP | high > 180 mmHg | 122 mmHg     | 195 mmHg       |
+
+Scenario: A value held just inside the threshold carries no out-of-range indication
+    Given the simulator is running
+    And the SpO₂ Probe is connected in the simulator
+    And the MMSS is running with the SpO2 channel marked live
+    And the SpO2 channel is configured with the abnormal threshold low < 90 %
+    When the simulator drives the SpO2 value to 91 % which is just within its configured threshold
+    Then the SpO2 tile shows no out-of-range indication
 ```
 
 ```gherkin
 @ID:RQ_FN_06
-Feature: Distinct not-connected state for absent channels
-  As a clinician
-  I want absent device channels shown as a non-blank "not-connected" state
-  So that I never monitor a patient on an incomplete sensor set unnoticed
+Feature: Present continuous monitoring with a system-health indication
+    As a Critical-Care Nurse I want continuous vital-signs presentation and a visible health indication
+    So that I can trust monitoring is live while attending to other patients
 
-  Rule: MMSS shall present each expected-but-not-acquiring device channel with a distinct, non-blank "not-connected" state rather than an empty or placeholder value.
+Rule: The MMSS shall continuously present the acquired vital signs throughout sustained operation and display a perceptible system-health indication that monitoring is live.
 
-  Scenario Outline: An expected channel that is not acquiring shows the not-connected state
-    Given the <device> channel is in the expected six-device configuration
-    And the <device> simulator is disconnected from its ICD endpoint so no readings arrive
-    When the live monitoring layout frame is captured over IF_07
-    Then the <device> tile renders a distinct, non-blank "not-connected" state
-    And the <device> tile renders neither an empty field nor a placeholder numeric value
+Scenario: System-health indication shows monitoring is live during continuous operation
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running with every channel marked live
+    When monitoring continues without interruption for a representative run of at least 10 minutes
+    Then the acquired vital signs remain continuously presented on the Display Interface throughout the run
+    And a perceptible system-health indication shows that monitoring is live throughout the run
+    And no interval occurs in which vital-signs presentation is lost without an explicit perceptible indication to the clinician (RQ_NF_01)
 
-    Examples:
-      | device         |
-      | ECG monitor    |
-      | pulse oximeter |
-      | BP monitor     |
-      | thermal probe  |
-      | capnometer     |
-      | EEG monitor    |
+Scenario: Timing budgets and resource use hold across a 24-hour soak
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running with every channel marked live
+    When monitoring continues without interruption for a continuous soak period of at least 24 hours (RQ_PR_12)
+    Then a perceptible system-health indication shows that monitoring is live throughout the period
+    And the acquired vital signs remain continuously presented on the Display Interface throughout the period
+    And every acquisition, refresh, and alarm-latency budget measured at the end of the period still meets the following limits as at the start (RQ_PR_12)
+    | budget                  | limit at start | limit at end |
+    | acquisition-to-display  | ≤ 1 second     | ≤ 1 second   |
+    | display refresh interval| ≤ 1 second     | ≤ 1 second   |
+    | detection-to-alarm      | ≤ 1 second     | ≤ 1 second   |
+    And process memory and handle/thread counts at the end show no cumulative growth that would breach those budgets (RQ_PR_12)
 ```
 
 ```gherkin
 @ID:RQ_FN_07
-Feature: Dispatch diagnostic request to the AI engine
-  As a clinician
-  I want MMSS to send pre-processed vitals to the diagnostic engine
-  So that the monitor becomes a decision-support tool
+Feature: Detect and alert on a monitoring freeze via an independent liveness reference
+    As a Critical-Care Nurse I want any freeze, interruption, or restart of monitoring to become perceptible
+    So that a silent monitoring gap on an unattended patient never gives a false sense of safety
 
-  Rule: MMSS shall dispatch a diagnostic request, derived from the acquired and pre-processed vital-signs data, to the Open Evidence AI engine.
+Rule: The MMSS shall continuously emit, against an independent timing reference, a liveness indication that advances only while monitoring is running, shall make any interruption, freeze, or restart perceptible at the boundary, and shall raise an explicit perceptible alert on that condition; a frozen or stalled display shall never be presentable as if it were live.
 
-  Scenario: A diagnostic request is dispatched from pre-processed data
-    Given MMSS is acquiring vital signs from the six connected device simulators
-    And a stub Open Evidence engine endpoint is listening on the pinned IF_08 revision
-    When the pre-processing stage produces a dispatch-ready request
-    Then MMSS sends a diagnostic request to the stub engine endpoint over IF_08
-    And the captured request payload contains fields derived from the acquired and pre-processed vital-signs values
+Scenario: Liveness indication advances while monitoring runs
+    Given the simulator is running
+    And the MMSS is running and monitoring with a configured liveness interval of 1 second
+    When monitoring runs uninterrupted for at least 5 seconds
+    Then the liveness indication advances against its independent timing reference at least once per liveness interval
 
-  Scenario: Pre-processing meets its latency budget
-    Given acquired data is handed off to the pre-processing stage (DPREC) with a hand-off timestamp Th captured
-    When the diagnostic request reaches the dispatch-ready state at timestamp Td
-    Then Td − Th ≤ 800 ms per request (RQ_PR_06)
+Scenario: A monitoring freeze raises a perceptible interruption alert
+    Given the simulator is running
+    And the MMSS is running and monitoring with a configured liveness interval of 1 second
+    When the test harness injects a monitoring freeze that stalls the liveness indication for longer than the configured liveness interval
+    Then an explicit, perceptible interruption alert is raised within the following time (RQ_PR_13)
+    | event                       | maximum time |
+    | liveness stall to alert     | 1 second     |
+    And the frozen display is not presentable as if it were live
+    And the monitoring loss is made explicitly perceptible to the clinician rather than left silent (RQ_NF_01)
 
-  Scenario: The engine round-trip stays within its asynchronous budget
-    Given a diagnostic request is dispatched to the stub engine at timestamp Ts (RQ_IF_17)
-    And the stub engine is configured to reply after a fixed processing delay
-    When the DEC receives the structured response at timestamp Te
-    Then the asynchronous round-trip Te − Ts ≤ 800 ms (RQ_PR_08)
-    And the measured synchronous display-latency path (DPREC + DPROC) excludes this round-trip and still meets ≤ 1 s
+Scenario: The freeze alert is raised from the independent liveness path, not the monitoring path it protects
+    Given the simulator is running
+    And the MMSS is running and monitoring with a configured liveness interval of 1 second
+    When the test harness freezes the monitoring path so it can neither advance nor self-report its own stall
+    Then the interruption alert is still raised within 1 second from the independent liveness reference, demonstrating the safeguard does not share the failure of the frozen monitoring path (RQ_NF_12, RQ_PR_13)
+
+Scenario: A restart of monitoring is made perceptible
+    Given the simulator is running
+    And the MMSS is running and monitoring
+    When the MMSS restarts and returns to service
+    Then an explicit, perceptible interruption alert is raised within 1 second of the system returning to service (RQ_PR_13)
 ```
 
 ```gherkin
 @ID:RQ_FN_08
-Feature: Receive structured ranked diagnostic candidates
-  As a clinician
-  I want MMSS to receive the engine's structured candidates
-  So that diagnostic support can be presented to me
+Feature: Raise a parameter-specific abnormal-condition alarm within 1 second
+    As a Critical-Care Nurse I want an immediate alarm identifying which parameter is abnormal and how urgent it is
+    So that I can intervene before the patient deteriorates
 
-  Rule: MMSS shall receive the structured ranked diagnostic candidates returned by the Open Evidence AI engine.
+Rule: The MMSS shall raise, within 1 second of detecting an abnormal vital-sign condition, an immediate alarm that identifies which parameter is abnormal and its urgency level.
 
-  Scenario: Structured candidates are received and accepted
-    Given a diagnostic request has been dispatched to the stub Open Evidence engine
-    When the stub returns a well-formed structured response on the pinned interface revision (RQ_IF_16) containing 3 ranked candidates
-    Then MMSS parses and receives all 3 ranked diagnostic candidates in rank order
-    And the parsed candidate set is handed to the diagnostic-output processing stage, with the receipt occurring within the ≤ 800 ms round-trip budget (RQ_PR_08)
+Scenario Outline: An abnormal value raises a parameter-specific alarm within 1 second
+    Given the simulator is running
+    And the <sensor> is connected in the simulator
+    And the MMSS is running with the <channel> channel marked live showing the in-range value <normal value>
+    When the simulator steps the <channel> value from <normal value> to <abnormal value>, crossing its configured abnormal threshold
+    Then an alarm identifying the <channel> parameter and its urgency level is raised within the following time (RQ_PR_05)
+    | event              | maximum time |
+    | detection to alarm | 1 second     |
+
+    Examples:
+    | sensor              | channel     | normal value | abnormal value |
+    | ECG Electrodes      | Heart Rate  | 78 bpm       | 175 bpm        |
+    | SpO₂ Probe          | SpO2        | 98 %         | 82 %           |
+    | EtCO₂ Sampling Line | EtCO2       | 40 mmHg      | 18 mmHg        |
+    | NIBP Cuff           | Systolic BP | 122 mmHg     | 195 mmHg       |
+
+Scenario: Concurrent abnormal conditions each raise their own alarm under full load
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running with every channel marked live
+    When the simulator simultaneously steps Heart Rate to 175 bpm and SpO2 to 82 %, crossing both abnormal thresholds
+    Then a parameter-specific alarm is raised for Heart Rate within 1 second (RQ_PR_05, RQ_PR_11)
+    And a parameter-specific alarm is raised for SpO2 within 1 second (RQ_PR_05, RQ_PR_11)
 ```
 
 ```gherkin
 @ID:RQ_FN_09
-Feature: Display ranked diagnostic candidates alongside vitals
-  As a clinician
-  I want candidates shown next to the vitals within 1 second of receipt
-  So that I reach a working diagnosis faster
+Feature: Annunciate abnormal-condition alarms multi-modally and latch them
+    As a Critical-Care Nurse I want alarms I can perceive in noisy, mobile conditions and that do not self-clear unnoticed
+    So that a clinically significant condition is never missed while I am away
 
-  Rule: MMSS shall display the received ranked diagnostic candidates alongside the raw vital signs within 1 second of receiving them from the AI engine.
+Rule: The MMSS shall present abnormal-condition alarms multi-modally (audible and visual) such that they are perceptible in noisy and mobile conditions and shall keep each alarm latched until the condition resolves or the clinician acknowledges it.
 
-  Scenario: Received candidates are rendered within the display budget
-    Given 3 ranked diagnostic candidates have been received from the stub engine at receipt timestamp Tc
-    When the diagnostic-output processing stage (DPROC) renders them
-    Then the candidates are rendered on the Monitor Display alongside the raw vital-signs tiles, with render-complete timestamp Tr satisfying Tr − Tc ≤ 1 s (RQ_PR_05)
-    And the DPROC stage completes (response receipt → render-ready) within ≤ 200 ms per response (RQ_PR_07)
+Scenario: An abnormal-condition alarm is presented audibly and visually
+    Given the simulator is running
+    And the ECG Electrodes are connected in the simulator
+    And the MMSS is running with the Heart Rate channel marked live showing 78 bpm
+    When the simulator steps Heart Rate to 175 bpm, crossing its abnormal threshold
+    Then the alarm is presented through both of the following modalities
+    | modality |
+    | audible  |
+    | visual   |
+
+Scenario: An unacknowledged alarm latches until acknowledged
+    Given the simulator is running
+    And the ECG Electrodes are connected in the simulator
+    And the MMSS is running with the Heart Rate channel marked live showing 175 bpm with an abnormal-condition alarm active
+    When the simulator returns Heart Rate to 78 bpm (within range)
+    And the clinician has not acknowledged the alarm
+    Then the alarm remains latched and perceptible until the clinician acknowledges it
+
+Scenario: An alarm clears when the condition resolves and is acknowledged
+    Given the simulator is running
+    And the ECG Electrodes are connected in the simulator
+    And the MMSS is running with the Heart Rate channel marked live showing 175 bpm with an abnormal-condition alarm active
+    When the simulator returns Heart Rate to 78 bpm (within range)
+    And the clinician acknowledges the alarm
+    Then the alarm clears
 ```
 
 ```gherkin
 @ID:RQ_FN_10
-Feature: Transparent candidate basis, confidence and limitations
-  As a clinician
-  I want each candidate's basis, confidence and limitations co-located and always visible
-  So that I can calibrate trust to the evidence
+Feature: Distinguish clinical alarms from sensor-fault warnings
+    As a Critical-Care Nurse I want clinical alarms and sensor-fault warnings to be unmistakably different
+    So that I never take the wrong action by confusing a fault for a clinical condition
 
-  Rule: MMSS shall present, co-located with each diagnostic candidate and visible without additional interaction, the candidate's basis, confidence/ranking, and known limitations.
+Rule: The MMSS shall make abnormal-condition clinical alarms distinguishable from sensor-fault warnings by distinct audible tone, colour, icon, and text, conforming to recognised alarm-safety practice.
 
-  Scenario: Every candidate shows its supporting attributes without interaction
-    Given the stub engine has returned 3 ranked candidates, each populated with basis, confidence/ranking, and known-limitations fields
-    And the candidates are displayed on the Monitor Display
-    When the rendered frame is captured without any further user interaction (no tap, scroll, or expand)
-    Then for each of the 3 candidates the following attributes are present in the same tile, co-located with the candidate
-      | attribute            |
-      | basis                |
-      | confidence/ranking   |
-      | known limitations    |
+Scenario: A clinical alarm and a sensor-fault warning differ across every channel
+    Given the simulator is running
+    And the SpO₂ Probe is connected in the simulator
+    And the ECG Electrodes are connected in the simulator
+    And the MMSS is running with the SpO2 channel marked live showing 98 %
+    When the simulator steps SpO2 to 82 %, crossing its abnormal threshold and raising a clinical alarm
+    And the simulator disconnects the ECG Electrodes raising a sensor-fault warning
+    Then the clinical alarm and the sensor-fault warning differ in each of the following channels (RQ_NF_08)
+    | channel      |
+    | audible tone |
+    | colour       |
+    | icon         |
+    | text         |
 ```
 
 ```gherkin
 @ID:RQ_FN_11
-Feature: Frame candidates as decision support only
-  As a clinician
-  I want candidates framed as decision support, never as a confirmed diagnosis
-  So that I retain clinical responsibility
+Feature: Bound and conspicuously indicate alarm suspension
+    As a Critical-Care Nurse I want alarm suspension to be time-limited, always visible, and to remind me before it ends
+    So that the patient is never left silently unmonitored after a forgotten silence
 
-  Rule: MMSS shall frame the diagnostic-candidate presentation as decision support that the clinician must interpret, and shall not present it as a confirmed or device-made diagnosis.
+Rule: The MMSS shall permit alarms to be suspended only for a bounded interval after which they automatically restore, shall display a persistent conspicuous indication for the whole period alarms are suspended, and shall raise an escalating reminder as the suspension window expires.
 
-  Scenario: Candidates are presented as interpretable decision support
-    Given the stub engine has returned ranked candidates and they are displayed
-    When the rendered candidate region is captured over IF_07
-    Then the region carries the persistent decision-support framing text (e.g. "Decision support — clinician interpretation required")
-    And no candidate label or heading uses the terms "confirmed", "final", or "diagnosis made by device" (verified against the rendered text)
+Scenario: Suspended alarms restore automatically after the bounded interval
+    Given the simulator is running
+    And the MMSS is running with alarms active
+    And the bounded alarm-suspension interval is configured to 120 seconds
+    When the clinician suspends alarms
+    Then a persistent conspicuous "alarms suspended" indication is displayed for the whole suspension period
+    And the system asserts the following over the suspension window
+    | time after suspension | expected behaviour                                  |
+    | 10 seconds            | suspension indication still displayed               |
+    | 105 seconds           | an escalating reminder is raised before the window ends |
+    | 120 seconds           | alarms automatically restore and the indication clears |
+
+Scenario: Alarm suspension cannot be extended indefinitely
+    Given the simulator is running
+    And the MMSS is running with alarms suspended for the configured 120-second interval
+    When no clinician action is taken before the interval ends
+    Then alarms automatically restore at 120 seconds without requiring any clinician action
 ```
 
 ```gherkin
 @ID:RQ_FN_12
-Feature: Prioritised alarm on vital-sign limit breach
-  As a clinician
-  I want a prioritised IEC 60601-1-8 alarm within 1 second of a limit breach
-  So that critical conditions are noticed and acted on in time
+Feature: Detect sensor disconnection, misplacement, or unreliable readings within 1 second
+    As a Critical-Care Nurse I want sensor faults detected promptly from device signalling and input inactivity
+    So that I am warned before false or missing data is trusted
 
-  Rule: MMSS shall raise a prioritised, perceptible audible-and-visual alarm conforming to IEC 60601-1-8 within 1 second of detecting a vital sign breaching its configured alarm limit.
+Rule: The MMSS shall detect, within 1 second, a measurement-device disconnection, misplacement, or unreliable-reading condition for any device whenever the device asserts its ICD-defined fault or quality flag, or valid input is absent for the configured short inactivity window, relying only on the device's signalling plus inactivity.
 
-  Scenario Outline: A breach raises a conforming alarm within the latency budget
-    Given the <vital_sign> alarm limit is configured to <limit>
-    And MMSS is acquiring from the corresponding device simulator within normal range
-    When the simulator emits an out-of-range value of <breach_value> and the detection timestamp Tb is captured
-    Then a prioritised audible-and-visual alarm conforming to IEC 60601-1-8 is asserted (audio-on signal and visual banner), with assertion timestamp Ta satisfying Ta − Tb ≤ 1 s (RQ_PR_09)
+Scenario: A device-asserted fault flag is detected within 1 second
+    Given the simulator is running
+    And the SpO₂ Probe is connected in the simulator
+    And the MMSS is running with the SpO2 channel marked live
+    When the simulator asserts the SpO₂ device fault flag at the interface
+    Then the fault condition is detected within the following time (RQ_PR_07)
+    | event                      | maximum time |
+    | fault signalling to detect | 1 second     |
 
-    Examples:
-      | vital_sign     | limit      | breach_value |
-      | SpO2           | low 90 %   | 85 %         |
-      | heart rate     | high 130 bpm | 145 bpm    |
-      | end-tidal CO2  | high 50 mmHg | 60 mmHg    |
+Scenario: Sustained input inactivity triggers a connection alarm at 5 seconds and not before
+    Given the simulator is running
+    And the ECG Electrodes are connected in the simulator
+    And the MMSS is running with the Heart Rate channel marked live showing 78 bpm
+    When the simulator stops delivering valid input on the Heart Rate channel
+    Then the connection (sensor-inactivity) alarm behaves as follows over the inactivity window (RQ_PR_06)
+    | elapsed inactivity | connection alarm |
+    | 4 seconds          | not raised       |
+    | 5 seconds          | raised           |
 ```
 
 ```gherkin
 @ID:RQ_FN_13
-Feature: Critical-versus-minor alarm prioritisation
-  As a clinician
-  I want critical and minor alarms to be perceptually distinct
-  So that I respond decisively without alarm fatigue
+Feature: Raise a sensor-fault warning and remove the untrustworthy value
+    As a Critical-Care Nurse I want a faulted channel marked untrustworthy with no value shown
+    So that I never act on a stale or implausible reading as if it were live
 
-  Rule: MMSS shall present alarms with perceptually distinct critical-versus-minor signals and shall de-prioritise or suppress transient minor events so the highest-priority active alarm is the one presented in the alarm banner.
+Rule: The MMSS shall, on detecting a sensor disconnection, misplacement, or fault, raise a sensor-fault warning distinguishable from a clinical alarm, visibly mark the affected parameter as untrustworthy, and replace its displayed value with an explicit no-data/untrustworthy state instead of a stale or implausible value.
 
-  Scenario: Critical and minor alarms are perceptually distinct
-    Given a critical (high-priority) alarm condition and a minor (low-priority) alarm condition are both injected via the simulators
-    When the asserted audible signal pattern and visual indicator are captured
-    Then the high-priority and low-priority signals differ in the IEC 60601-1-8 priority-encoding attributes (audible burst pattern and visual colour/flash rate)
+Scenario: A faulted channel is marked untrustworthy and its value removed
+    Given the simulator is running
+    And the SpO₂ Probe is connected in the simulator
+    And the MMSS is running with the SpO2 channel marked live showing 97 %
+    When the simulator disconnects the SpO₂ Probe
+    Then a sensor-fault warning distinguishable from a clinical alarm is raised within 1 second of detection (RQ_PR_07)
+    And the SpO2 channel is visibly marked untrustworthy
+    And the SpO2 channel shows an explicit no-data/untrustworthy state instead of the last value 97 %
 
-  Scenario: The highest-priority alarm occupies the banner
-    Given a minor alarm is the only active alarm and is shown in the alarm banner
-    When a critical alarm condition is injected while the minor alarm is still active
-    Then the captured alarm banner shows the critical alarm as the single presented alarm
-    And the minor event is de-prioritised or suppressed in the banner
+Scenario: The device's own fault signalling is consumed at the boundary without suppressing the device's independent alarm
+    Given the simulator is running
+    And the SpO₂ Probe is connected in the simulator
+    And the MMSS is running with the SpO2 channel marked live showing 97 %
+    When the simulator asserts the SpO₂ device's ICD-defined fault signalling and the device emits its own independent fault alarm
+    Then the MMSS receives and acts on the device fault signalling, marking the SpO2 channel untrustworthy (RQ_IF_08)
+    And the simulator's device-side independent fault alarm remains asserted and is not suppressed or overridden by the MMSS (RQ_IF_08, RQ_NF_12)
 ```
 
 ```gherkin
 @ID:RQ_FN_14
-Feature: Connection-loss alarm on device inactivity
-  As a clinician
-  I want a connection-loss alarm after 5 seconds of no readings
-  So that an undetected connection failure does not hide missing vitals
+Feature: Restore a channel to trusted state on re-acquisition and re-flag on each loss
+    As a Critical-Care Nurse I want a recovered channel to become trusted again and a flickering channel re-flagged on every loss
+    So that I can re-seat a sensor yet never intermittently believe an unreliable channel
 
-  Rule: MMSS shall raise a connection-loss alarm when no valid reading has been received from a device for 5 seconds, displayed within 1 second of the trigger.
+Rule: The MMSS shall return an affected channel to a live, trusted state once valid acquisition resumes, and shall mark the channel untrustworthy on each loss of valid acquisition for an intermittently faulting channel rather than alternating between trusted and fault states unsafely.
 
-  Scenario: Inactivity for 5 seconds triggers the connection-loss alarm
-    Given the ECG simulator has been delivering valid readings and the last valid reading is received at timestamp Tlast
-    When the simulator stops emitting and no valid reading is received on that channel thereafter
-    Then a connection-loss condition is raised on the first acquisition cycle whose evaluation time is ≥ Tlast + 5 s, and not before Tlast + 5 s (RQ_PR_10, RQ_IF_13)
-    And the connection-loss alarm (audible + visual) is displayed within ≤ 1 s of that trigger (RQ_PR_11)
+Scenario: A channel returns to trusted state when valid acquisition resumes
+    Given the simulator is running
+    And the SpO₂ Probe is connected in the simulator
+    And the MMSS is running with the SpO2 channel marked live showing 97 %
+    And the simulator has disconnected the SpO₂ Probe so the SpO2 channel is marked untrustworthy
+    When the simulator reconnects the SpO₂ Probe and resumes valid acquisition at 96 %
+    Then the SpO2 channel returns to a live, trusted state and displays 96 %
 
-  Scenario: A reading arriving before 5 s of inactivity does not trigger the alarm
-    Given the ECG simulator's last valid reading was received at timestamp Tlast
-    When a new valid reading arrives at Tlast + 4 s
-    Then no connection-loss condition is raised for that channel
-    And the inactivity timer for that channel is reset
+Scenario: An intermittently faulting channel is marked untrustworthy on each loss
+    Given the simulator is running
+    And the ECG Electrodes are connected in the simulator
+    And the MMSS is running with the Heart Rate channel marked live showing 78 bpm
+    When the simulator drops and restores valid acquisition on the Heart Rate channel 5 times in succession, each loss lasting at least 2 seconds
+    Then the Heart Rate channel is marked untrustworthy on each of the 5 loss intervals
+    And the Heart Rate channel is not displayed as trusted during any loss interval
+    And the Heart Rate channel returns to trusted only while valid acquisition is present
 ```
 
 ```gherkin
 @ID:RQ_FN_15
-Feature: Alarm on sensor-misplacement and unreliable-reading flags
-  As a clinician
-  I want a prioritised alarm whenever a device reports misplacement or unreliable data
-  So that I do not act on incorrect data
+Feature: Present ranked diagnostic candidates within 1 second of receipt
+    As an Emergency Physician I want ranked diagnostic candidates shown beside the vital signs promptly
+    So that I can reach a working diagnosis faster, including when no colleague is available
 
-  Rule: MMSS shall surface each device-reported sensor-misplacement and unreliable-reading flag as a prioritised, perceptible audible-and-visual alarm within 1 second of the flag being reported.
+Rule: The MMSS shall submit the conditioned patient parameter set to the external diagnostic AI capability and, given a complete ranked-candidate response received at the diagnostic-AI interface, present those candidates alongside the raw vital signs within 1 second of the response being fully received at that boundary.
 
-  Scenario Outline: A device-reported fault flag raises an alarm within the budget
-    Given MMSS is acquiring from the <device> simulator
-    When the simulator sets its <flag> status flag in the ICD-defined status field, with the flag-reported timestamp Tf captured at acquisition
-    Then a prioritised audible-and-visual alarm is asserted, with assertion timestamp Ta satisfying Ta − Tf ≤ 1 s (RQ_PR_11)
-    And the alarm semantics map to the flag exactly as defined in the ICD, without alteration (RQ_IF_02/04/06/08/10/12)
-
-    Examples:
-      | device         | flag                |
-      | pulse oximeter | sensor misplacement |
-      | ECG monitor    | unreliable reading  |
+Scenario: Ranked candidates are presented within 1 second of full receipt
+    Given the simulator is running
+    And the MMSS is running with vital signs being acquired
+    And a diagnostic-AI stub stands in for the external capability at the diagnostic-AI interface (RQ_IF_10)
+    When the diagnostic-AI stub returns the following complete ranked-candidate response at the interface
+    | rank | candidate          | confidence |
+    | 1    | Sepsis             | 0.74       |
+    | 2    | Pulmonary embolism | 0.18       |
+    | 3    | Pneumonia          | 0.08       |
+    Then the ranked diagnostic candidates are presented alongside the raw vital signs within the following time (RQ_PR_08)
+    | event                        | maximum time |
+    | full receipt to presentation | 1 second     |
 ```
 
 ```gherkin
 @ID:RQ_FN_16
-Feature: Invalidate presentation of discredited readings
-  As a clinician
-  I want misplaced or unreliable values suppressed or visibly invalidated
-  So that a discredited reading cannot be read as a valid vital sign
+Feature: Present each diagnostic candidate with confidence, reasoning, and driving parameters
+    As an Emergency Physician I want each candidate's confidence, reasoning, and driving vital signs at a glance with detail on demand
+    So that I can judge whether it fits the patient and recognise when it rests on a parameter I distrust
 
-  Rule: MMSS shall suppress or visibly invalidate the numeric presentation of any value flagged as misplaced or unreliable so it cannot be read as a valid vital sign.
+Rule: The MMSS shall present each diagnostic candidate with its confidence and its supporting reasoning — including the driving vital-sign parameters — absorbable at a glance, with fuller detail available on demand.
 
-  Scenario Outline: A flagged value is not shown as a normal number
-    Given the <device> simulator emits a reading of <value> with its <flag> status flag set
-    When the live monitoring frame is captured over IF_07
-    Then the <device> tile either omits the numeric value or renders it in the invalidated style (e.g. struck-through/greyed with a fault marker)
-    And the raw numeric <value> is not rendered in the normal current-value style
+Scenario: Each candidate shows confidence, reasoning, and driving parameters
+    Given the simulator is running
+    And the MMSS is running with vital signs being acquired
+    And a diagnostic-AI stub stands in for the external capability at the diagnostic-AI interface
+    When the diagnostic-AI stub returns the following candidate with confidence, reasoning, and driving parameters
+    | candidate | confidence | supporting reasoning                            | driving vital-sign params      |
+    | Sepsis    | 0.74       | tachycardia with low EtCO2 and high temperature | Heart Rate, EtCO2, Temperature |
+    Then the presented Sepsis candidate shows each of the following at a glance
+    | element                   |
+    | confidence                |
+    | supporting reasoning      |
+    | driving vital-sign params |
+
+Scenario: Fuller candidate detail is available on demand
+    Given the simulator is running
+    And a diagnostic-AI stub has returned the Sepsis candidate and it is presented
+    When the clinician requests fuller detail for the Sepsis candidate
+    Then the fuller supporting detail for the Sepsis candidate is presented
+
+Scenario Outline: Out-of-scope diagnostic output is withheld or marked out-of-scope rather than presented as in-scope
+    Given the simulator is running
+    And the MMSS is running with vital signs being acquired
+    And a diagnostic-AI stub stands in for the external capability at the diagnostic-AI interface (RQ_IF_10)
+    When the submitted input parameter set is <input vs scope> the supplier-declared validated intended-use scope
+    And the returned output's supplier scope/applicability flag is <output flag>
+    Then the diagnostic output is <expected handling> rather than presented or exchanged as in-scope (RQ_NF_13)
 
     Examples:
-      | device         | value | flag                |
-      | pulse oximeter | 97 %  | sensor misplacement |
-      | ECG monitor    | 72 bpm| unreliable reading  |
+    | input vs scope | output flag  | expected handling                                              |
+    | within         | in-scope     | presented normally with no out-of-scope indication            |
+    | outside        | in-scope     | withheld or accompanied by an explicit out-of-scope indication |
+    | within         | out-of-scope | withheld or accompanied by an explicit out-of-scope indication |
 ```
 
 ```gherkin
 @ID:RQ_FN_17
-Feature: Attention-independent audible fault alarm
-  As a clinician
-  I want an audible fault alarm that does not require me to look at the display
-  So that a sole caregiver with eyes on the patient still detects faults
+Feature: Distinguish provisional from settled candidates and signal revisions
+    As an Emergency Physician I want provisional candidate lists distinguished from settled ones and material ranking changes made salient
+    So that I am not anchored on an early candidate or blind to a revision
 
-  Rule: MMSS shall provide an attention-independent audible fault alarm for sensor misplacement, disconnection, and unreliable readings that does not depend on the clinician looking at the display.
+Rule: The MMSS shall visibly distinguish a still-converging (provisional) candidate list from a settled one and make a materially changed ranking salient so a revision is noticed rather than missed.
 
-  Scenario Outline: A fault produces an audible alarm without requiring display attention
-    Given MMSS is acquiring and no operator input or display interaction occurs during the test
-    When the <fault> condition is injected via the simulator
-    Then the audible fault-alarm output signal is asserted (observed at the audio output, independent of the display frame)
-    And the audible alarm assertion does not require any display-render or focus event as a precondition
+Scenario: A still-converging candidate list is marked provisional
+    Given the simulator is running
+    And the MMSS is running with vital signs being acquired
+    And a diagnostic-AI stub stands in for the external capability at the diagnostic-AI interface
+    When the diagnostic-AI stub returns a response flagged as still-converging (provisional)
+    Then the candidate list is visibly distinguished as provisional
+    When the diagnostic-AI stub returns a subsequent response flagged as settled
+    Then the candidate list is visibly distinguished as settled, not provisional
 
-    Examples:
-      | fault               |
-      | sensor misplacement |
-      | disconnection       |
-      | unreliable reading  |
+Scenario: A material ranking change is made salient
+    Given the simulator is running
+    And a diagnostic-AI stub has returned the following provisional ranking which is presented
+    | rank | candidate          |
+    | 1    | Pneumonia          |
+    | 2    | Sepsis             |
+    When the diagnostic-AI stub returns a revised response that reorders the ranking
+    | rank | candidate          |
+    | 1    | Sepsis             |
+    | 2    | Pneumonia          |
+    Then the new top-ranked candidate Sepsis is made salient so the revision is noticed
 ```
 
 ```gherkin
 @ID:RQ_FN_18
-Feature: Diagnostic-convergence timeout notification
-  As a clinician
-  I want an explicit timeout notice if no candidate arrives within 2 minutes
-  So that I fall back to standard assessment without an unnoticed delay
+Feature: Frame diagnostic output as non-gating decision support
+    As an Emergency Physician I want the diagnostic output framed as decision support that never gates my action
+    So that final diagnostic and treatment authority stays with me and automation bias is mitigated
 
-  Rule: MMSS shall display an explicit, persistent, acknowledge-to-clear on-screen timeout notification, backed by the independent ALGOS audible signal, when no diagnostic candidate has been received by 120 s after patient connection (T0).
+Rule: The MMSS shall frame and label the diagnostic output unambiguously as decision support that informs rather than replaces the clinician, and shall impose no workflow gate, confirmation, or override on a candidate that could prevent or delay the clinician acting on their own judgement.
 
-  Scenario: No candidate by the 120 s window raises a persistent notification with an independent audible co-signal
-    Given a patient is connected at time T0 and the patient-connection event is recorded
-    And the stub Open Evidence engine is configured to never return a response
-    When 120 s elapse from T0 with no diagnostic candidate received (RQ_PR_12, RQ_IF_18)
-    Then an explicit on-screen timeout notification is displayed on the first display cycle at or after T0 + 120 s
-    And the independent ALGOS audible signal is asserted on its own channel within 1 second of the on-screen notification
-    And the notification persists in every subsequent captured frame until an explicit acknowledge-to-clear action is performed
+Scenario: Diagnostic output is persistently labelled as decision support
+    Given the simulator is running
+    And a diagnostic-AI stub has returned ranked candidates which are presented
+    Then a persistent, unambiguous "decision support — not a diagnosis" indication is shown with the candidates (RQ_NF_14)
 
-  Scenario: A candidate arriving before the window prevents the timeout
-    Given a patient is connected at time T0
-    And the stub engine is configured to return a valid candidate at T0 + 90 s
-    When the candidate is received at T0 + 90 s
-    Then no convergence timeout notification is raised at or after T0 + 120 s
+Scenario: The clinician can act on their own judgement without any gate
+    Given the simulator is running
+    And a diagnostic-AI stub has returned ranked candidates which are presented
+    When the clinician proceeds with their own clinical decision without acknowledging a candidate
+    Then the MMSS presents no blocking confirmation, override, or candidate-acknowledgement prompt
+    And the clinician's action is accepted immediately with no MMSS-imposed delay
 ```
 
 ```gherkin
 @ID:RQ_FN_19
-Feature: Reject malformed diagnostic responses
-  As a clinician
-  I want malformed or incomplete engine output never shown as a candidate
-  So that an uncalibrated suggestion is not presented as trustworthy
+Feature: Signal a diagnostic time-out independently of the candidate path
+    As a Pre-hospital Clinician I want a positive time-out indication when no diagnosis is produced in the expected time
+    So that I know not to keep waiting and can fall back on my own assessment without delaying care
 
-  Rule: MMSS shall not present a malformed or incomplete diagnostic response from the AI engine as a valid candidate, and shall instead indicate that diagnostic support is unavailable.
+Rule: The MMSS shall, when no diagnostic result is produced within the expected convergence time, present a positive perceptible time-out indication delivered independently of the diagnostic candidate-result path and an explicit "no diagnosis available — proceed on your own assessment" message, and shall not leave the candidate area silently blank.
 
-  Scenario Outline: A malformed or incomplete response is flagged, not presented
-    Given the stub Open Evidence engine is configured to return a response that is <condition>
-    When the DEC parses it against the pinned structured-field schema (RQ_IF_19)
-    Then the response is classified as an engine error and no candidate from it is rendered on the display
-    And the display shows the "diagnostic support unavailable" indication
+Scenario: A diagnostic time-out is signalled positively after the convergence deadline
+    Given the simulator is running
+    And a diagnostic-AI stub stands in for the external capability with its convergence time-out configured to 2 minutes
+    And the MMSS is running with a diagnostic request in progress
+    When the diagnostic-AI stub returns no candidate result for the full 2-minute convergence window owned by the external capability (RQ_PR_10, RQ_CS_09)
+    Then the candidate area shows a "diagnosis in progress" state and is not left silently blank before the deadline
+    And after the 2-minute deadline a positive, perceptible time-out indication is presented
+    And the explicit message "no diagnosis available — proceed on your own assessment" is shown
 
-    Examples:
-      | condition                                   |
-      | not valid JSON for the pinned schema        |
-      | missing the required candidate-ranking field|
-      | present but with empty basis and confidence |
+Scenario: The time-out indication is delivered independently of the candidate-result path
+    Given the simulator is running
+    And a diagnostic-AI stub stands in for the external capability at the diagnostic-AI interface
+    And the MMSS is running with a diagnostic request in progress
+    When the diagnostic-AI stub emits its independent convergence-time-out notification while the candidate-result path returns nothing (RQ_IF_11)
+    Then the time-out indication is presented from that independent notification, not from the candidate-result path (RQ_IF_11, RQ_NF_12)
 ```
 
 ```gherkin
 @ID:RQ_FN_20
-Feature: Share data to the Hospital Information System
-  As a clinician
-  I want patient and diagnostic data shared to the HIS within 1 second
-  So that the receiving hospital has continuity of care and a timely second opinion
+Feature: Exchange vital-sign data and diagnostic findings with the HIS on request
+    As an Emergency Physician I want to send vital signs and diagnostic findings to a confirmed recipient over a standard interface
+    So that I can obtain a second opinion and hand over the patient smoothly and securely
 
-  Rule: MMSS shall transmit patient and diagnostic data to the Hospital Information System over the single HL7-or-FHIR protocol fixed at design freeze, within 1 second of the share being triggered.
+Rule: The MMSS shall exchange the patient's vital-sign data and diagnostic findings with the hospital information system over the recognised interoperability standard on clinician request, delivering diagnostic candidates within 1 second of their availability, and shall require the receiving recipient to be confirmed before the exchange proceeds.
 
-  Scenario: A triggered share is delivered within the budget
-    Given the HIS connector is built against the single protocol fixed at design freeze (RQ_CS_05)
-    And a mock HIS endpoint is listening and conforms to the frozen HIS interface ICD (RQ_IF_20)
-    And the patient identity has been explicitly confirmed (RQ_FN_23)
-    When a data share is triggered at timestamp Tt
-    Then the patient and diagnostic data are handed off at the HIS interface with hand-off timestamp Th satisfying Th − Tt ≤ 1 s (RQ_PR_13)
-    And the mock HIS endpoint validates the received message against the frozen ICD and reports no schema/conformance error
-    And the message is transmitted over an encrypted channel (RQ_IF_21)
+Scenario: Exchange requires a confirmed recipient before it proceeds
+    Given the simulator is running
+    And the MMSS is running with vital signs and diagnostic findings available
+    And a HIS stub stands in for the hospital information system over a recognised HL7/FHIR-class interface (RQ_IF_12)
+    When the clinician requests an exchange without confirming the recipient
+    Then the exchange does not proceed and no message is sent to the HIS stub until the receiving recipient is confirmed
+
+Scenario: Confirmed exchange delivers data within 1 second of request
+    Given the simulator is running
+    And the MMSS is running with vital signs and diagnostic findings available
+    And a HIS stub stands in for the hospital information system over a recognised HL7/FHIR-class interface (RQ_IF_12)
+    And the receiving recipient "Ward-A HIS" is confirmed
+    When the clinician confirms the exchange request
+    Then the vital-sign data and diagnostic findings are received at the HIS stub within the following time (RQ_PR_09)
+    | event                         | maximum time |
+    | confirmed request to delivery | 1 second     |
+    And diagnostic candidates are delivered within 1 second of their availability (RQ_PR_09)
+    And the exchange is carried over the recognised HL7/FHIR-class interoperability standard (RQ_CS_04)
+
+Scenario: Personal health data is exchanged with confidentiality, integrity, and an audit record
+    Given the simulator is running
+    And the MMSS is running with vital signs and diagnostic findings available for patient record "MRN-00427"
+    And a HIS stub stands in for the hospital information system over a recognised HL7/FHIR-class secured interface (RQ_IF_12)
+    And the receiving recipient "Ward-A HIS" is confirmed
+    When a passive network observer captures the traffic while the clinician confirms the exchange request
+    Then the captured payload does not expose the personal health data in clear (confidentiality protected) (RQ_IF_13, RQ_NF_04)
+    And the HIS stub validates the integrity of the received message and detects no tampering (RQ_IF_13, RQ_NF_04)
+    And the MMSS records a tamper-evident audit entry for the access to and exchange of the personal health data (RQ_NF_04)
 ```
 
 ```gherkin
 @ID:RQ_FN_21
-Feature: Isolate HIS sharing from the acquisition/alarm path
-  As a clinician
-  I want HIS sharing isolated from live monitoring
-  So that HIS slowness or outage never degrades acquisition or alarming
+Feature: Confirm transfer outcome and flag partial or failed transfers
+    As an Emergency Physician I want explicit confirmation of a complete transfer and an explicit flag on any partial or failed one
+    So that neither end falsely believes the information is in hand
 
-  Rule: MMSS shall keep the HIS data-sharing function isolated from the acquisition and alarm path so that HIS slowness or unavailability cannot block, delay, or degrade live acquisition, display, or alarming.
+Rule: The MMSS shall give explicit confirmation of a successful, complete transfer to the correct patient record and shall explicitly flag any partial or failed transfer with the option to retry, rather than reporting success.
 
-  Scenario Outline: Monitoring continues unaffected during HIS degradation
-    Given live acquisition from the six simulators, display, and alarming are running normally
-    And a baseline display latency and alarm latency have been measured with the HIS healthy
-    When the mock HIS endpoint is set to <his_state> and a data share is triggered
-    Then live acquisition continues with no dropped samples on any channel
-    And vital signs are still rendered within ≤ 1 s of acquisition, with no measurable regression versus baseline (RQ_PR_02)
-    And an injected alarm is still asserted within ≤ 1 s of detection (RQ_PR_09)
+Scenario: A complete transfer is explicitly confirmed to the correct record
+    Given the simulator is running
+    And a HIS stub stands in for the hospital information system over a recognised HL7/FHIR-class interface
+    And the MMSS has sent an exchange to the confirmed HIS recipient "Ward-A HIS" for patient record "MRN-00427"
+    When the HIS stub returns a protocol acknowledgement of a successful, complete transfer to "MRN-00427" (RQ_IF_12)
+    Then the MMSS shows explicit confirmation of a successful, complete transfer to patient record "MRN-00427"
+
+Scenario Outline: A failed or partial transfer is flagged with a retry option
+    Given the simulator is running
+    And a HIS stub stands in for the hospital information system over a recognised HL7/FHIR-class interface
+    And the MMSS has sent an exchange to the confirmed HIS recipient "Ward-A HIS"
+    When the HIS stub returns an acknowledgement indicating a <outcome> transfer (RQ_IF_12)
+    Then the MMSS explicitly flags the transfer as <outcome>
+    And the MMSS offers the option to retry
+    And the MMSS does not report the transfer as successful
 
     Examples:
-      | his_state                                   |
-      | slow (response delayed by 30 s)             |
-      | unavailable (connection refused / no route) |
+    | outcome |
+    | partial |
+    | failed  |
 ```
 
 ```gherkin
 @ID:RQ_FN_22
-Feature: Persistent patient-identity display
-  As a clinician
-  I want the monitored patient's identity always visible
-  So that I never associate data with the wrong patient
+Feature: Persistently surface safety-relevant working state and sustain monitoring to handover
+    As a Critical-Care Nurse I want the device's safety-relevant working state always visible and monitoring sustained until handover is confirmed
+    So that critical state and live monitoring never fall through the gap between clinicians
 
-  Rule: MMSS shall display the currently monitored patient's identity persistently and unambiguously on the live monitoring screen.
+Rule: The MMSS shall persistently surface the safety-relevant working state to any clinician at the device — untrustworthy channels, modified or suspended alarms or limits, and the current diagnostic candidate state — and shall continue presenting vital signs and active alarm state until handover to receiving monitoring is confirmed complete.
 
-  Scenario: Patient identity remains visible throughout monitoring
-    Given the patient identity "TEST-PID-0001 / Doe, J." is associated with the monitoring session
-    When the live monitoring frame is captured at session start, at 60 s, and at 600 s
-    Then the patient identity field renders "TEST-PID-0001 / Doe, J." in every captured frame
-    And the identity field is present in a fixed, persistent screen region (not transient or overlay-only)
+Scenario: Safety-relevant working state is persistently surfaced
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running with the SpO2 channel flagged untrustworthy after a simulated probe disconnection
+    And alarms are currently suspended
+    And a diagnostic-AI stub has returned a provisional candidate list which is present
+    Then the Display Interface persistently surfaces each of the following working-state items
+    | working-state item            |
+    | channels flagged untrustworthy|
+    | alarms suspended/modified     |
+    | current candidate state       |
+
+Scenario: Monitoring is sustained until handover is confirmed complete
+    Given the simulator is running
+    And all sensors are connected in the simulator
+    And the MMSS is running and monitoring with an active alarm state
+    When the clinician initiates handover to receiving monitoring
+    And the receiving monitoring has not yet returned a handover-complete confirmation
+    Then the MMSS continues presenting vital signs and the active alarm state
+    When the receiving monitoring returns a handover-complete confirmation
+    Then the MMSS may release continuity
 ```
 
 ```gherkin
 @ID:RQ_FN_23
-Feature: Confirm identity before consequential actions
-  As a clinician
-  I want identity confirmation required before configuring alarms or sharing data
-  So that no consequential action proceeds under a wrong or unconfirmed identity
+Feature: Provide a realistic risk-free simulated training mode
+    As a Clinical Trainer / Super-User I want a simulated mode that behaves like live operation
+    So that clinicians can build competence — including AI candidate interpretation — before live patient use
 
-  Rule: MMSS shall require explicit confirmation of the correct patient identity before alarm-limit configuration or HIS data sharing proceeds.
+Rule: The MMSS shall provide a simulated training mode in which simulated vital signs, alarms, sensor faults, and diagnostic candidates behave as in live operation, allowing risk-free practice including AI candidate interpretation and bias avoidance.
 
-  Scenario Outline: A consequential action is blocked until identity is confirmed
-    Given the patient-identity confirmation flag is unset for the session
-    When <action> is initiated via its UI control
-    Then the action does not execute (no alarm-limit write / no HIS message emitted)
-    And the system presents an identity-confirmation prompt before the action can proceed
+Scenario: Simulated elements behave as in live operation
+    Given the MMSS is running in training mode
+    When the training scenario drives simulated patient data including an abnormal value, a sensor fault, and a candidate response
+    Then each of the following exhibits the same observable behaviour as in live operation
+    | simulated element     | observable behaviour as in live operation        |
+    | vital signs           | displayed with unit and refreshed at least once per second |
+    | alarms                | abnormal value raises a multi-modal alarm        |
+    | sensor faults         | faulted channel marked untrustworthy, value removed |
+    | diagnostic candidates | ranked candidates presented with confidence       |
 
-    Examples:
-      | action                    |
-      | alarm-limit configuration |
-      | HIS data sharing          |
-
-  Scenario Outline: A confirmed identity allows the action to proceed
-    Given the patient identity "TEST-PID-0001" has been explicitly confirmed and the confirmation flag is set
-    When <action> is initiated via its UI control
-    Then the action executes (the alarm-limit is written / a HIS message is emitted)
-
-    Examples:
-      | action                    |
-      | alarm-limit configuration |
-      | HIS data sharing          |
+Scenario: Training mode supports AI candidate interpretation practice
+    Given the MMSS is running in training mode
+    When the training scenario presents the following simulated diagnostic candidate
+    | candidate | confidence | supporting reasoning                  |
+    | Sepsis    | 0.74       | tachycardia with low EtCO2            |
+    Then the candidate shows its confidence and reasoning so the trainee can practise interpretation and bias avoidance
 ```
 
 ```gherkin
 @ID:RQ_FN_24
-Feature: Time-limited alarm-audio silence
-  As a clinician
-  I want a silence that auto-restores and is visibly indicated
-  So that a silenced safety signal can never persist unnoticed
+Feature: Enforce fail-safe separation between training and live operation
+    As a Clinical Trainer / Super-User I want unmistakable, fail-safe separation between training and live modes
+    So that simulated data is never mistaken for a real patient and a real patient is never monitored in training mode
 
-  Rule: MMSS shall, on a request to silence alarm audio, enter a time-limited silence that automatically restores audio at the time limit and display a persistent indication that audio is suspended while it is active.
+Rule: The MMSS shall enforce fail-safe separation between training and live operation: requiring explicit confirmation to enter and exit training mode, displaying a persistent always-visible mode indicator and watermarking all simulated data, and defaulting to live operation on restart or return to the device.
 
-  Scenario: Silence is time-limited and visibly indicated
-    Given an alarm condition is active and alarm audio is sounding
-    And the configured silence time limit is 120 s
-    When the clinician requests to silence alarm audio at timestamp Tsil
-    Then the audio output is suspended from Tsil
-    And a persistent "audio suspended" indication is present in every captured frame from Tsil until restoration
+Scenario: Entering and exiting training mode requires explicit confirmation
+    Given the MMSS is running in live operation
+    When the user requests to enter training mode
+    Then the MMSS requires explicit confirmation before entering training mode
+    And on requesting to exit, the MMSS requires explicit confirmation before returning to live operation
 
-  Scenario: Audio is automatically restored at the time limit
-    Given alarm audio is silenced at Tsil with a configured 120 s time limit and the underlying alarm condition still active
-    When 120 s elapse from Tsil with no further operator action
-    Then the audio output is restored within one alarm cycle of Tsil + 120 s
-    And the "audio suspended" indication is cleared from the display
+Scenario: Simulated operation is persistently indicated and watermarked
+    Given the MMSS is running in training mode
+    Then a persistent, always-visible training-mode indicator is displayed
+    And all simulated data is watermarked as simulated
+
+Scenario: The MMSS defaults to live operation on restart
+    Given the MMSS is running in training mode
+    When the MMSS restarts or is returned to the device
+    Then the MMSS defaults to live operation
 ```
 
 ```gherkin
 @ID:RQ_FN_25
-Feature: Higher-priority alarm overrides a silence
-  As a clinician
-  I want a higher-priority alarm to break through an active silence
-  So that a critical alarm is never latched silently behind a lower-priority one
+Feature: Commission devices through published contracts with guided verification
+    As a Biomedical / Clinical Engineer I want contract-only connection with per-channel feedback and guided mapping verification
+    So that I integrate the fleet without modifying external elements and prevent a mis-mapped channel reaching clinical use
 
-  Rule: MMSS shall override an active alarm-audio silence and sound a new alarm whenever a higher-priority alarm occurs during the silence.
+Rule: The MMSS shall connect to each of the six measurement-device types and to the hospital information system strictly through their published interface contracts, shall provide clear per-channel interface and fault feedback, and shall provide a guided verification step confirming each acquired parameter maps to the correct device and display field before the device is released for clinical use.
 
-  Scenario: A higher-priority alarm sounds despite an active silence
-    Given a low-priority alarm is active and its audio has been silenced with a 120 s time limit
-    When a high-priority alarm condition is injected during the silence window, with detection timestamp Tb
-    Then the silence is overridden for the high-priority alarm
-    And the audio output for the high-priority alarm is asserted within ≤ 1 s of Tb (RQ_PR_09)
+Scenario: Each device connects through its published interface contract with per-channel feedback
+    Given the simulator is running
+    And the MMSS is in commissioning mode
+    When the engineer connects each measurement-device type through its published interface contract
+    Then the MMSS shows clear per-channel interface and fault feedback for each of the following devices (RQ_IF_02, RQ_IF_03, RQ_IF_04, RQ_IF_05, RQ_IF_06, RQ_IF_07)
+    | device                | interface | expected per-channel feedback     |
+    | ECG monitor           | IF_02     | Heart Rate channel: connected, no fault |
+    | Blood pressure monitor| IF_04     | Systolic/Diastolic/MAP: connected, no fault |
+    | Pulse oximeter        | IF_03     | SpO2/Pulse Rate: connected, no fault |
+    | Capnometer            | IF_06     | Respiratory Rate/EtCO2: connected, no fault |
+    | Thermal probe         | IF_05     | Temperature channel: connected, no fault |
+    | EEG monitor           | IF_07     | BIS channel: connected, no fault  |
+
+Scenario: A guided verification step blocks release on an unconfirmed mapping
+    Given the simulator is running
+    And the MMSS is in commissioning mode
+    When the engineer runs the guided per-channel verification step
+    And one acquired parameter is not confirmed against its correct device and display field
+    Then the MMSS does not release the device for clinical use until every channel mapping is confirmed
+
+Scenario: A seeded mis-mapping is detected during guided verification
+    Given the simulator is running
+    And the MMSS is in commissioning mode with a seeded channel mis-mapping
+    When the engineer runs the guided per-channel verification step
+    Then the MMSS surfaces the mis-mapped channel so it can be corrected before release
 ```
 
 ```gherkin
 @ID:RQ_FN_26
-Feature: Simulation training mode
-  As a trainee clinician
-  I want a simulation mode for competency-based onboarding
-  So that I can practise without monitoring a live patient
+Feature: Apply software updates only through a use-aware controlled lifecycle workflow
+    As a Biomedical / Clinical Engineer I want updates applied only through a controlled workflow that never disrupts a device in use
+    So that the deployed fleet stays patchable over its service life without disrupting monitoring or returning unverified
 
-  Rule: MMSS shall provide a simulation training mode that delivers competency-based onboarding without monitoring a live patient.
+Rule: The MMSS shall apply software updates only through the controlled lifecycle workflow, preventing or deferring any update to a device in active clinical use and verifying correct operation before the device is returned to service.
 
-  Scenario: Training mode runs without a live patient
-    Given MMSS offers a simulation training mode
-    When the clinician enters simulation training mode
-    Then at least one competency-based onboarding scenario is presented from the built-in training content
-    And the displayed vital signs are sourced from the simulation scenario, not from the live device ICD inputs
-    And no acquisition is performed from the live device interfaces (IF_01–IF_06) while in simulation mode
-```
+Scenario: An update is prevented or deferred while a device is in active clinical use
+    Given the simulator is running with all sensors connected
+    And the MMSS is in live operation monitoring a patient with channels marked live
+    When the host platform stub initiates a software update over the host platform/OS interface (RQ_IF_14, RQ_IF_01)
+    Then the MMSS does not apply the update while monitoring is active
+    And the MMSS defers the update and continues uninterrupted monitoring
 
-```gherkin
-@ID:RQ_FN_27
-Feature: Unmistakable simulation-versus-live distinction
-  As a clinician
-  I want simulation mode to be unmistakably distinct from live use
-  So that mode confusion cannot cause a high-consequence use error
-
-  Rule: MMSS shall make the simulation training mode persistently and unmistakably distinguishable from live clinical use, and shall require explicit confirmation to leave the simulation mode.
-
-  Scenario: Simulation mode is persistently and unmistakably indicated
-    Given MMSS is in simulation training mode
-    When the display frame is captured at mode entry, at 60 s, and on every screen of the training flow
-    Then a persistent simulation indicator (e.g. full-width "SIMULATION — NOT A LIVE PATIENT" banner) is present in every captured frame
-    And the simulation indicator differs from the live clinical layout by a fixed, non-overlappable visual treatment (distinct banner and border)
-
-  Scenario: Leaving simulation requires explicit confirmation
-    Given MMSS is in simulation training mode
-    When the clinician initiates leaving simulation mode
-    Then MMSS presents an explicit confirmation prompt and does not switch to live clinical use on the initiate action alone
-    And if the confirmation is dismissed or not given, MMSS remains in simulation mode with the simulation indicator still present
+Scenario: An update is verified before the device is returned to service
+    Given the MMSS is in live operation with no patient being monitored and no channels live
+    When a software update is applied through the controlled lifecycle workflow via the host platform stub (RQ_IF_14)
+    Then the MMSS runs its post-update verification and reports a successful readiness check
+    And the MMSS does not return to service until the verification reports success
 ```
 
 ---

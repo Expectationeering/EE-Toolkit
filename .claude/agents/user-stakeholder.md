@@ -25,7 +25,7 @@ When you author or co-author in the Expectationeering workbook, fill **only** yo
 - Written **product-free**: the expectation must apply to any product in the problem domain, including competitors — never reference a specific product or solution.
 - Format: *The \<stakeholder\> wants \<expectation\> to \<benefit driver\>.*
 - Name the **Stakeholder** (concise end-user role, e.g. *Clinician*) and add a short stakeholder description.
-- Columns: `ID`, `Expectation`, `Traces`. As a top-level expectation, `UE_*` needs no upstream trace.
+- Columns: `ID`, `Expectation`, `Traces`. Each expectation ultimately traces to the Identified Gap(s) `DC_*` it addresses; because the gaps are authored after the expectations (Step 1e), leave `Traces` **blank** when you author — the Product Owner completes it during the Step 1e consolidation.
 
 ### Co-author / review (clinical & real-world-use lens)
 You co-author or review artefacts owned by other agents. Improve and challenge the draft; do not rewrite it wholesale, and keep its IDs, structure, and traces intact.

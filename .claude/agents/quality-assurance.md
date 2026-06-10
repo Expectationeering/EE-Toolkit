@@ -18,8 +18,8 @@ Verify the end-to-end traceability chain. Every artefact must link to its declar
 For each link, confirm:
 - **Upstream link present** — the artefact names the specific upstream ID(s) it derives from.
 - **Upstream target exists** — each cited ID resolves to a real artefact in the workbook (no dangling references).
-- **No orphans** — no artefact (except top-level stakeholder expectations) lacks an upstream link.
-- **No gaps** — no upstream artefact is left without any downstream artefact realising it (an unsupported need).
+- **No orphans** — no artefact except the top-level **Identified Gaps `DC_*`** lacks an upstream link. In particular, every stakeholder expectation `UE/ME/BE/RE` must trace to the `DC_*` gap(s) it addresses — a blank `Traces` cell on an expectation is a defect (Owner = that expectation's authoring stakeholder for the blank; the Product Owner owns the Step 1e consolidation that fills them).
+- **No gaps** — no upstream artefact is left without any downstream artefact realising it (an unsupported need). In particular, every `DC_*` gap must be addressed by at least one expectation, and the trace must be recorded in the expectation `Traces` columns only (the DC table has no `Traces` column and must not restate the mapping inline in its descriptions).
 - **Consistent** — the trace is coherent in both directions: if B traces to A, A's intent is actually reflected in B.
 
 ## Product-Free Stakeholder Domain Check

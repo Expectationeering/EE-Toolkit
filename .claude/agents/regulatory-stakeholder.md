@@ -33,7 +33,7 @@ When you author or co-author in the Expectationeering workbook, fill **only** yo
 - Written **product-free**: the expectation must apply to any product in the problem domain, including competitors — never reference a specific product or solution.
 - Format: *The \<stakeholder\> wants \<expectation\> to \<benefit driver\>.*
 - Name the **Stakeholder** (concise role, e.g. *Competent Authority / Notified Body*) and add a short stakeholder description. Voice mandatory market-access obligations and approval criteria — what is required by law, not best practice.
-- Columns: `ID`, `Expectation`, `Traces`. As a top-level expectation, `RE_*` needs no upstream trace.
+- Columns: `ID`, `Expectation`, `Traces`. Each expectation ultimately traces to the Identified Gap(s) `DC_*` it addresses; because the gaps are authored after the expectations (Step 1e), leave `Traces` **blank** when you author — the Product Owner completes it during the Step 1e consolidation.
 
 ### Non-Functional Requirements (RQ_NF_*) — you author
 - **Solution-level only**: write each requirement against the product/system as a whole (the SOLUTION named in the `## SOLUTION:` heading), as a black box at its external boundary — "The system shall …". Never reference, allocate to, or name an internal sub-system, item, module, or component; that decomposition is the Architecture/Items level, out of scope for this flow.

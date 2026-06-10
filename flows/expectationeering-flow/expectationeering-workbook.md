@@ -313,19 +313,19 @@ The **BDD feature files** that verify the functional requirements, defined joint
 ```gherkin
 @ID:RQ_FN_01
 Feature: Show Vital Signs
-  As a clinician I want to see the patient's current vital signs on the Monitor Display within 5 seconds of a valid sensor reading
-  So that I can make safe, timely clinical decisions at the bedside
+    As a clinician I want to see the patient's current vital signs on the Monitor Display within 5 seconds of a valid sensor reading
+    So that I can make safe, timely clinical decisions at the bedside
 
-  Rule: The MMSS shall show the vital signs on the Display Interface within 5 seconds after the sensor is correctly connected to the Device Interface.
+Rule: The MMSS shall show the vital signs on the Display Interface within 5 seconds after the sensor is correctly connected to the Device Interface.
 
-  Scenario: Show vital signs from ECG Electrodes on the Monitor Display
+Scenario: Show vital signs from ECG Electrodes on the Monitor Display
     Given the simulator is running
     And no sensors are connected in the simulator
     And the MMSS is running
     When the ECG Electrodes are connected in the simulator
     Then the following vital signs are visible on the Display Interface within 5 seconds
-      | vital sign |
-      | Heart Rate |
+    | vital sign |
+    | Heart Rate |
 ```
 
 ---

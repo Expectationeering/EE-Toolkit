@@ -254,30 +254,141 @@ def populate_user_groups(table, md_rows: list):
 # ---------------------------------------------------------------------------
 
 # BDD feature files in the Verification section render in a fixed monospace font so the
-# Gherkin indentation and data-table columns stay aligned (see flows/.../Example.feature).
+# Gherkin indentation and data-table columns stay aligned (see flows/.../Example.feature),
+# with Gherkin syntax colouring applied per token so the feature reads like a coloured .feature file.
 FEATURE_FONT = 'Consolas'
 FEATURE_FONT_HALF_PT = '18'  # Word sizes are in half-points; 18 = 9 pt
 
+# Gherkin syntax-colour palette (hex RRGGBB), chosen to read well on a white page.
+GHERKIN_COLOURS = {
+    'keyword': '7B1FA2',   # Feature / Rule / Scenario / Scenario Outline / Background / Examples
+    'step':    '0451A5',   # Given / When / Then / And / But / *
+    'tag':     '808080',   # @tags
+    'comment': '008000',   # # comments
+    'string':  'A31515',   # "quoted strings"
+    'param':   'CC6600',   # <parameters>
+    'table':   '6A737D',   # | data | table | rows
+}
 
-def _apply_run_font(r_el, name: str, half_pt: str):
-    """Set the font name and size (in half-points) on a Word run element `r_el`."""
+_PRIMARY_KW = re.compile(r'^(Feature|Rule|Scenario Outline|Scenario|Background|Examples)(:)(.*)$')
+_STEP_KW = re.compile(r'^(Given|When|Then|And|But|\*)(\s+)(.*)$')
+_INLINE = re.compile(r'("[^"]*"|<[^>]*>)')
+
+
+def _feature_run(text, *, color=None, bold=False, italic=False):
+    """Build a Word run element in the feature monospace font, optionally coloured/bold/italic.
+
+    Pass text=None for a break-only run (the caller appends the <w:br/>)."""
+    r = OxmlElement('w:r')
     rpr = OxmlElement('w:rPr')
     rfonts = OxmlElement('w:rFonts')
     for attr in ('w:ascii', 'w:hAnsi', 'w:cs'):
-        rfonts.set(qn(attr), name)
-    rpr.append(rfonts)
+        rfonts.set(qn(attr), FEATURE_FONT)
+    rpr.append(rfonts)               # rPr child order must follow the CT_RPr schema
+    if bold:
+        rpr.append(OxmlElement('w:b'))
+    if italic:
+        rpr.append(OxmlElement('w:i'))
+    if color:
+        c = OxmlElement('w:color')
+        c.set(qn('w:val'), color)
+        rpr.append(c)
     for tag in ('w:sz', 'w:szCs'):
         sz = OxmlElement(tag)
-        sz.set(qn('w:val'), half_pt)
+        sz.set(qn('w:val'), FEATURE_FONT_HALF_PT)
         rpr.append(sz)
-    r_el.insert(0, rpr)  # rPr must be the first child of the run
+    r.append(rpr)
+    if text is not None:
+        t = OxmlElement('w:t')
+        t.text = text
+        t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+        r.append(t)
+    return r
+
+
+def _inline_runs(text: str):
+    """Split free text into runs, colouring "quoted strings" and <parameters>."""
+    runs = []
+    for tok in _INLINE.split(text):
+        if not tok:
+            continue
+        if tok.startswith('"') and tok.endswith('"'):
+            runs.append(_feature_run(tok, color=GHERKIN_COLOURS['string']))
+        elif tok.startswith('<') and tok.endswith('>'):
+            runs.append(_feature_run(tok, color=GHERKIN_COLOURS['param']))
+        else:
+            runs.append(_feature_run(tok))
+    return runs
+
+
+def _gherkin_line_runs(line: str):
+    """Return the coloured runs for one Gherkin line, preserving its leading indentation."""
+    stripped = line.lstrip(' ')
+    indent = line[:len(line) - len(stripped)]
+    runs = []
+    if indent:
+        runs.append(_feature_run(indent))
+    if not stripped:
+        return runs
+    if stripped.startswith('@'):
+        runs.append(_feature_run(stripped, color=GHERKIN_COLOURS['tag']))
+        return runs
+    if stripped.startswith('#'):
+        runs.append(_feature_run(stripped, color=GHERKIN_COLOURS['comment'], italic=True))
+        return runs
+    if stripped.startswith('|'):
+        runs.append(_feature_run(stripped, color=GHERKIN_COLOURS['table']))
+        return runs
+    m = _PRIMARY_KW.match(stripped)
+    if m:
+        runs.append(_feature_run(m.group(1) + m.group(2), color=GHERKIN_COLOURS['keyword'], bold=True))
+        if m.group(3):
+            runs.extend(_inline_runs(m.group(3)))
+        return runs
+    m = _STEP_KW.match(stripped)
+    if m:
+        runs.append(_feature_run(m.group(1), color=GHERKIN_COLOURS['step'], bold=True))
+        runs.append(_feature_run(m.group(2)))
+        runs.extend(_inline_runs(m.group(3)))
+        return runs
+    runs.extend(_inline_runs(stripped))
+    return runs
+
+
+def _set_para_left(p_el):
+    """Force a paragraph element to left alignment (override any justified template style).
+
+    Justified ('both') alignment stretches inter-word spacing to fill the line, which destroys
+    the monospace indentation and data-table column alignment of a Gherkin feature block."""
+    pPr = p_el.find(qn('w:pPr'))
+    if pPr is None:
+        pPr = OxmlElement('w:pPr')
+        p_el.insert(0, pPr)  # pPr must be the first child of w:p
+    jc = pPr.find(qn('w:jc'))
+    if jc is None:
+        jc = OxmlElement('w:jc')
+        pPr.insert(0, jc)
+    jc.set(qn('w:val'), 'left')
+
+
+def _render_feature_runs(p, text: str):
+    """Render a Gherkin feature block into paragraph `p` as coloured monospace runs."""
+    _set_para_left(p)  # never justify a feature block — it would break the monospace alignment
+    for li, line in enumerate(text.split('\n')):
+        if li > 0:
+            br = _feature_run(None)
+            br.append(OxmlElement('w:br'))  # line break between Gherkin lines
+            p.append(br)
+        for r in _gherkin_line_runs(line):
+            p.append(r)
 
 
 def set_value_cell(cell_el, text: str):
-    """Set a Word table cell element to a single run of `text`, replacing ALL its paragraphs.
+    """Set a Word table cell element to `text`, replacing ALL its paragraphs.
 
     Feature-file content (a Gherkin block, recognised by its leading `@ID:` tag) is rendered in
-    the fixed monospace FEATURE_FONT/size so its indentation and data tables stay aligned.
+    the fixed monospace FEATURE_FONT/size with Gherkin syntax colouring so its indentation and
+    data tables stay aligned; all other content is rendered as a single plain run.
     """
     text = (text or '').replace('**', '')  # drop markdown bold markers; cells are plain text
     is_feature = text.lstrip().startswith('@ID:')
@@ -291,18 +402,20 @@ def set_value_cell(cell_el, text: str):
         cell_el.append(p)
     for r in p.findall(qn('w:r')):
         p.remove(r)
-    if text:
-        r_new = OxmlElement('w:r')
-        for idx, line in enumerate(text.split('\n')):
-            if idx > 0:
-                r_new.append(OxmlElement('w:br'))  # line break inside the cell
-            t_new = OxmlElement('w:t')
-            t_new.text = line
-            t_new.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
-            r_new.append(t_new)
-        if is_feature:
-            _apply_run_font(r_new, FEATURE_FONT, FEATURE_FONT_HALF_PT)
-        p.append(r_new)
+    if not text:
+        return
+    if is_feature:
+        _render_feature_runs(p, text)
+        return
+    r_new = OxmlElement('w:r')
+    for idx, line in enumerate(text.split('\n')):
+        if idx > 0:
+            r_new.append(OxmlElement('w:br'))  # line break inside the cell
+        t_new = OxmlElement('w:t')
+        t_new.text = line
+        t_new.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+        r_new.append(t_new)
+    p.append(r_new)
 
 
 def add_row_copy(table, template_tr, values: list):

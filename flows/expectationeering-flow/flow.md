@@ -36,7 +36,7 @@ Steps 9f–9h form a **3-Amigos session**: the **Product Owner** (business inten
 | 1b | Customer Stakeholder | author | ME_*, market expectations, commercial constraints | parallel with 1a |
 | 1c | Business Stakeholder | author | BE_* — business expectations, organisational strategy and liability | parallel with 1a |
 | 1d | Regulatory Stakeholder | author | RE_* — mandatory regulatory expectations and approval criteria | parallel with 1a |
-| 1e | Product Owner | author | Problem (Domain Description, Actual State, Desired State, Identified Gaps) and consolidation: tracing UE/ME/BE/RE to DC | sequential after 1a–1d; gates 2a |
+| 1e | Product Owner | author | Problem (Domain Description, Actual State, Desired State, Identified Gaps DC_*) and consolidation: fill each UE/ME/BE/RE expectation's `Traces` with the DC gap(s) it addresses (DC_* is the top-level root) | sequential after 1a–1d; gates 2a |
 | 2a | Product Owner | author | KA_* — Ideal Product Model, tracing from KA to UE/ME/BE/RE | sequential after 1e |
 | 2b | System Architect | co-author | KA_* — feasibility, proposition attributes, and risk validation | parallel with 2a |
 | 2c | Business Stakeholder | co-author | KA_* — organisational, manufacturability and liability view | parallel with 2a |
@@ -71,7 +71,7 @@ Steps 9f–9h form a **3-Amigos session**: the **Product Owner** (business inten
 | 9f | Product Owner | author | SV_* — one Gherkin BDD feature file per functional requirement (`@ID:RQ_FN_xx` tag, Feature + As a/I want/So that, `Rule:`, Scenarios with Given/When/Then + data tables), tracing from SV to RQ_FN | sequential after 9e |
 | 9g | Development Lead | co-author | SV_* — implementability of each scenario: preconditions, test data, and technical feasibility | parallel with 9f |
 | 9h | Verification Lead | co-author | SV_* — testability and verification coverage; finalise so every RQ_* is covered by at least one scenario | parallel with 9f; gates Step 10a |
-| 10a | Quality Assurance | audit | Full workbook (DC/UE/ME/BE/RE → KA → BR → IU_01/MD_01 → IF → UR → USER_DFMEA → UT → UFMEA → USR → UC → DD → RQ_IF/FN/PR/NF/CS → SV); route every finding back to its authoring agent, correct in-place, and re-audit until zero findings remain | sequential after 9h |
+| 10a | Quality Assurance | audit | Full workbook (DC → UE/ME/BE/RE → KA → BR → IU_01/MD_01 → IF → UR → USER_DFMEA → UT → UFMEA → USR → UC → DD → RQ_IF/FN/PR/NF/CS → SV); route every finding back to its authoring agent, correct in-place, and re-audit until zero findings remain | sequential after 9h |
 
 ## Artifact Authoring Guidance
 
@@ -80,7 +80,7 @@ This is the authoritative guidance for **what content goes in each artifact and 
 **Universal conventions (apply to every artifact):**
 - Fill **only** the section(s) assigned to the step. Never add, remove, rename, or reorder sections, headings, tables, or columns; preserve all surrounding structure and placeholders verbatim.
 - Every item has a **unique ID**, numbered sequentially within its prefix (`PREFIX_01`, `PREFIX_02`, …).
-- Every item (except the top-level stakeholder expectations UE/ME/BE/RE) records the **upstream ID(s)** it is derived from in its `Traces` column. Cited IDs must already exist in the workbook.
+- Every item except the top-level **Identified Gaps `DC_*`** records the **upstream ID(s)** it is derived from in its `Traces` column. Cited IDs must already exist in the workbook. The stakeholder expectations `UE/ME/BE/RE` are **not** top-level: each traces to the `DC_*` gap(s) it addresses. Because the gaps are authored after the expectations (Step 1e), the expectation authors leave `Traces` blank and the Product Owner completes it during the Step 1e consolidation.
 - `Classification` columns are **inherited from the traced upstream item** (e.g. a UR inherits from the KA/BR it traces to; a USR inherits from its UR; a UC inherits from its UR).
 - From the Context level onward (the solution domain / DHF) requirements are **SMART** and form the basis for verification.
 - **Enumerate sets, never leave them collective.** Whenever an artifact would refer to a *set* of parameters, signals, measurements, data items, or inputs provided by a *set* of source elements (devices, sensors, sub-systems, services) — e.g. "the parameters from the connected devices" — do NOT leave the set implicit or vaguely named. Capture the concrete mapping (each source element → the specific parameters it provides, with units/range and interface, from the input) in the **Acquired Parameters / Signals** table in the Context section, and have every downstream artifact **reference that table** rather than repeating or vaguely naming the set. This is a generic rule about parameters/signals — never hard-code the actual domain values into the flow or agents; they come from the input.
@@ -96,13 +96,14 @@ This is the authoritative guidance for **what content goes in each artifact and 
 - **Domain Description**: the applicable domain where any product (yours and competitors') provides a solution.
 - **Actual State**: pros and cons of the current situation.
 - **Desired State**: pros and cons of the target situation — keep the pros of the actual state. State desired *capabilities and outcomes*, not a specific product or design.
-- **Identified Gaps (DC_*)**: the design changes needed to move from the actual state to the desired state, expressed as solution-neutral capability gaps. Columns: `ID`, `Description`.
+- **Identified Gaps (DC_*)**: the design changes needed to move from the actual state to the desired state, expressed as solution-neutral capability gaps. Columns: `ID`, `Description`. The gaps are the **top-level root** of the informal domain — derived from the Problem analysis, they carry no upstream trace and the DC table has no `Traces` column.
+- **Consolidation (UE/ME/BE/RE → DC):** after authoring the gaps, complete the traceability by filling each stakeholder expectation's `Traces` cell with the `DC_*` gap(s) it addresses (the expectation authors left it blank because the gaps did not yet exist). Ensure every expectation traces to at least one gap and every gap is addressed by at least one expectation. Record the mapping **only** in the expectation `Traces` columns — do not restate it inline inside the DC descriptions.
 
 ### Stakeholder Expectations — UE_* / ME_* / BE_* / RE_*
 - Written **product-free**: they apply to any product in the problem domain, including competitors — never reference your specific product.
 - Format: *The \<stakeholder\> wants \<expectation\> to \<benefit driver\>.*
 - Each block names its **Stakeholder** (concise role) and a short stakeholder description.
-- Columns: `ID`, `Expectation`, `Traces`. Top-level expectations need no upstream trace.
+- Columns: `ID`, `Expectation`, `Traces`. Each expectation traces to the Identified Gap(s) `DC_*` it addresses. The gaps are authored after the expectations (Step 1e), so the stakeholder author leaves `Traces` blank and the Product Owner fills it during the Step 1e consolidation.
 - `UE_*` = User Stakeholder; `ME_*` = Customer Stakeholder; `BE_*` = Business Stakeholder; `RE_*` = Regulatory Stakeholder.
 
 ### Ideal Product Model (KA_*) — Product Owner (author); System Architect & Business Stakeholder (co-author); User Stakeholder (review)
@@ -177,6 +178,7 @@ All requirement tables share the columns `ID`, `Description`, `Rationale`, `Clas
 
 ### Verification (SV_*) — Product Owner (author); Development Lead & Verification Lead (co-author) — the 3-Amigos session
 - **Follow the reference file [`Example.feature`](Example.feature) in this flow folder** for the structure, style, and layout of every feature file: the leading `@ID:` tag, the `Feature:` line, the `As a … I want … So that …` user story, a `Rule:` capturing the "shall" statement, and concrete `Scenario`s with `Given / When / Then` steps and aligned `| … |` data tables — including its indentation. Use `Example.feature` as the format template; keep this flow's tagging/tracing rules below.
+- **Exact indentation (must match `Example.feature`):** put `@ID:…`, `Feature:`, `Rule:`, and `Scenario:` / `Scenario Outline:` flush at **column 0**; indent **everything else by exactly 4 spaces** — the `As a … / So that …` user story, every `Given / When / Then / And / But` step, any `# comment` line, `Examples:`, and every `| … |` data-table row. Put one blank line before each `Rule:` and before each `Scenario:`. Do **not** nest `Rule:`/`Scenario:` under `Feature:` (no 2-space "tree" indentation).
 - Write **one Gherkin BDD feature file per functional requirement** as a `gherkin` fenced block, tagged `@ID:RQ_FN_xx` to trace it to the requirement it verifies.
 - Each feature opens with a user story (`As a … I want … So that …`), states a `Rule:` that captures the requirement's "shall" statement, and contains one or more concrete `Scenario`s with `Given / When / Then` steps and data tables for the expected values. Use **measurable** outcomes (e.g. "within 5 seconds").
-- Every `RQ_FN_*` must have a feature file and every `RQ_*` must be covered by at least one scenario. The converter records each feature file as one `SV_*` row in the Verification table and renders it in a fixed monospace font (**Consolas 9 pt**) so the Gherkin indentation and data-table columns stay aligned — keep the data-table pipes aligned in the markdown. Traces from **SV → RQ_FN**.
+- Every `RQ_FN_*` must have a feature file and every `RQ_*` must be covered by at least one scenario. The converter records each feature file as one `SV_*` row in the Verification table and renders it in a fixed monospace font (**Consolas 9 pt**) with **Gherkin syntax colouring** (keywords, step keywords, tags, comments, `"strings"`, `<parameters>`, and `| data | table |` rows are colour-coded) so the Gherkin indentation and data-table columns stay aligned — keep the data-table pipes aligned in the markdown. Traces from **SV → RQ_FN**.
