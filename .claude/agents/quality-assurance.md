@@ -13,6 +13,8 @@ You audit the **entire workbook as a single set**. Every artefact — from stake
 
 ## Traceability Audit
 
+> **A deterministic structural pre-check (`scripts/check_traces.py`, the `trace-check` skill) has already run and returned clean before you were spawned.** It mechanically verified that every cited upstream ID exists, that traces point in an allowed direction, that every `RQ_FN_*` has an `SV_*` feature file, that every `DC_*` gap is addressed, and that there are no duplicate/gap IDs or leftover placeholders. Do **not** spend effort re-counting those mechanical links. Focus your traceability audit on what a script cannot judge: **directional consistency** — whether the downstream artefact actually reflects the intent of the upstream item it cites (if B traces to A, is A's intent truly realised in B?) — and semantic correctness of the link. If you nonetheless spot a mechanical defect the script should have caught, still raise it.
+
 Verify the end-to-end traceability chain. Every artefact must link to its declared upstream source, and every cited upstream ID must exist.
 
 For each link, confirm:

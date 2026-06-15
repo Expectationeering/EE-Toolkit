@@ -1,7 +1,7 @@
 # EEToolkit — Claude Project Instructions
 
 ## Collaboration Rules
-- Ask for explicit user permission before executing any terminal command.
+- Terminal commands may run without asking for confirmation (the environment is configured for unattended runs). Still avoid destructive commands (e.g. deleting or overwriting files you did not create) unless the user asked for them.
 - Do not install dependencies unless the user explicitly requests it.
 - Do exactly what the user asked, and nothing more.
 - Offer extra improvements only as optional questions, never as automatic work.
@@ -86,7 +86,7 @@ Execute flows/<name>
 
 **Always show progress with a todo list.** Before loading anything, call `TodoWrite` to create a progress checklist and keep it updated throughout — the user relies on it to follow progress live. Create one item per phase (or per step) covering the flow's `## Steps`, plus `Ingest input documents`, `Quality Assurance audit`, `Convert to .docx`, and `Write run statistics`. Keep exactly one item `in_progress`; mark it `completed` the moment that step's output is written to the workbook. Do not open a run by printing the full step table — the todo list is the progress view.
 
-**1. Load all inputs.** Ingest input documents first. For each `<name>.docx` in `inputs/`, convert it to a markdown sibling with pandoc and use the markdown — never the `.docx`. On Windows, run pandoc in PowerShell prefixed with a registry PATH refresh (ask permission first, per Collaboration Rules):
+**1. Load all inputs.** Ingest input documents first. For each `<name>.docx` in `inputs/`, convert it to a markdown sibling with pandoc and use the markdown — never the `.docx`. On Windows, run pandoc in PowerShell prefixed with a registry PATH refresh:
 ```
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); pandoc "inputs/<name>.docx" -o "inputs/<name>.md" --wrap=none
 ```
@@ -126,7 +126,7 @@ Date: <YYYY-MM-DD>
 ---
 ```
 
-**6. Convert to .docx.** If a `Convert command` is defined, run it (ask permission first). Substitute `{md}`, `{docx}`, `{output_dir}` with the output paths. On Windows, prefix with the same registry PATH refresh. If no `Convert command` is defined, skip.
+**6. Convert to .docx.** If a `Convert command` is defined, run it. Substitute `{md}`, `{docx}`, `{output_dir}` with the output paths. On Windows, prefix with the same registry PATH refresh. If no `Convert command` is defined, skip.
 
 **7. Write run statistics.** Always, as the final step of every run, write `outputs/<YYYY-MM-DD>/run-stats.md` summarising the run. This is orchestrator-authored (no specialist agent), built from the per-invocation figures each subagent returns (`subagent_tokens`, `duration_ms`). It contains:
 - A header: flow path, workbook name, date, and the AI model used (orchestrator and subagents).
@@ -139,4 +139,7 @@ Use `outputs/2026-06-09/run-stats.md` as the reference format. Add `Write run st
 **Co-author, gates, and audit modes.**
 - **Co-author** (`parallel with` an author step): take the primary author's draft first, then spawn the co-author to review, challenge, and improve it — not replace it wholesale.
 - **Gates**: before a gated step, verify the gating step's section is non-empty; if not, re-run it.
-- **Audit** (`audit` mode): run as a loop, not one pass. Spawn the audit agent (e.g. Quality Assurance) on the complete workbook; it returns findings tagged with the **Owner** role. If zero findings, record PASS and finish. Otherwise group findings by Owner, re-spawn each owning agent to correct its artefact(s) in-place, then re-spawn the audit agent on the updated workbook (a fix can break a downstream trace). Repeat until zero findings. The audit produces no report section — its deliverable is the corrected workbook. Cap the loop at a reasonable number of cycles; if findings persist, surface them rather than looping indefinitely.
+- **Audit** (`audit` mode): run as a loop, not one pass.
+  - **Structural pre-check first (cheap, no model tokens).** Before spawning the audit agent, run the **`trace-check`** skill — `python scripts/check_traces.py "<workbook>.md" --json` (use `.venv\Scripts\python.exe` on Windows) — which deterministically validates traceability and structure (dangling/wrong-direction traces, missing `SV_*` coverage, unaddressed `DC_*` gaps, ID gaps/duplicates, leftover placeholders). Route each `error` finding to its owning agent by ID prefix (see the skill's routing table), fix in-place, and **re-run the script until it returns no errors**. This is where the mechanical traceability defects are caught — for ~0 tokens — instead of inside the expensive full-workbook LLM read.
+  - **Then the semantic audit.** Only once the script is clean, spawn the audit agent (e.g. Quality Assurance) on the complete workbook for the **semantic** review (INCOSE requirements quality, product-free / solution-level / enumerated-set checks). It returns findings tagged with the **Owner** role. If zero findings, record PASS and finish. Otherwise group findings by Owner, re-spawn each owning agent to correct its artefact(s) in-place, then re-run the `trace-check` script (a fix can break a trace) and re-spawn the audit agent on the updated workbook. Repeat until zero findings.
+  - The audit produces no report section — its deliverable is the corrected workbook. Cap the loop at a reasonable number of cycles; if findings persist, surface them rather than looping indefinitely.
