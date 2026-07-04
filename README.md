@@ -83,14 +83,16 @@ When it finishes, your completed workbook is in the **`outputs`** folder, in bot
 
 A full run drives every flow step (all stakeholder, design, and requirement sections), a 3-Amigos session that writes the BDD verification scenarios, and a quality-assurance pass that audits traceability and requirement quality — fixing what it finds until nothing remains — then renders the context diagram and the Word document.
 
-Measured on the bundled example input ([`inputs/Project_Description.docx`](inputs/)), one complete run was:
+Measured on the bundled example input ([`inputs/Project_Description.docx`](inputs/)), recent complete runs were:
 
 | Metric | Example run |
 |--------|-------------|
-| AI tokens | **~101,000** |
-| Wall-clock time | **~13–14 minutes** |
-| Tool actions (file edits, conversions, audits) | ~68 |
-| Output | ~530 KB Word workbook, 130+ tables, 40+ requirements, 19 BDD scenarios, embedded context diagram |
+| AI tokens | **~1.7–1.9 million** |
+| Wall-clock time | **~45–75 minutes** |
+| Agent invocations (authoring, co-author, QA audits, fixes) | ~40–45 |
+| Output | ~560 KB Word workbook, 130+ tables, 60+ requirements, 20+ BDD feature files |
+
+> **How tokens are counted:** the figure is the **total subagent tokens** — every agent invocation re-ingests its instructions, the project input, and its scoped workbook context, and all of that counts, not just the text that ends up in the workbook. Per run this is dominated by that per-invocation context, so the number is much larger than the workbook itself. See `outputs/<date>-<time>/run-stats.md` for the per-step breakdown of a real run.
 
 Treat this as a baseline for a small-to-medium project. Cost scales with the size and complexity of your input document — a larger brief means more requirements to author and more quality-assurance correction cycles, so expect the token count and time to rise accordingly.
 

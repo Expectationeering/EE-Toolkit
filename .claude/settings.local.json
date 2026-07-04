@@ -1,9 +1,26 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash",
-      "PowerShell"
-    ]
+      "Bash(*)",
+      "PowerShell",
+      "PowerShell(*)",
+      "Bash(.venv/Scripts/python.exe *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(echo *)",
+      "Bash(git *)",
+      "Bash(pwd)",
+      "PowerShell($env:Path*)",
+      "PowerShell(git *)",
+      "Edit(/.claude/skills/requirements-quality/**)",
+      "Edit(/.claude/skills/fmea/**)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "sandbox": {
+    "autoAllowBashIfSandboxed": true
   }
 }

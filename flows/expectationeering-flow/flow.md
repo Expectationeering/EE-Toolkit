@@ -39,18 +39,15 @@ Steps 9f–9h form a **3-Amigos session**: the **Product Owner** (business inten
 | 1e | Product Owner | author | Problem (Domain Description, Actual State, Desired State, Identified Gaps DC_*) and consolidation: fill each UE/ME/BE/RE expectation's `Traces` with the DC gap(s) it addresses (DC_* is the top-level root) | sequential after 1a–1d; gates 2a |
 | 2a | Product Owner | author | KA_* — Ideal Product Model, tracing from KA to UE/ME/BE/RE | sequential after 1e |
 | 2b | System Architect | co-author | KA_* — feasibility, proposition attributes, and risk validation | parallel with 2a |
-| 2c | Business Stakeholder | co-author | KA_* — organisational, manufacturability and liability view | parallel with 2a |
-| 2d | User Stakeholder | review | KA_* — domain review | sequential after 2b; gates 3a |
-| 3a | Product Owner | author | BR_* — Business Requirements, tracing from BR to KA | sequential after 2d |
+| 2c | Business Stakeholder | co-author | KA_* — organisational, manufacturability and liability view; also apply the User Stakeholder domain-review checklist (does each proposition attribute reflect real user benefit; product-free check) — no separate review step | sequential after 2b; gates 3a |
+| 3a | Product Owner | author | BR_* — Business Requirements, tracing from BR to KA | sequential after 2c |
 | 3b | System Architect | co-author | BR_* — technical and architectural alignment | parallel with 3a |
 | 3c | Customer Stakeholder | co-author | BR_* — buying criteria and commercial alignment | parallel with 3a; gates 4a |
 | 4a | Usability Validation | author | IU_01, MD_01 — Intended Use and Medical Device Classification, tracing from MD_01 to IU_01 | sequential after 3c |
-| 4b | Regulatory Stakeholder | co-author | IU_01, MD_01 — market access and approval criteria | parallel with 4a |
-| 4c | User Stakeholder | review | IU_01, MD_01 — clinical review | parallel with 4a; gates 5a |
-| 5a | System Architect | author | Product Information, System of Interest, Context Elements, IF_*, the Acquired Parameters / Signals table (each source element → the parameters it provides, from the input), and a `_To be added_` placeholder for the context diagram (no graphic is produced) | sequential after 4c; gates 6a |
-| 6a | Usability Validation | author | User Groups | sequential after 5a |
-| 6b | Usability Validation | author | UR_* — User Requirements, tracing from UR to IU_01/BR | sequential after 6a |
-| 6c | User Stakeholder | co-author | UR_* — clinical validation of user requirements | parallel with 6b; gates 6d |
+| 4b | Regulatory Stakeholder | co-author | IU_01, MD_01 — market access and approval criteria; also apply the User Stakeholder clinical-review checklist (intended use against real usage) — no separate review step | parallel with 4a; gates 5a |
+| 5a | System Architect | author | Product Information, System of Interest, Context Elements, IF_*, the Acquired Parameters / Signals table (each source element → the parameters it provides, from the input), and a `_To be added_` placeholder for the context diagram (no graphic is produced) | sequential after 4b; gates 6a+6b |
+| 6a+6b | Usability Validation | author | User Groups and UR_* — User Requirements, tracing from UR to IU_01/BR (one combined invocation, same author) | sequential after 5a |
+| 6c | User Stakeholder | co-author | UR_* — clinical validation of user requirements | parallel with 6a+6b; gates 6d |
 | 6d | Usability Validation | author | USER_DFMEA_* — User DFMEA, tracing from USER_DFMEA to UR | sequential after 6c |
 | 6e | User Stakeholder | co-author | USER_DFMEA_* — clinical review of user failure modes | parallel with 6d; gates 6f |
 | 6f | Usability Validation | author | UT_* — Use Scenarios / use tasks, tracing from UT to UR | sequential after 6e |
@@ -58,20 +55,19 @@ Steps 9f–9h form a **3-Amigos session**: the **Product Owner** (business inten
 | 6h | Usability Validation | author | UFMEA_* — Usability FMEA, tracing from UFMEA to UT | sequential after 6g |
 | 6i | User Stakeholder | co-author | UFMEA_* — clinical review of usability failure modes | parallel with 6h; gates 6j |
 | 6j | Usability Validation | author | USR_* — Usability Requirements, tracing from USR to UR/UFMEA | sequential after 6i; gates 7 |
-| 7 | Usability Validation | author | UI/UX Design — wireframes and interaction flows | sequential after 6j; gates 8a |
-| 8a | System Architect | author | Actors | sequential after 7 |
-| 8b | System Architect | author | UC_* — Use Cases, tracing from UC to UT/UR | sequential after 8a |
-| 8c | User Stakeholder | co-author | UC_* — clinical review of use cases | parallel with 8b; gates 8d |
+| 7 | Usability Validation | author | UI/UX Design — wireframes and interaction flows | sequential after 6j; gates 8a+8b |
+| 8a+8b | System Architect | author | Actors and UC_* — Use Cases, tracing from UC to UT/UR (one combined invocation, same author) | sequential after 7 |
+| 8c | User Stakeholder | co-author | UC_* — clinical review of use cases | parallel with 8a+8b; gates 8d |
 | 8d | System Architect | author | DD_* — Design Decisions, tracing from DD to UC/BR | sequential after 8c; gates 9a |
 | 9a | System Architect | author | Development external interfaces (black-box design) and RQ_IF_* — Interface Requirements, tracing from RQ_IF to IF | sequential after 8d |
 | 9b | Product Owner | author | RQ_FN_* — Functional Requirements, tracing from RQ_FN to UC/UR | sequential after 9a |
-| 9c | System Architect | author | RQ_PR_* — Performance Requirements, tracing from RQ_PR to RQ_FN | sequential after 9b |
-| 9d | Regulatory Stakeholder | author | RQ_NF_*, RQ_CS_* — Non-Functional and Constraint Requirements, tracing to BR/RE | sequential after 9c |
-| 9e | Development Lead | co-author | RQ_IF_*, RQ_FN_*, RQ_PR_*, RQ_NF_*, RQ_CS_* — implementation constraints and technical feasibility | sequential after 9d |
+| 9c | System Architect | author | RQ_PR_* — Performance Requirements, tracing from RQ_PR to RQ_FN | sequential after 9b; parallel with 9d |
+| 9d | Regulatory Stakeholder | author | RQ_NF_*, RQ_CS_* — Non-Functional and Constraint Requirements, tracing to BR/RE | sequential after 9b; parallel with 9c |
+| 9e | Development Lead | co-author | RQ_IF_*, RQ_FN_*, RQ_PR_*, RQ_NF_*, RQ_CS_* — implementation constraints and technical feasibility | sequential after 9c and 9d |
 | 9f | Product Owner | author | SV_* — one Gherkin BDD feature file per functional requirement (`@ID:RQ_FN_xx` tag, Feature + As a/I want/So that, `Rule:`, Scenarios with Given/When/Then + data tables), tracing from SV to RQ_FN | sequential after 9e |
 | 9g | Development Lead | co-author | SV_* — implementability of each scenario: preconditions, test data, and technical feasibility | parallel with 9f |
 | 9h | Verification Lead | co-author | SV_* — testability and verification coverage; finalise so every RQ_* is covered by at least one scenario | parallel with 9f; gates Step 10a |
-| 10a | Quality Assurance | audit | Full workbook (DC → UE/ME/BE/RE → KA → BR → IU_01/MD_01 → IF → UR → USER_DFMEA → UT → UFMEA → USR → UC → DD → RQ_IF/FN/PR/NF/CS → SV); route every finding back to its authoring agent, correct in-place, and re-audit until zero findings remain | sequential after 9h |
+| 10a | Quality Assurance | audit | Trace-check script first (mechanical traceability, ~0 tokens), then **four parallel scoped sub-audits** — (1) informal domain: DC/UE/ME/BE/RE/KA/BR incl. product-free check; (2) usability chain: IU/MD, User Groups, UR, USER_DFMEA, UT, UFMEA, USR, UI/UX; (3) requirements: Context/IF, Actors/UC, DD, RQ_* incl. solution-level and enumerated-set checks; (4) verification: SV feature files incl. gherkin-sv format and coverage. Route every finding back to its authoring agent, apply the fix, and re-audit only the touched scope until zero findings remain | sequential after 9h |
 
 ## Artifact Authoring Guidance
 
@@ -82,7 +78,7 @@ This is the authoritative guidance for **what content goes in each artifact and 
 - Every item has a **unique ID**, numbered sequentially within its prefix (`PREFIX_01`, `PREFIX_02`, …).
 - Every item except the top-level **Identified Gaps `DC_*`** records the **upstream ID(s)** it is derived from in its `Traces` column. Cited IDs must already exist in the workbook. The stakeholder expectations `UE/ME/BE/RE` are **not** top-level: each traces to the `DC_*` gap(s) it addresses. Because the gaps are authored after the expectations (Step 1e), the expectation authors leave `Traces` blank and the Product Owner completes it during the Step 1e consolidation.
 - `Classification` columns are **inherited from the traced upstream item** (e.g. a UR inherits from the KA/BR it traces to; a USR inherits from its UR; a UC inherits from its UR).
-- From the Context level onward (the solution domain / DHF) requirements are **SMART** and form the basis for verification.
+- From the Context level onward (the solution domain / DHF) requirements are **SMART** and form the basis for verification. Every requirement statement (`BR_*`, `UR_*`, `USR_*`, `RQ_*`) must satisfy the ten INCOSE quality criteria — the [`requirements-quality` skill](../../.claude/skills/requirements-quality/SKILL.md) is the single source; the orchestrator injects its body into every requirement-authoring/co-author step and every QA sub-audit.
 - **Enumerate sets, never leave them collective.** Whenever an artifact would refer to a *set* of parameters, signals, measurements, data items, or inputs provided by a *set* of source elements (devices, sensors, sub-systems, services) — e.g. "the parameters from the connected devices" — do NOT leave the set implicit or vaguely named. Capture the concrete mapping (each source element → the specific parameters it provides, with units/range and interface, from the input) in the **Acquired Parameters / Signals** table in the Context section, and have every downstream artifact **reference that table** rather than repeating or vaguely naming the set. This is a generic rule about parameters/signals — never hard-code the actual domain values into the flow or agents; they come from the input.
 
 > **PRODUCT-FREE RULE — the entire Stakeholder (INFORMAL) domain.** Everything under `## Stakeholders (INFORMAL)` — the **Problem** (Domain Description, Actual State, Desired State, Identified Gaps `DC_*`), **all Expectations** (`UE_*`/`ME_*`/`BE_*`/`RE_*`), the **Ideal Product Model** (`KA_*`), and the **Business Requirements** (`BR_*`) — MUST be written purely from the **problem domain** and be completely **solution- and product-free**. It describes the problem and the needs, never a chosen solution.
@@ -106,7 +102,7 @@ This is the authoritative guidance for **what content goes in each artifact and 
 - Columns: `ID`, `Expectation`, `Traces`. Each expectation traces to the Identified Gap(s) `DC_*` it addresses. The gaps are authored after the expectations (Step 1e), so the stakeholder author leaves `Traces` blank and the Product Owner fills it during the Step 1e consolidation.
 - `UE_*` = User Stakeholder; `ME_*` = Customer Stakeholder; `BE_*` = Business Stakeholder; `RE_*` = Regulatory Stakeholder.
 
-### Ideal Product Model (KA_*) — Product Owner (author); System Architect & Business Stakeholder (co-author); User Stakeholder (review)
+### Ideal Product Model (KA_*) — Product Owner (author); System Architect & Business Stakeholder (co-author, the latter also applying the User Stakeholder domain-review checklist)
 - **Product-free** (problem domain only — see the rule above). The Ideal Product Model is the blueprint that aligns stakeholder expectations with the *kind of capabilities* any product in the domain would offer — NOT a description of your specific product. Describe **Proposition Attributes** as solution-neutral capability classes (what the capability does for any product in the domain), never as named architecture, internal elements/components, or product/vendor brands. "Superior to" compares against the current/competitor baseline, also product-free.
 - The blueprint that aligns stakeholder expectations with product capabilities: the key proposition attributes, their priority, feasibility, and risk.
 - Columns: `ID`, `Benefit Driver`, `Expectation`, `Proposition Attributes`, `Superior to`, `Priority`, `Feasible`, `Risk`, `Rationale`.
@@ -118,7 +114,7 @@ This is the authoritative guidance for **what content goes in each artifact and 
 - Columns: `ID`, `Description`, `Rationale`, `Stakeholder`, `Importance`, `Traces`.
 - Traces from **BR → KA**.
 
-### Intended Use (IU_01) & Medical Device Classification (MD_01) — Usability Validation (author); Regulatory Stakeholder (co-author); User Stakeholder (review)
+### Intended Use (IU_01) & Medical Device Classification (MD_01) — Usability Validation (author); Regulatory Stakeholder (co-author, also applying the User Stakeholder clinical-review checklist)
 - **IU_01**: a single, flowing **prose** statement that naturally covers the five aspects — what the product is, what it does (medical indication), who uses it (user profile), where it is used (use environment), and how it works (operating principle). Do **not** add bold labels or headers for the aspects; weave them into the sentences. Columns: `ID`, `Description`.
 - **MD_01**: the assessed medical device classification. Columns: `ID`, `Description`, `Traces`. Traces from **MD_01 → IU_01**.
 
@@ -141,6 +137,7 @@ This is the authoritative guidance for **what content goes in each artifact and 
 ### User DFMEA (USER_DFMEA_*) — Usability Validation (author); User Stakeholder (co-author)
 - A structured analysis of how users might misuse, misinterpret, or fail to operate the product, the consequences, and the mitigations the design must include.
 - Columns: `ID`, `Item/Function`, `Requirement`, `Failure Mode`, `End-effect`, `Rationale`, `Failure Cause`, `Severity`, `Prevention`, `Classification`, `Traces`. Traces from **USER_DFMEA → UR**.
+- **Method: the [`fmea` skill](../../.claude/skills/fmea/SKILL.md) is the single source** for column semantics, the severity scale, and row-quality rules; the orchestrator injects its body into steps 6d/6e/6h/6i and the usability-chain QA sub-audit.
 
 ### Use Scenarios / Use Tasks (UT_*) — Usability Validation (author); User Stakeholder (co-author)
 - Concrete narratives of how the product is used in the real world, walking from a triggering situation to a successful outcome. Each scenario contains use tasks.
@@ -149,6 +146,7 @@ This is the authoritative guidance for **what content goes in each artifact and 
 ### Usability FMEA (UFMEA_*) — Usability Validation (author); User Stakeholder (co-author)
 - An FMEA focused on usability: where the UI, workflow, or interaction model can lead to errors, slow operation, or unsafe outcomes.
 - Columns: `ID`, `Scenario Title`, `Use Error`, `Cause`, `Effect`, `HF Cause`, `Rationale`, `Usability Impact Level`, `Mitigation (existing)`, `Mitigation (new)`, `Classification`, `Traces`. Traces from **UFMEA → UT**.
+- **Method: the [`fmea` skill](../../.claude/skills/fmea/SKILL.md)** governs column semantics, the impact scale, and row-quality rules (see the USER_DFMEA entry above).
 
 ### Usability Requirements (USR_*) — Usability Validation
 - Measurable requirements for how the product must perform from a user perspective: task completion times, error rates, learnability, accessibility. Validated through usability testing.
@@ -177,8 +175,5 @@ All requirement tables share the columns `ID`, `Description`, `Rationale`, `Clas
 - **Development Lead** co-authors all RQ_* for implementation constraints and technical feasibility.
 
 ### Verification (SV_*) — Product Owner (author); Development Lead & Verification Lead (co-author) — the 3-Amigos session
-- **Follow the reference file [`Example.feature`](Example.feature) in this flow folder** for the structure, style, and layout of every feature file: the leading `@ID:` tag, the `Feature:` line, the `As a … I want … So that …` user story, a `Rule:` capturing the "shall" statement, and concrete `Scenario`s with `Given / When / Then` steps and aligned `| … |` data tables — including its indentation. Use `Example.feature` as the format template; keep this flow's tagging/tracing rules below.
-- **Exact indentation (must match `Example.feature`):** put `@ID:…`, `Feature:`, `Rule:`, and `Scenario:` / `Scenario Outline:` flush at **column 0**; indent **everything else by exactly 4 spaces** — the `As a … / So that …` user story, every `Given / When / Then / And / But` step, any `# comment` line, `Examples:`, and every `| … |` data-table row. Put one blank line before each `Rule:` and before each `Scenario:`. Do **not** nest `Rule:`/`Scenario:` under `Feature:` (no 2-space "tree" indentation).
-- Write **one Gherkin BDD feature file per functional requirement** as a `gherkin` fenced block, tagged `@ID:RQ_FN_xx` to trace it to the requirement it verifies.
-- Each feature opens with a user story (`As a … I want … So that …`), states a `Rule:` that captures the requirement's "shall" statement, and contains one or more concrete `Scenario`s with `Given / When / Then` steps and data tables for the expected values. Use **measurable** outcomes (e.g. "within 5 seconds").
-- Every `RQ_FN_*` must have a feature file and every `RQ_*` must be covered by at least one scenario. The converter records each feature file as one `SV_*` row in the Verification table and renders it in a fixed monospace font (**Consolas 9 pt**) with **Gherkin syntax colouring** (keywords, step keywords, tags, comments, `"strings"`, `<parameters>`, and `| data | table |` rows are colour-coded) so the Gherkin indentation and data-table columns stay aligned — keep the data-table pipes aligned in the markdown. Traces from **SV → RQ_FN**.
+- **Format: the [`gherkin-sv` skill](../../.claude/skills/gherkin-sv/SKILL.md) is the single source for the feature-file format** — reference file `Example.feature`, structure (`@ID:` tag, `Feature:`, user story, `Rule:`, `Scenario`s with data tables), exact indentation, measurable outcomes, coverage rules, and converter rendering. The orchestrator injects the skill body into the prompts of steps 9f–9h and the SV sub-audit.
+- One Gherkin BDD feature file per functional requirement, as a `gherkin` fenced block tagged `@ID:RQ_FN_xx`. Every `RQ_FN_*` gets a feature file and every `RQ_*` is covered by at least one scenario. The converter records each feature file as one `SV_*` row in the Verification table. Traces from **SV → RQ_FN**.
