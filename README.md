@@ -138,3 +138,7 @@ Direct commits are restricted to maintainers. To propose a change, **fork** this
 ## License
 
 Released under the [MIT License](LICENSE). You're free to use and adapt the kit; attribution is appreciated.
+
+## Disclaimer
+
+The materials and methodologies in this repository have been developed independently in a personal capacity. Any views, opinions, and content expressed are solely those of the author and do not represent the views, positions, or policies of any current or former employer, client, or affiliated organization.
