@@ -16,7 +16,9 @@
       "PowerShell($env:Path*)",
       "PowerShell(git *)",
       "Edit(/.claude/skills/requirements-quality/**)",
-      "Edit(/.claude/skills/fmea/**)"
+      "Edit(/.claude/skills/fmea/**)",
+      "Edit(/.claude/skills/install-toolkit/**)",
+      "Edit(/.claude/skills/execute-flow/**)"
     ],
     "defaultMode": "bypassPermissions"
   },
