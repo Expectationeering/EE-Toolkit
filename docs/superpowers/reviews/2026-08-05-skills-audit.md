@@ -146,6 +146,43 @@ Status values: `open` → `approved`/`deferred (…)` (behavior, Task 3) →
 | IT-8 | form | low | line 19 vs execute-flow:29 | PATH-refresh snippet duplicated across both skills — intentional (execute-flow must run standalone). | Keep both; add pointer here: "(execute-flow uses this same prefix at run time.)" No execute-flow change. | fixed |
 | IT-9 | form | low | line 13 | Detection commands left implicit. | "Check with `uv --version` and `pandoc --version` (with the Windows prefix); install only what is missing." | fixed |
 
+## Outcome (2026-08-05)
+
+58 findings: **47 fixed, 11 deferred, 0 open, 0 not-resolved.** One commit
+per skill on `SuperPowers` (e8a8fd4 execute-flow, 4f4d01f
+requirements-quality, bd6280d gherkin-sv, 36e4903 fmea, adbef3a trace-check,
+56de9a0 install-toolkit).
+
+Per skill (fixed / deferred):
+
+| Skill | Fixed | Deferred | Deferral reasons |
+|---|---|---|---|
+| execute-flow | 11 | EF-11 | baseline not reproduced (3/3 correct subagent_type) |
+| requirements-quality | 8 (incl. RQ-7 agent-file dedup) | RQ-3 | gate: self-invocation risk |
+| gherkin-sv | 3 | GS-2, GS-4, GS-5, GS-6, GS-8 | GS-4/GS-8 gate; GS-2/5/6 baselines not reproduced |
+| fmea | 8 | FM-4, FM-8 | baselines not reproduced (downgrade resisted; coverage read consistently) |
+| trace-check | 9 | TC-1 | baseline not reproduced (skill loaded before acting) |
+| install-toolkit | 8 | IT-1 | baseline not reproduced (discovery 2/2 incl. near-miss) |
+
+Test evidence: session scratchpad `microtest-{EF,RQ,GS,FM,TC,IT}.md` — every
+substantive change has a documented RED baseline failure and a GREEN pass
+(trace-check's TC-2 needed one wording iteration, closing the exemption
+list). Structural changes verified via reference greps (all six skill names
+resolve at every consumption site), a clean `check_traces.py` run on the
+reference workbook (exit 0), and word counts (execute-flow 2120,
+requirements-quality 810, gherkin-sv 453, fmea 975, trace-check 664,
+install-toolkit 416 — increases trace to approved content-adding findings).
+
+Method notes for the record: micro-tests ran as single-shot haiku subagents,
+3 reps for primary scenarios and 2 for secondary ones (plan prescribed 3 —
+deviation noted); scenario C used 1 rep (the defect was a verbatim mandated
+sentence, variance impossible); scenario F's first baseline pair was
+discarded as unrealistic (it leaked a "template mandates the stub" hint that
+real sub-audits never receive) and rerun without the hint.
+
 ## Deferred / dropped findings
 
-(filled in Tasks 3–9: rejected by Eric, or baseline not reproduced)
+Deferred by approval-gate decision: RQ-3, GS-4, GS-8 (see Approval
+decisions). Deferred as not reproduced under the Iron Law (no failing
+baseline → no edit): EF-11, GS-2, GS-5, GS-6, FM-4, FM-8, TC-1, IT-1 —
+each with the observed baseline behaviour recorded in its Status cell.
