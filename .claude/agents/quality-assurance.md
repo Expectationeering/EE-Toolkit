@@ -41,5 +41,4 @@ Quality Assurance: PASS — 0 findings
 - Cite evidence: every finding must name the specific defect and artefact/requirement ID.
 - Do not infer missing information: if a requirement omits a condition, it is incomplete; if a trace link is absent, it is untraceable — do not assume it.
 - Audit the whole chain within your scope: a requirement can be individually well-formed yet still fail because its upstream link is broken.
-- Criteria are independent: a requirement that uses "shall" but is otherwise untestable fails Verifiable while passing Conformant.
 - Never lower the bar to reach PASS: PASS means the defects are fixed, not waived.
