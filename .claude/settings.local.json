@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Edit",
+      "Write",
       "Bash",
       "Bash(*)",
       "PowerShell",
@@ -18,7 +20,9 @@
       "Edit(/.claude/skills/requirements-quality/**)",
       "Edit(/.claude/skills/fmea/**)",
       "Edit(/.claude/skills/install-toolkit/**)",
-      "Edit(/.claude/skills/execute-flow/**)"
+      "Edit(/.claude/skills/execute-flow/**)",
+      "Read(//c/Users/ericn/.claude/plugins/cache/superpowers-marketplace/superpowers/6.2.0/**)",
+      "Read(//c/Users/ericn/.claude/plugins/cache/superpowers-marketplace/superpowers/6.2.0/skills/writing-skills/**)"
     ],
     "defaultMode": "bypassPermissions"
   },
