@@ -55,6 +55,7 @@ EEToolkit/
 │   ├── agents/                            # specialist agent definitions (see Agent Registry)
 │   └── skills/                            # all toolkit behaviour: execute-flow, install-toolkit, + supporting skills
 ├── inputs/                                # input documents — shared by all flows, never duplicated
-├── flows/                                 # one folder per flow: flow.md + flow-specific templates
+├── templates/                             # workbook templates (.md skeletons, .docx conversion templates) and the Example.feature reference — shared location; flow.md points at them via project-root-relative paths
+├── flows/                                 # one folder per flow: flow.md
 └── outputs/                               # reports and workbooks written after each run (one dated folder per run)
 ```

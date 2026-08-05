@@ -254,7 +254,7 @@ def populate_user_groups(table, md_rows: list):
 # ---------------------------------------------------------------------------
 
 # BDD feature files in the Verification section render in a fixed monospace font so the
-# Gherkin indentation and data-table columns stay aligned (see flows/.../Example.feature),
+# Gherkin indentation and data-table columns stay aligned (see templates/Example.feature),
 # with Gherkin syntax colouring applied per token so the feature reads like a coloured .feature file.
 FEATURE_FONT = 'Consolas'
 FEATURE_FONT_HALF_PT = '18'  # Word sizes are in half-points; 18 = 9 pt

@@ -4,10 +4,10 @@
 
 | Key | Value |
 |-----|-------|
-| Templates | expectationeering-workbook.md |
+| Templates | templates/expectationeering-workbook.md |
 | Date in filename | false |
-| Docx template | Expectationeering-Workbook.docx |
-| Convert command | uv run python scripts/populate_docx.py "{md}" "flows/expectationeering-flow/Expectationeering-Workbook.docx" "{docx}" |
+| Docx template | templates/Expectationeering-Workbook.docx |
+| Convert command | uv run python scripts/populate_docx.py "{md}" "templates/Expectationeering-Workbook.docx" "{docx}" |
 
 ## Stakeholders
 
@@ -175,5 +175,5 @@ All requirement tables share the columns `ID`, `Description`, `Rationale`, `Clas
 - **Development Lead** co-authors all RQ_* for implementation constraints and technical feasibility.
 
 ### Verification (SV_*) — Product Owner (author); Development Lead & Verification Lead (co-author) — the 3-Amigos session
-- **Format: the [`gherkin-sv` skill](../../.claude/skills/gherkin-sv/SKILL.md) is the single source for the feature-file format** — reference file `Example.feature`, structure (`@ID:` tag, `Feature:`, user story, `Rule:`, `Scenario`s with data tables), exact indentation, measurable outcomes, coverage rules, and converter rendering. The orchestrator injects the skill body into the prompts of steps 9f–9h and the SV sub-audit.
+- **Format: the [`gherkin-sv` skill](../../.claude/skills/gherkin-sv/SKILL.md) is the single source for the feature-file format** — reference file `templates/Example.feature`, structure (`@ID:` tag, `Feature:`, user story, `Rule:`, `Scenario`s with data tables), exact indentation, measurable outcomes, coverage rules, and converter rendering. The orchestrator injects the skill body into the prompts of steps 9f–9h and the SV sub-audit.
 - One Gherkin BDD feature file per functional requirement, as a `gherkin` fenced block tagged `@ID:RQ_FN_xx`. Every `RQ_FN_*` gets a feature file and every `RQ_*` is covered by at least one scenario. The converter records each feature file as one `SV_*` row in the Verification table. Traces from **SV → RQ_FN**.

@@ -5,7 +5,7 @@ description: Canonical format rules for the SV_* Gherkin BDD feature files in th
 
 # Gherkin SV_* feature-file format
 
-Every `SV_*` verification entry in the workbook is **one Gherkin BDD feature file per functional requirement**, written as a `gherkin` fenced block. **Follow the reference file `flows/expectationeering-flow/Example.feature` (path relative to the project root) for the structure, style, and layout of every feature file** — the leading `@ID:` tag, the `Feature:` line, the `As a … I want … So that …` user story, a `Rule:` capturing the "shall" statement, and concrete `Scenario`s with `Given / When / Then` steps and aligned `| … |` data tables — including its indentation.
+Every `SV_*` verification entry in the workbook is **one Gherkin BDD feature file per functional requirement**, written as a `gherkin` fenced block. **Follow the reference file `templates/Example.feature` (path relative to the project root) for the structure, style, and layout of every feature file** — the leading `@ID:` tag, the `Feature:` line, the `As a … I want … So that …` user story, a `Rule:` capturing the "shall" statement, and concrete `Scenario`s with `Given / When / Then` steps and aligned `| … |` data tables — including its indentation.
 
 ## Structure & tracing
 
@@ -15,7 +15,7 @@ Every `SV_*` verification entry in the workbook is **one Gherkin BDD feature fil
 - Every `RQ_FN_*` must have a feature file and every `RQ_*` must be covered by at least one scenario.
 - Do **not** add housekeeping comment lines such as `# verifies RQ_PR_01, RQ_IF_01`. Keep cross-coverage traceability in the `@ID:` tag and, where helpful, as a brief inline `(RQ_xx)` reference within the step text — never as a separate `#` comment line.
 
-## Exact indentation (must match `flows/expectationeering-flow/Example.feature`)
+## Exact indentation (must match `templates/Example.feature`)
 
 - Put `@ID:…`, `Feature:`, `Rule:`, and `Scenario:` / `Scenario Outline:` flush at **column 0**.
 - Indent **everything else by exactly 4 spaces** — the `As a … / So that …` user story, every `Given / When / Then / And / But` step, any `# comment` line, `Examples:`, and every `| … |` data-table row.

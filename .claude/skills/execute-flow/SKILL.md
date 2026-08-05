@@ -21,7 +21,7 @@ You — the main assistant — orchestrate flows directly; there is no separate 
 ```
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); pandoc "inputs/<name>.docx" -o "inputs/<name>.md" --wrap=none
 ```
-Regenerate on every run. The generated `.md` keeps the exact stem of the `.docx` — the output-name derivation in step 2 relies on this stem. Then read `flows/<name>/flow.md` and all `.md` documents in `inputs/`. From `flow.md` extract the flow name (`#` heading) and the `## Metadata` keys: `Templates` (the only templates used), `Date in filename` (`true` default / `false` → omit the date suffix from filenames), `Source inputs` (optional comma-separated globs relative to project root pointing to other flows' outputs — read all matches and pass them to agents as source context), and `Docx template` / `Convert command` (optional, used at step 6). Read each `Templates` file from `flows/<name>/` — these are the output skeletons.
+Regenerate on every run. The generated `.md` keeps the exact stem of the `.docx` — the output-name derivation in step 2 relies on this stem. Then read `flows/<name>/flow.md` and all `.md` documents in `inputs/`. From `flow.md` extract the flow name (`#` heading) and the `## Metadata` keys: `Templates` (the only templates used), `Date in filename` (`true` default / `false` → omit the date suffix from filenames), `Source inputs` (optional comma-separated globs relative to project root pointing to other flows' outputs — read all matches and pass them to agents as source context), and `Docx template` / `Convert command` (optional, used at step 6). Read each `Templates` file — paths are relative to the project root (e.g. `templates/<file>.md`) — these are the output skeletons.
 
 **2. Initialise the output workbook.** Derive the output base name from the flow's **primary input document** in `inputs/` (the single `.docx` there; if there are several, the one the user named, else the largest — state your choice before creating the output folder) by appending `_Workbook` to its filename stem, preserving original casing and separators (independent of the template's own name):
 - `inputs/Project_Description.docx` → `Project_Description_Workbook`
@@ -77,7 +77,7 @@ Create `outputs/<YYYY-MM-DD>-<HHMMSS>/` and copy each `Templates` file verbatim 
 ---
 Executed by: execute-flow skill (.claude/skills/execute-flow/SKILL.md)
 Flow: flows/<name>/flow.md
-Templates: flows/<name>/<template-1>.md, …
+Templates: <the Templates paths from flow.md, e.g. templates/<template-1>.md>, …
 Inputs: inputs/
 Date: <YYYY-MM-DD>
 ---
