@@ -11,24 +11,31 @@ description: >-
 
 # Trace check
 
-Run the mechanical traceability and structure sweep as a script. It costs **zero
-model tokens** and catches exactly the class of findings the QA audit loop
-otherwise burns ~250k tokens per pass on: dangling traces, wrong-direction
-traces, missing SV coverage, unaddressed gaps, ID gaps/duplicates, and leftover
-placeholders.
+Run the mechanical traceability and structure sweep as a script — it costs
+**zero model tokens** and finds the whole class of structural defects a
+full-workbook QA read otherwise burns six figures of tokens on. The LLM audit
+is for meaning; this script is for structure.
 
 ## How to run
 
-On Windows use the project venv Python (see the `venv-python-for-docx` memory);
-otherwise `uv run python` or plain `python` is fine:
+On Windows use the project venv interpreter directly; `uv run python` or plain
+`python` works elsewhere:
 
 ```
 .venv\Scripts\python.exe scripts/check_traces.py "<path-to-workbook>.md" --json
 ```
 
 Exit code `0` = no errors (warnings may still be present), `1` = at least one
-error. With `--json` it prints a list of `{severity, id, msg}` objects; without
-it, one human-readable line per finding.
+error, `2` = bad invocation (no workbook path) — fix the command, do not route
+it as a finding. With `--json` it prints a list of `{severity, id, msg}`
+objects; without it, one human-readable line per finding. Example output:
+
+```json
+[{"severity": "error", "id": "RQ_FN_07", "msg": "traces to UR_44 which does not exist in the workbook"}]
+```
+
+`id` is an item ID for item-level findings, a bare prefix (e.g. `KA_`) for
+duplicate/gap findings, and the literal `template` for placeholder warnings.
 
 ## What it validates
 
@@ -38,32 +45,47 @@ it, one human-readable line per finding.
 | Item traces to a disallowed upstream prefix (wrong direction in the DAG) | error |
 | Item that must trace upstream has no trace | error |
 | `RQ_FN_*` with no `SV` feature file (`@ID:RQ_FN_xx`) covering it | error |
-| `DC_*` gap addressed by no expectation | warning |
+| `DC_*` gap that nothing traces to | warning |
 | Duplicate IDs within a prefix | error |
 | ID sequence gaps within a prefix | warning |
 | Leftover `<!-- ... -->` fill-in placeholder | warning |
 
 The allowed-upstream DAG is encoded in `RULES` inside the script and mirrors the
 `Traces from X → Y` lines in `flows/expectationeering-flow/flow.md`.
+`_To be added_` diagram markers and the out-of-scope template comment block are
+intentional and already filtered (`INTENTIONAL_COMMENT` in the script) — they
+never appear in output.
+
+### Expected findings during a partial run
+
+Mid-flow, some findings only exist because later steps have not run yet:
+
+- `RQ_FN_* → no SV feature file`: expected until steps 9f–9h;
+- `UE_*/ME_*/BE_*/RE_* → has no upstream trace`: expected until step 1e;
+- `DC_*` gap that nothing traces to: expected until step 1e;
+- `template` (unfilled placeholder): expected for any section whose authoring
+  step has not run.
+
+Only the four patterns above are deferrable, and only while their step has not
+run. Anything else is a real finding — in particular, an item that traces to a
+non-existent ID is broken in an already-authored section: fix it now; deferring
+it lets later steps build on a broken trace.
 
 ## How to use the result in the QA loop
 
 1. Run this script **first**, before any LLM audit. Parse the JSON.
-2. Route each finding to the owning authoring agent by ID prefix:
-   - `RQ_FN_*`, `SV_*`, `BR_*`, `KA_*`, `DC_*` → **Product Owner**
-   - `RQ_PR_*`, `RQ_IF_*`, `IF_*`, `UC_*`, `DD_*`, `KA_*` (feasibility) → **System Architect**
-   - `UR_*`, `USR_*`, `UFMEA_*`, `USER_DFMEA_*`, `UT_*`, `IU_*`, `MD_*` → **Usability Validation**
-   - `RQ_NF_*`, `RQ_CS_*` → **Regulatory Stakeholder**
-   Fix in-place, then **re-run the script** (a fix can break another trace).
-3. Only once the script returns no errors, spawn the **Quality Assurance** agent
-   for the **semantic** INCOSE review (clarity, atomicity, verifiability,
-   SMART-ness). It no longer needs to do mechanical trace-counting, so scope it
-   to quality only.
+2. Route each finding to the single owner by ID prefix:
 
-## Known non-findings (do not act on these)
+   | Finding `id` starts with | Owner |
+   |---|---|
+   | `UE_`, `ME_`, `BE_`, `RE_`, `DC_`, `KA_`, `BR_`, `RQ_FN_` | **Product Owner** |
+   | `UC_`, `DD_`, `IF_`, `RQ_IF_`, `RQ_PR_` | **System Architect** |
+   | `IU_`, `MD_`, `UR_`, `USR_`, `UT_`, `UFMEA_`, `USER_DFMEA_` | **Usability Validation** |
+   | `RQ_NF_`, `RQ_CS_` | **Regulatory Stakeholder** |
+   | `template` | **orchestrator** — fill or delete the placeholder yourself |
 
-- `_To be added_` markers for the Context, Use Case, and black-box diagrams are
-  **required** by the flow — they are plain text, not `<!-- -->` comments, so the
-  script already does not flag them.
-- The trailing template comment block for the out-of-scope Architecture /
-  Detailed Design / DFMEA / Items sections is filtered out by design.
+   A missing-SV finding is reported against the `RQ_FN_*` id — the fix is a new
+   feature file, still Product Owner. Fix in-place, then **re-run the script**
+   (a fix can break another trace).
+3. Only once the script returns no errors, start the semantic QA audit — this
+   script proves nothing about clarity, atomicity, or verifiability.
