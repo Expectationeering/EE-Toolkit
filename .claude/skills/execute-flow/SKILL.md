@@ -4,8 +4,10 @@ description: >-
   Use when the user asks to execute, run, or start an EE-Toolkit flow under
   flows/ — e.g. "Execute flows/ee-flow", "start ee-flow", "run ee", "run
   rte", or just a bare flow name matching a folder in flows/ (ignore case,
-  the -flow suffix, and filler words). Also use when the user asks to
-  (re)produce a flow's workbook, .docx output, or run statistics.
+  the -flow suffix, and filler words; a flow's full title also matches —
+  "run expectationeering" → flows/ee-flow, whose flow.md is titled
+  "Expectationeering Flow"). Also use when the user asks to (re)produce a
+  flow's workbook, .docx output, or run statistics.
 ---
 
 # Execute a flow — produce a workbook
@@ -16,7 +18,7 @@ You — the main assistant — orchestrate flows directly; there is no separate 
 
 **Always show progress with a todo list.** Per CLAUDE.md, show progress as a live todo list — resolve the flow name (step 1) first, then create the list with `TodoWrite` before loading anything else. Items: one per phase (or per step) of the flow's `## Steps`, plus `Ingest input documents`, `Quality Assurance audit`, `Convert to .docx`, and `Write run statistics`. Keep exactly one item `in_progress`; mark it `completed` the moment that step's output is written to the workbook.
 
-**1. Load all inputs.** Resolve the flow first: if the requested name matches no folder under `flows/`, list the available flows and stop; if it matches several, ask which one. Then ingest input documents. For each `<name>.docx` in `inputs/`, convert it to a markdown sibling with pandoc and use the markdown — never the `.docx`. On Windows, run pandoc in PowerShell prefixed with a registry PATH refresh:
+**1. Load all inputs.** Resolve the flow first: match the requested name against the folder names under `flows/` and the flow titles (each `flow.md`'s `#` heading) — so "expectationeering" resolves to `flows/ee-flow`. If nothing matches, list the available flows and stop; if several match, ask which one. Then ingest input documents. For each `<name>.docx` in `inputs/`, convert it to a markdown sibling with pandoc and use the markdown — never the `.docx`. On Windows, run pandoc in PowerShell prefixed with a registry PATH refresh:
 ```
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); pandoc "inputs/<name>.docx" -o "inputs/<name>.md" --wrap=none
 ```
