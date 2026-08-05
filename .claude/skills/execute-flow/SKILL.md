@@ -124,6 +124,15 @@ Date: <YYYY-MM-DD>
 
 - **Co-author** (`parallel with` an author step): take the primary author's returned draft first, then spawn the co-author with that draft inline to review, challenge, and improve it — not replace it wholesale. The co-author returns the improved section; paste it over the previous version. When a step's description folds a review perspective into a co-author step, include that review checklist in the same prompt — do not spawn a separate reviewer.
 - **Gates**: before a gated step, verify the gating step's section is non-empty; if not, re-run it.
+- **Challenger (safety-critical chain).** After the listed step completes (co-author round included), spawn one adversarial challenger for the group, with scoped context (the group's section + its direct upstream sections) and the skill bodies per the injection table:
+
+  | After step | Challenger examines | Agent |
+  |---|---|---|
+  | 6e | USER_DFMEA table | quality-assurance |
+  | 6j | UFMEA table + USR_* rows | quality-assurance |
+  | 9e | all RQ_* rows with Classification Critical or Major | quality-assurance |
+
+  The challenger's mandate is to **refute**: missing failure modes for covered URs/UTs, causes restating the mode, unverifiable or training-only mitigations, severity ratings unsupported by the stated end-effect, Critical/Major RQ rows failing the ten criteria. It returns a findings list tagged with the owning Role, or PASS — **it returns no corrected content and no rewritten rows**. Route findings to the owning author as one correction request (return-content; you paste), re-run trace-check if traces changed, and continue — challenger findings get **one** remediation round; anything still disputed flows into the step-10 QA audit rather than looping. Cap: one challenger invocation per group per run.
 - **Audit** (`audit` mode): run as a loop, not one pass.
   - **Structural pre-check first (cheap, no model tokens).** Run the **`trace-check`** skill first and iterate to zero errors before spawning any audit agent: route each `error` to its owning agent by ID prefix per that skill's routing table, apply the returned fix, and re-run until clean. If the per-phase checks of step 4 were done, this pass is normally already clean.
   - **Then the semantic audit — four parallel scoped sub-audits.** Once the script is clean, spawn **four Quality Assurance sub-audits concurrently**, each with only its own sections, the ID lists of their direct upstream artefacts (for trace-intent context), and the cross-cutting rules that apply to that scope:
