@@ -51,7 +51,7 @@ duplicate/gap findings, and the literal `template` for placeholder warnings.
 | Leftover `<!-- ... -->` fill-in placeholder | warning |
 
 The allowed-upstream DAG is encoded in `RULES` inside the script and mirrors the
-`Traces from X → Y` lines in `flows/expectationeering-flow/flow.md`.
+`Traces from X → Y` lines in `flows/ee-flow/flow.md`.
 `_To be added_` diagram markers and the out-of-scope template comment block are
 intentional and already filtered (`INTENTIONAL_COMMENT` in the script) — they
 never appear in output.

@@ -2,11 +2,10 @@
 name: execute-flow
 description: >-
   Use when the user asks to execute, run, or start an EE-Toolkit flow under
-  flows/ — e.g. "Execute flows/expectationeering-flow", "start
-  expectationeering", "run expectationeering", or just a bare flow name
-  matching a folder in flows/ (ignore case, the -flow suffix, and filler
-  words). Also use when the user asks to (re)produce a flow's workbook,
-  .docx output, or run statistics.
+  flows/ — e.g. "Execute flows/ee-flow", "start ee-flow", "run ee", "run
+  rte", or just a bare flow name matching a folder in flows/ (ignore case,
+  the -flow suffix, and filler words). Also use when the user asks to
+  (re)produce a flow's workbook, .docx output, or run statistics.
 ---
 
 # Execute a flow — produce a workbook
