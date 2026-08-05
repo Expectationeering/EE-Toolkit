@@ -30,44 +30,44 @@ Steps 9f–9h form a **3-Amigos session**: the **Product Owner** (business inten
 
 ## Steps
 
-| Step | Role | Mode | Artifact | Sequencing |
-|------|------|------|----------|------------|
-| 1a | User Stakeholder | author | UE_* — user expectations, daily context, pain points | parallel with 1b–1d |
-| 1b | Customer Stakeholder | author | ME_*, market expectations, commercial constraints | parallel with 1a |
-| 1c | Business Stakeholder | author | BE_* — business expectations, organisational strategy and liability | parallel with 1a |
-| 1d | Regulatory Stakeholder | author | RE_* — mandatory regulatory expectations and approval criteria | parallel with 1a |
-| 1e | Product Owner | author | Problem (Domain Description, Actual State, Desired State, Identified Gaps DC_*) and consolidation: fill each UE/ME/BE/RE expectation's `Traces` with the DC gap(s) it addresses (DC_* is the top-level root) | sequential after 1a–1d; gates 2a |
-| 2a | Product Owner | author | KA_* — Ideal Product Model, tracing from KA to UE/ME/BE/RE | sequential after 1e |
-| 2b | System Architect | co-author | KA_* — feasibility, proposition attributes, and risk validation | parallel with 2a |
-| 2c | Business Stakeholder | co-author | KA_* — organisational, manufacturability and liability view; also apply the User Stakeholder domain-review checklist (does each proposition attribute reflect real user benefit; product-free check) — no separate review step | sequential after 2b; gates 3a |
-| 3a | Product Owner | author | BR_* — Business Requirements, tracing from BR to KA | sequential after 2c |
-| 3b | System Architect | co-author | BR_* — technical and architectural alignment | parallel with 3a |
-| 3c | Customer Stakeholder | co-author | BR_* — buying criteria and commercial alignment | parallel with 3a; gates 4a |
-| 4a | Usability Validation | author | IU_01, MD_01 — Intended Use and Medical Device Classification, tracing from MD_01 to IU_01 | sequential after 3c |
-| 4b | Regulatory Stakeholder | co-author | IU_01, MD_01 — market access and approval criteria; also apply the User Stakeholder clinical-review checklist (intended use against real usage) — no separate review step | parallel with 4a; gates 5a |
-| 5a | System Architect | author | Product Information, System of Interest, Context Elements, IF_*, the Acquired Parameters / Signals table (each source element → the parameters it provides, from the input), and a `_To be added_` placeholder for the context diagram (no graphic is produced) | sequential after 4b; gates 6a+6b |
-| 6a+6b | Usability Validation | author | User Groups and UR_* — User Requirements, tracing from UR to IU_01/BR (one combined invocation, same author) | sequential after 5a |
-| 6c | User Stakeholder | co-author | UR_* — clinical validation of user requirements | parallel with 6a+6b; gates 6d |
-| 6d | Usability Validation | author | USER_DFMEA_* — User DFMEA, tracing from USER_DFMEA to UR | sequential after 6c |
-| 6e | User Stakeholder | co-author | USER_DFMEA_* — clinical review of user failure modes | parallel with 6d; gates 6f |
-| 6f | Usability Validation | author | UT_* — Use Scenarios / use tasks, tracing from UT to UR | sequential after 6e |
-| 6g | User Stakeholder | co-author | UT_* — clinical review of use scenarios | parallel with 6f; gates 6h |
-| 6h | Usability Validation | author | UFMEA_* — Usability FMEA, tracing from UFMEA to UT | sequential after 6g |
-| 6i | User Stakeholder | co-author | UFMEA_* — clinical review of usability failure modes | parallel with 6h; gates 6j |
-| 6j | Usability Validation | author | USR_* — Usability Requirements, tracing from USR to UR/UFMEA | sequential after 6i; gates 7 |
-| 7 | Usability Validation | author | UI/UX Design — wireframes and interaction flows | sequential after 6j; gates 8a+8b |
-| 8a+8b | System Architect | author | Actors and UC_* — Use Cases, tracing from UC to UT/UR (one combined invocation, same author) | sequential after 7 |
-| 8c | User Stakeholder | co-author | UC_* — clinical review of use cases | parallel with 8a+8b; gates 8d |
-| 8d | System Architect | author | DD_* — Design Decisions, tracing from DD to UC/BR | sequential after 8c; gates 9a |
-| 9a | System Architect | author | Development external interfaces (black-box design) and RQ_IF_* — Interface Requirements, tracing from RQ_IF to IF | sequential after 8d |
-| 9b | Product Owner | author | RQ_FN_* — Functional Requirements, tracing from RQ_FN to UC/UR | sequential after 9a |
-| 9c | System Architect | author | RQ_PR_* — Performance Requirements, tracing from RQ_PR to RQ_FN | sequential after 9b; parallel with 9d |
-| 9d | Regulatory Stakeholder | author | RQ_NF_*, RQ_CS_* — Non-Functional and Constraint Requirements, tracing to BR/RE | sequential after 9b; parallel with 9c |
-| 9e | Development Lead | co-author | RQ_IF_*, RQ_FN_*, RQ_PR_*, RQ_NF_*, RQ_CS_* — implementation constraints and technical feasibility | sequential after 9c and 9d |
-| 9f | Product Owner | author | SV_* — one Gherkin BDD feature file per functional requirement (`@ID:RQ_FN_xx` tag, Feature + As a/I want/So that, `Rule:`, Scenarios with Given/When/Then + data tables), tracing from SV to RQ_FN | sequential after 9e |
-| 9g | Development Lead | co-author | SV_* — implementability of each scenario: preconditions, test data, and technical feasibility | parallel with 9f |
-| 9h | Verification Lead | co-author | SV_* — testability and verification coverage; finalise so every RQ_* is covered by at least one scenario | parallel with 9f; gates Step 10a |
-| 10a | Quality Assurance | audit | Trace-check script first (mechanical traceability, ~0 tokens), then **four parallel scoped sub-audits** — (1) informal domain: DC/UE/ME/BE/RE/KA/BR incl. product-free check; (2) usability chain: IU/MD, User Groups, UR, USER_DFMEA, UT, UFMEA, USR, UI/UX; (3) requirements: Context/IF, Actors/UC, DD, RQ_* incl. solution-level and enumerated-set checks; (4) verification: SV feature files incl. gherkin-sv format and coverage. Route every finding back to its authoring agent, apply the fix, and re-audit only the touched scope until zero findings remain | sequential after 9h |
+| Step | Role | Mode | Artifact | Sequencing | Model |
+|------|------|------|----------|------------|-------|
+| 1a | User Stakeholder | author | UE_* — user expectations, daily context, pain points | parallel with 1b–1d | sonnet |
+| 1b | Customer Stakeholder | author | ME_*, market expectations, commercial constraints | parallel with 1a | sonnet |
+| 1c | Business Stakeholder | author | BE_* — business expectations, organisational strategy and liability | parallel with 1a | sonnet |
+| 1d | Regulatory Stakeholder | author | RE_* — mandatory regulatory expectations and approval criteria | parallel with 1a | sonnet |
+| 1e | Product Owner | author | Problem (Domain Description, Actual State, Desired State, Identified Gaps DC_*) and consolidation: fill each UE/ME/BE/RE expectation's `Traces` with the DC gap(s) it addresses (DC_* is the top-level root) | sequential after 1a–1d; gates 2a | |
+| 2a | Product Owner | author | KA_* — Ideal Product Model, tracing from KA to UE/ME/BE/RE | sequential after 1e | |
+| 2b | System Architect | co-author | KA_* — feasibility, proposition attributes, and risk validation | parallel with 2a | |
+| 2c | Business Stakeholder | co-author | KA_* — organisational, manufacturability and liability view; also apply the User Stakeholder domain-review checklist (does each proposition attribute reflect real user benefit; product-free check) — no separate review step | sequential after 2b; gates 3a | |
+| 3a | Product Owner | author | BR_* — Business Requirements, tracing from BR to KA | sequential after 2c | |
+| 3b | System Architect | co-author | BR_* — technical and architectural alignment | parallel with 3a | |
+| 3c | Customer Stakeholder | co-author | BR_* — buying criteria and commercial alignment | parallel with 3a; gates 4a | |
+| 4a | Usability Validation | author | IU_01, MD_01 — Intended Use and Medical Device Classification, tracing from MD_01 to IU_01 | sequential after 3c | |
+| 4b | Regulatory Stakeholder | co-author | IU_01, MD_01 — market access and approval criteria; also apply the User Stakeholder clinical-review checklist (intended use against real usage) — no separate review step | parallel with 4a; gates 5a | |
+| 5a | System Architect | author | Product Information, System of Interest, Context Elements, IF_*, the Acquired Parameters / Signals table (each source element → the parameters it provides, from the input), and a `_To be added_` placeholder for the context diagram (no graphic is produced) | sequential after 4b; gates 6a+6b | |
+| 6a+6b | Usability Validation | author | User Groups and UR_* — User Requirements, tracing from UR to IU_01/BR (one combined invocation, same author) | sequential after 5a | |
+| 6c | User Stakeholder | co-author | UR_* — clinical validation of user requirements | parallel with 6a+6b; gates 6d | sonnet |
+| 6d | Usability Validation | author | USER_DFMEA_* — User DFMEA, tracing from USER_DFMEA to UR | sequential after 6c | |
+| 6e | User Stakeholder | co-author | USER_DFMEA_* — clinical review of user failure modes | parallel with 6d; gates 6f | |
+| 6f | Usability Validation | author | UT_* — Use Scenarios / use tasks, tracing from UT to UR | sequential after 6e | |
+| 6g | User Stakeholder | co-author | UT_* — clinical review of use scenarios | parallel with 6f; gates 6h | sonnet |
+| 6h | Usability Validation | author | UFMEA_* — Usability FMEA, tracing from UFMEA to UT | sequential after 6g | |
+| 6i | User Stakeholder | co-author | UFMEA_* — clinical review of usability failure modes | parallel with 6h; gates 6j | |
+| 6j | Usability Validation | author | USR_* — Usability Requirements, tracing from USR to UR/UFMEA | sequential after 6i; gates 7 | |
+| 7 | Usability Validation | author | UI/UX Design — wireframes and interaction flows | sequential after 6j; gates 8a+8b | |
+| 8a+8b | System Architect | author | Actors and UC_* — Use Cases, tracing from UC to UT/UR (one combined invocation, same author) | sequential after 7 | |
+| 8c | User Stakeholder | co-author | UC_* — clinical review of use cases | parallel with 8a+8b; gates 8d | sonnet |
+| 8d | System Architect | author | DD_* — Design Decisions, tracing from DD to UC/BR | sequential after 8c; gates 9a | |
+| 9a | System Architect | author | Development external interfaces (black-box design) and RQ_IF_* — Interface Requirements, tracing from RQ_IF to IF | sequential after 8d | |
+| 9b | Product Owner | author | RQ_FN_* — Functional Requirements, tracing from RQ_FN to UC/UR | sequential after 9a | |
+| 9c | System Architect | author | RQ_PR_* — Performance Requirements, tracing from RQ_PR to RQ_FN | sequential after 9b; parallel with 9d | |
+| 9d | Regulatory Stakeholder | author | RQ_NF_*, RQ_CS_* — Non-Functional and Constraint Requirements, tracing to BR/RE | sequential after 9b; parallel with 9c | |
+| 9e | Development Lead | co-author | RQ_IF_*, RQ_FN_*, RQ_PR_*, RQ_NF_*, RQ_CS_* — implementation constraints and technical feasibility | sequential after 9c and 9d | |
+| 9f | Product Owner | author | SV_* — one Gherkin BDD feature file per functional requirement (`@ID:RQ_FN_xx` tag, Feature + As a/I want/So that, `Rule:`, Scenarios with Given/When/Then + data tables), tracing from SV to RQ_FN | sequential after 9e | |
+| 9g | Development Lead | co-author | SV_* — implementability of each scenario: preconditions, test data, and technical feasibility | parallel with 9f | |
+| 9h | Verification Lead | co-author | SV_* — testability and verification coverage; finalise so every RQ_* is covered by at least one scenario | parallel with 9f; gates Step 10a | |
+| 10a | Quality Assurance | audit | Trace-check script first (mechanical traceability, ~0 tokens), then **four parallel scoped sub-audits** — (1) informal domain: DC/UE/ME/BE/RE/KA/BR incl. product-free check; (2) usability chain: IU/MD, User Groups, UR, USER_DFMEA, UT, UFMEA, USR, UI/UX; (3) requirements: Context/IF, Actors/UC, DD, RQ_* incl. solution-level and enumerated-set checks; (4) verification: SV feature files incl. gherkin-sv format and coverage. Route every finding back to its authoring agent, apply the fix, and re-audit only the touched scope until zero findings remain | sequential after 9h | |
 
 ## Artifact Authoring Guidance
 

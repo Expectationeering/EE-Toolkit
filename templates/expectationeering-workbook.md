@@ -308,7 +308,7 @@ External constraints the system must respect: regulatory rules, applicable stand
 
 ### Verification (SV_*)
 
-The **BDD feature files** that verify the functional requirements, defined jointly by the 3-Amigos (Product Owner, Development Lead, Verification Lead). Write **one feature file per functional requirement** as a `gherkin` fenced block, tagged `@ID:RQ_FN_xx` to trace it to the requirement it verifies. Each feature has a user story (`As a … I want … So that …`), a `Rule:` that captures the requirement's "shall" statement, and one or more concrete `Scenario`s with `Given / When / Then` steps and data tables for the expected values. Use measurable outcomes (e.g. "within 5 seconds"). Every RQ_FN_* must have a feature file and every RQ_* must be covered by at least one scenario. The converter records each feature file as one row (`SV_*`) in the workbook's Verification table.
+The **BDD feature files** that verify the functional requirements, defined jointly by the 3-Amigos (Product Owner, Development Lead, Verification Lead). Format, tagging, indentation, and coverage rules: the `gherkin-sv` skill (injected into the authoring steps) is the single source. The converter records each feature file as one `SV_*` row in the workbook's Verification table.
 
 ```gherkin
 @ID:RQ_FN_01
