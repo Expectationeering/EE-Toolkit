@@ -49,6 +49,8 @@ Create `outputs/<YYYY-MM-DD>-<HHMMSS>/` and copy each `Templates` file verbatim 
 | every `BR_*`/`UR_*`/`USR_*`/`RQ_*` authoring or co-author step + all four QA sub-audits | **`requirements-quality`** (`.claude/skills/requirements-quality/SKILL.md`) |
 
 > **Return-content protocol — agents never edit the workbook.** Each agent returns its filled (or improved) section(s) as markdown in its final message. You — the orchestrator — paste each returned section into the live workbook with a single Edit, replacing exactly that section and nothing else. Content passes through the model once instead of three times (no Read + old_string + new_string round-trips), and agents can safely run in parallel because only you write to the file. After each paste, confirm the surrounding headings and sections are untouched.
+>
+> **Agent failure protocol.** An agent that returns empty, malformed, or out-of-scope content (wrong section, prose instead of the table) gets exactly **one** re-dispatch with a clarified prompt naming the defect. If the re-dispatch also fails, stop the run and surface the step, the prompt, and both returns in your final message. Never author artefact content yourself as a fallback, never insert an "incomplete" marker and move on, and never skip the step — downstream steps trace to its artefacts.
 
 > **Scoped context — never pass the whole workbook to an authoring/co-author/review step.** The growing workbook is the single largest token cost when handed in full to every step, and most of it is irrelevant to any one artifact. Instead, pass only what the step needs:
 > - **(a)** the template section(s) the step must fill, and
