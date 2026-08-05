@@ -15,10 +15,10 @@ Keep the two disjoint: an operation failure (wrong sensor site, skipped step) be
 ## Column semantics
 
 - **`Item/Function`** (USER_DFMEA) — the user-facing function or interaction step being analysed (e.g. "sensor placement", "alarm acknowledgement"), not a product component. **`Requirement`** (USER_DFMEA) / **`Scenario Title`** (UFMEA) restate the traced upstream item in words so the row reads standalone.
-- **Failure Mode / Use Error** — *what* goes wrong, stated as observable user behaviour ("user attaches the sensor to the wrong body site"), never as a design flaw or a consequence.
+- **Failure Mode / Use Error** — *what* goes wrong, stated as observable user behaviour, never as a design flaw or a consequence.
 - **Failure Cause / Cause** — *why* it goes wrong: the concrete circumstance or design property that produces the error (time pressure, look-alike connectors, ambiguous state indication). Never a restatement of the failure mode.
 - **HF Cause** (UFMEA) — the human-factors mechanism behind the cause: habituation, banner blindness, automation bias, attention tunnelling, mode confusion, premature task closure, working-memory overload, perceptual confusion, interrupted-task slip.
-- **End-effect / Effect** — the *clinical* consequence for the patient or care process, followed through to harm ("wrong diagnostic candidate → wrong treatment"), not merely the technical result ("wrong value displayed").
+- **End-effect / Effect** — the *clinical* consequence for the patient or care process, followed through to harm, not merely the technical result (see the worked row).
 - **Rationale** — why this row is credible in the real use context (name the setting, workload, or named input risk it derives from).
 - **`Prevention`** (USER_DFMEA) — the design measures that control the mode, in one cell. Where a measure is additional to the current concept, prefix it `NEW:`; anything unprefixed is read as existing. Do not invent other markup (no "Existing:/New:" labels, no numbered lists of independent measures — split rows instead).
 - **`Mitigation (existing)` / `Mitigation (new)`** (UFMEA) — *existing* = what the current concept already provides; *new* = the additional measure this row demands.

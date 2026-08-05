@@ -186,3 +186,43 @@ Deferred by approval-gate decision: RQ-3, GS-4, GS-8 (see Approval
 decisions). Deferred as not reproduced under the Iron Law (no failing
 baseline → no edit): EF-11, GS-2, GS-5, GS-6, FM-4, FM-8, TC-1, IT-1 —
 each with the observed baseline behaviour recorded in its Status cell.
+
+GS-2 deferral note (post-review): the code reviewer flagged that GS-1's path
+fix made the mis-tagged `Example.feature` *reachable*, questioning whether
+the baseline covered that condition. It did — scenario G showed the reference
+file's content (including its `@ID:PR_02.1` first line) inline in every
+baseline rep, which is strictly equivalent exposure; 3/3 still tagged
+`@ID:RQ_FN_01` correctly. Deferral stands on that evidence.
+
+## Code review (2026-08-05, post-close)
+
+Independent reviewer over `09f9abe..664e8e0`: verdict "ready to merge with
+fixes" — 1 critical, 2 important, 4 minor. Actions:
+
+- **Critical (fixed):** trace-check's partial-run exemption list was closed
+  around four patterns, but the script emits `has no upstream trace` errors
+  for *every* template stub row of unauthored sections (reproduced against
+  the pristine template) — the closed list would have triggered bogus
+  remediation at each phase boundary and contradicted execute-flow step 4.
+  Rewritten to key deferral on the observable predicate "section whose
+  authoring step has not run"; strictness retained for authored sections.
+  Cause: micro-test overfitting when closing the list in TC-2's GREEN
+  iteration. GREEN re-verified (stub-row deferred + authored dangling trace
+  fixed, 2/2).
+- **Important (fixed):** execute-flow's run-stats "Format reference"
+  contradicted the new skeleton on details EF-6 restructured — demoted to
+  tone/Notes-style only.
+- **Important (pushed back):** gherkin-sv reachable mis-tagged reference —
+  see GS-2 deferral note above.
+- **Minor (fixed):** FM-3's parenthetical strip completed; execute-flow todo
+  list now created after flow-name resolution (no todo list for a run that
+  never starts).
+- **Minor (follow-up, no edit):** "Tag each finding with the violated
+  criterion by name" is duplicated between `quality-assurance.md:21` and the
+  injected body (pre-existing, outside this audit's finding list);
+  install-toolkit's completion line hardcodes the example flow name (part of
+  the approved IT-4 wording).
+- **Process recommendation adopted for future passes:** when an edit closes
+  an open list, add a deterministic full-universe check (e.g. run
+  `check_traces.py` against the pristine template) before trusting the
+  micro-test scenario set.

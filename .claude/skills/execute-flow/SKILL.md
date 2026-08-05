@@ -15,7 +15,7 @@ You — the main assistant — orchestrate flows directly; there is no separate 
 
 ## Procedure
 
-**Always show progress with a todo list.** Per CLAUDE.md, show progress as a live todo list — create it with `TodoWrite` before loading anything. Items: one per phase (or per step) of the flow's `## Steps`, plus `Ingest input documents`, `Quality Assurance audit`, `Convert to .docx`, and `Write run statistics`. Keep exactly one item `in_progress`; mark it `completed` the moment that step's output is written to the workbook.
+**Always show progress with a todo list.** Per CLAUDE.md, show progress as a live todo list — resolve the flow name (step 1) first, then create the list with `TodoWrite` before loading anything else. Items: one per phase (or per step) of the flow's `## Steps`, plus `Ingest input documents`, `Quality Assurance audit`, `Convert to .docx`, and `Write run statistics`. Keep exactly one item `in_progress`; mark it `completed` the moment that step's output is written to the workbook.
 
 **1. Load all inputs.** Resolve the flow first: if the requested name matches no folder under `flows/`, list the available flows and stop; if it matches several, ask which one. Then ingest input documents. For each `<name>.docx` in `inputs/`, convert it to a markdown sibling with pandoc and use the markdown — never the `.docx`. On Windows, run pandoc in PowerShell prefixed with a registry PATH refresh:
 ```
@@ -115,7 +115,7 @@ Date: <YYYY-MM-DD>
 - <artifact volume produced>
 ````
 
-Format reference: `outputs/2026-07-04-170434/run-stats.md`. Add `Write run statistics` as the last todo item and mark it complete once the file is written.
+`outputs/2026-07-04-170434/run-stats.md` may be consulted for tone and the Notes style only — the skeleton above is the required shape where the two differ. Add `Write run statistics` as the last todo item and mark it complete once the file is written.
 
 ## Co-author, gates, and audit modes
 

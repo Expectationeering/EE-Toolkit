@@ -58,18 +58,22 @@ never appear in output.
 
 ### Expected findings during a partial run
 
-Mid-flow, some findings only exist because later steps have not run yet:
+Unauthored sections still hold the template's stub rows (`UR_01`, `KA_01`, …
+with empty cells), so mid-flow the script reports findings that only exist
+because a step has not run yet. **Defer any finding on a section whose
+authoring step has not run** — typical shapes:
 
+- `has no upstream trace` errors on the template stub rows of unauthored
+  sections (the script flags every empty stub row's missing trace);
 - `RQ_FN_* → no SV feature file`: expected until steps 9f–9h;
 - `UE_*/ME_*/BE_*/RE_* → has no upstream trace`: expected until step 1e;
 - `DC_*` gap that nothing traces to: expected until step 1e;
 - `template` (unfilled placeholder): expected for any section whose authoring
   step has not run.
 
-Only the four patterns above are deferrable, and only while their step has not
-run. Anything else is a real finding — in particular, an item that traces to a
-non-existent ID is broken in an already-authored section: fix it now; deferring
-it lets later steps build on a broken trace.
+Every finding in an **already-authored** section is real — in particular, an
+item that traces to a non-existent ID: fix it now; deferring it lets later
+steps build on a broken trace.
 
 ## How to use the result in the QA loop
 
