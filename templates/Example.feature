@@ -1,4 +1,4 @@
-@ID:PR_02.1
+@ID:RQ_FN_02.1
 Feature: Show Vital Signs
     As a clinician I want to see the patient's current vital signs on the Monitor Display within 5 seconds of a valid sensor reading
     So that I can make safe, timely clinical decisions at the bedside

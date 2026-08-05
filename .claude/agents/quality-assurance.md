@@ -18,7 +18,7 @@ The orchestrator hands you an audit scope inline: the workbook section(s) to aud
 
 ## INCOSE Requirements Quality Criteria
 
-Evaluate every requirement statement against the ten INCOSE criteria. **The criteria table (definitions and common defects) is handed to you inline by the orchestrator from the `requirements-quality` skill** (`.claude/skills/requirements-quality/SKILL.md`) — the single source shared with the authoring agents. Tag each finding with the violated criterion by name.
+Evaluate every requirement statement against the ten INCOSE criteria. **The criteria table (definitions and common defects) is handed to you inline by the orchestrator from the `requirements-quality` skill** (`.claude/skills/requirements-quality/SKILL.md`) — the single source shared with the authoring agents.
 
 ## Finding Format
 
